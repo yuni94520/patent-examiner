@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>專利相似度比對 v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07080f;--s1:#0e1120;--s2:#141729;--s3:#1a1f38;
+  --bd:rgba(120,130,255,0.13);--bdm:rgba(120,130,255,0.28);
+  --a1:#818cf8;--a2:#34d399;--a3:#f59e0b;--a4:#f87171;--a5:#c084fc;
+  --tx:#e2e4f0;--mt:#6b7280;--dm:#2d3148;
+  --mono:'JetBrains Mono',monospace;--sans:'Sora',system-ui,sans-serif;
+  --r:8px;--rs:5px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--sans);background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px;line-height:1.6;
+  background-image:radial-gradient(ellipse 70% 40% at 15% -5%,rgba(129,140,248,0.07) 0%,transparent 55%),
+  radial-gradient(ellipse 50% 35% at 85% 105%,rgba(52,211,153,0.05) 0%,transparent 55%);}
+
+/* HEADER */
+header{display:flex;align-items:center;padding:0 2rem;height:52px;border-bottom:1px solid var(--bd);
+  background:rgba(7,8,15,0.9);backdrop-filter:blur(16px);position:sticky;top:0;z-index:50;gap:.875rem;}
+.logo-mark{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,var(--a1),#6366f1);
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:8px;font-weight:700;
+  color:#fff;box-shadow:0 0 18px rgba(129,140,248,0.35);flex-shrink:0;letter-spacing:-.02em;}
+.logo-text{font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:.04em;}
+.logo-sub{font-family:var(--mono);font-size:9px;color:var(--mt);}
+.logo-ver{font-size:8px;color:var(--mt);background:var(--s2);border:1px solid var(--bd);padding:1px 6px;border-radius:3px;font-family:var(--mono);}
+.hdr-r{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.badge{font-family:var(--mono);font-size:9px;padding:2px 9px;border-radius:20px;background:var(--s2);border:1px solid var(--bd);color:var(--mt);}
+.badge.ok{color:var(--a2);border-color:rgba(52,211,153,0.3);background:rgba(52,211,153,0.07);}
+.badge.local{color:var(--a1);border-color:rgba(129,140,248,0.3);background:rgba(129,140,248,0.07);}
+.badge.sbert{color:var(--a5);border-color:rgba(192,132,252,0.3);background:rgba(192,132,252,0.07);}
+
+/* SHELL */
+.shell{display:grid;grid-template-columns:200px 1fr;min-height:calc(100vh - 52px);}
+
+/* SIDEBAR */
+aside{background:var(--s1);border-right:1px solid var(--bd);padding:1.25rem .875rem;display:flex;flex-direction:column;gap:1.25rem;overflow-y:auto;scrollbar-width:none;}
+.sb-hd{font-family:var(--mono);font-size:8px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--mt);
+  padding-bottom:.5rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:5px;}
+.sb-hd::before{content:'';width:3px;height:9px;background:var(--a1);border-radius:2px;display:block;}
+
+/* API ENDPOINT BLOCK */
+.ep-block{background:rgba(192,132,252,0.06);border:1px solid rgba(192,132,252,0.2);border-radius:var(--rs);padding:9px;}
+.ep-label{font-family:var(--mono);font-size:8px;color:var(--a5);letter-spacing:.1em;margin-bottom:5px;}
+.ep-input{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:4px;color:var(--tx);
+  font-family:var(--mono);font-size:9px;padding:4px 7px;outline:none;transition:border-color .2s;}
+.ep-input:focus{border-color:var(--a5);}
+.ep-input::placeholder{color:var(--dm);}
+.ep-status{font-size:8px;font-family:var(--mono);margin-top:4px;color:var(--dm);min-height:11px;}
+.btn-ep{width:100%;margin-top:5px;background:rgba(192,132,252,0.1);border:1px solid rgba(192,132,252,0.3);
+  border-radius:var(--rs);color:var(--a5);font-family:var(--mono);font-size:8px;padding:4px;cursor:pointer;transition:all .2s;}
+.btn-ep:hover{background:rgba(192,132,252,0.2);}
+
+.w-list{display:flex;flex-direction:column;gap:7px;}
+.w-row{display:flex;flex-direction:column;gap:2px;}
+.w-head{display:flex;justify-content:space-between;align-items:baseline;}
+.w-name{font-size:10px;color:var(--mt);}
+.w-pct{font-family:var(--mono);font-size:9px;color:var(--dm);}
+.w-bg{height:3px;background:var(--dm);border-radius:2px;overflow:hidden;}
+.w-fill{height:100%;border-radius:2px;}
+
+.hist-list{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;scrollbar-width:none;}
+.hist-empty{font-family:var(--mono);font-size:9px;color:var(--dm);text-align:center;padding:10px 0;}
+.hist-row{display:flex;align-items:center;gap:5px;padding:4px 6px;border-radius:var(--rs);
+  background:var(--s2);border:1px solid var(--bd);cursor:pointer;transition:border-color .15s;}
+.hist-row:hover{border-color:var(--bdm);}
+.hist-sc{font-family:var(--mono);font-size:13px;font-weight:500;width:34px;flex-shrink:0;}
+.hist-id{font-family:var(--mono);font-size:8px;color:var(--mt);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* MAIN */
+.main{display:flex;flex-direction:column;}
+.tabs{display:flex;border-bottom:1px solid var(--bd);padding:0 1.75rem;background:rgba(7,8,15,0.7);
+  backdrop-filter:blur(10px);position:sticky;top:52px;z-index:10;}
+.tab-btn{font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  padding:11px 14px;border:none;background:transparent;color:var(--mt);cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;white-space:nowrap;}
+.tab-btn.active{color:var(--a1);border-bottom-color:var(--a1);}
+.tab-btn:hover:not(.active){color:var(--tx);}
+.tab-pane{display:none;}
+.tab-pane.active{display:flex;flex-direction:column;}
+.content{flex:1;padding:1.5rem 1.75rem;display:flex;flex-direction:column;gap:1.1rem;}
+
+/* CARD */
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;transition:border-color .2s;}
+.card:focus-within{border-color:var(--bdm);}
+.card-hd{padding:.6rem 1rem;border-bottom:1px solid var(--bd);background:var(--s2);display:flex;align-items:center;gap:8px;}
+.step-num{width:19px;height:19px;border-radius:50%;background:var(--a1);color:#07090f;
+  font-family:var(--mono);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-num.g{background:var(--a2);}
+.step-num.y{background:var(--a3);}
+.step-num.r{background:var(--a4);}
+.step-num.p{background:var(--a5);}
+.card-title{font-size:12px;font-weight:600;color:var(--tx);}
+.card-sub{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--dm);}
+.card-body{padding:.9rem 1rem;display:flex;flex-direction:column;gap:.7rem;}
+
+/* FIELDS */
+.frow{display:flex;gap:.7rem;}
+.fg{display:flex;flex-direction:column;gap:3px;flex:1;}
+.fg.sm{max-width:165px;}
+.fg.xs{max-width:110px;}
+label{font-family:var(--mono);font-size:8px;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;}
+input[type=text]{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);
+  color:var(--tx);font-family:var(--mono);font-size:11px;padding:6px 9px;outline:none;transition:border-color .2s;}
+input[type=text]:focus{border-color:var(--a1);}
+textarea{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);
+  color:var(--tx);font-family:var(--mono);font-size:11px;padding:7px 9px;outline:none;resize:vertical;line-height:1.65;transition:border-color .2s;}
+textarea:focus{border-color:var(--a1);}
+select{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);
+  color:var(--tx);font-family:var(--mono);font-size:10px;padding:6px 9px;outline:none;cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;}
+select:focus{border-color:var(--a1);}
+select option{background:var(--s2);}
+
+/* BUTTONS */
+.btn-run{display:flex;align-items:center;justify-content:center;gap:7px;background:linear-gradient(135deg,var(--a1),#6366f1);
+  color:#fff;border:none;border-radius:var(--rs);font-family:var(--mono);font-size:10px;font-weight:500;
+  letter-spacing:.1em;padding:10px 22px;cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 18px rgba(129,140,248,0.25);text-transform:uppercase;}
+.btn-run:hover{filter:brightness(1.12);transform:translateY(-1px);}
+.btn-run:active{transform:scale(.98);}
+.btn-run:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-ghost{background:transparent;border:1px solid var(--bdm);border-radius:var(--rs);color:var(--mt);
+  font-family:var(--mono);font-size:9px;padding:8px 12px;cursor:pointer;transition:all .2s;}
+.btn-ghost:hover{border-color:var(--a1);color:var(--a1);}
+.btn-local{display:inline-flex;align-items:center;gap:5px;background:rgba(129,140,248,0.1);
+  border:1px solid rgba(129,140,248,0.3);border-radius:var(--rs);color:var(--a1);font-family:var(--mono);
+  font-size:9px;font-weight:500;padding:7px 13px;cursor:pointer;transition:all .2s;}
+.btn-local:hover{background:rgba(129,140,248,0.18);}
+.btn-sbert{display:inline-flex;align-items:center;gap:5px;background:rgba(192,132,252,0.1);
+  border:1px solid rgba(192,132,252,0.3);border-radius:var(--rs);color:var(--a5);font-family:var(--mono);
+  font-size:9px;font-weight:500;padding:7px 13px;cursor:pointer;transition:all .2s;}
+.btn-sbert:hover:not(:disabled){background:rgba(192,132,252,0.18);}
+.btn-sbert:disabled{opacity:.35;cursor:not-allowed;}
+.btn-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;}
+
+/* SCORE CARD */
+.score-card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;display:none;animation:rise .3s ease;}
+.score-card.vis{display:block;}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.score-hd{padding:1.1rem 1.25rem .9rem;border-bottom:1px solid var(--bd);background:var(--s2);
+  display:grid;grid-template-columns:auto 1fr auto;gap:1.25rem;align-items:start;}
+.score-big{font-family:var(--mono);font-size:50px;font-weight:300;line-height:1;letter-spacing:-.02em;}
+.score-big.H{color:var(--a4);text-shadow:0 0 30px rgba(248,113,113,0.4);}
+.score-big.M{color:var(--a3);text-shadow:0 0 30px rgba(245,158,11,0.35);}
+.score-big.L{color:var(--a2);text-shadow:0 0 30px rgba(52,211,153,0.35);}
+.score-den{font-family:var(--mono);font-size:11px;color:var(--mt);margin-bottom:4px;align-self:flex-end;}
+.tier-chip{display:inline-flex;align-items:center;padding:3px 11px;border-radius:20px;font-family:var(--mono);font-size:10px;font-weight:500;}
+.tier-chip.H{background:rgba(248,113,113,0.1);color:var(--a4);border:1px solid rgba(248,113,113,0.3);}
+.tier-chip.M{background:rgba(245,158,11,0.09);color:var(--a3);border:1px solid rgba(245,158,11,0.3);}
+.tier-chip.L{background:rgba(52,211,153,0.09);color:var(--a2);border:1px solid rgba(52,211,153,0.3);}
+.score-meta{text-align:right;}
+.score-pid{font-family:var(--mono);font-size:10px;color:var(--a1);}
+.score-sub{font-family:var(--mono);font-size:8px;color:var(--mt);margin-top:3px;}
+.score-body{padding:1.1rem 1.25rem;}
+
+/* SCORE LAYER TABS */
+.slayer-tabs{display:flex;gap:5px;margin-bottom:1rem;}
+.slayer-btn{font-family:var(--mono);font-size:9px;padding:4px 11px;border-radius:20px;cursor:pointer;transition:all .2s;
+  background:var(--s2);border:1px solid var(--bd);color:var(--mt);}
+.slayer-btn.active{background:rgba(129,140,248,0.12);border-color:rgba(129,140,248,0.35);color:var(--a1);}
+.slayer-btn.sbert-active{background:rgba(192,132,252,0.12);border-color:rgba(192,132,252,0.35);color:var(--a5);}
+.slayer-btn.fused-active{background:rgba(52,211,153,0.1);border-color:rgba(52,211,153,0.3);color:var(--a2);}
+.slayer-pane{display:none;}
+.slayer-pane.active{display:block;}
+
+/* BREAKDOWN */
+.bk-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:1.1rem;}
+.bk-item{background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:8px 10px;text-align:center;}
+.bk-lbl{font-family:var(--mono);font-size:7px;color:var(--dm);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;}
+.bk-val{font-family:var(--mono);font-size:19px;font-weight:300;}
+.bk-val.a1{color:var(--a1);}
+.bk-val.a2{color:var(--a2);}
+.bk-val.a5{color:var(--a5);}
+.bk-val.fuse{color:var(--a2);font-size:24px;}
+
+/* 8D BARS */
+.dim-hd{display:flex;align-items:center;gap:8px;margin-bottom:.75rem;}
+.dim-hd-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.16em;color:var(--mt);text-transform:uppercase;}
+.dim-hd-line{flex:1;height:1px;background:var(--bd);}
+.dim-rows{display:flex;flex-direction:column;gap:6px;}
+.dim-row{display:flex;align-items:center;gap:9px;}
+.dim-name{width:52px;font-size:10px;color:var(--mt);flex-shrink:0;}
+.dim-w{width:22px;font-family:var(--mono);font-size:8px;color:var(--dm);text-align:right;flex-shrink:0;}
+.dim-bg{flex:1;height:5px;background:var(--s3);border-radius:3px;overflow:hidden;}
+.dim-fill{height:100%;border-radius:3px;transition:width .85s cubic-bezier(.4,0,.2,1);}
+.dim-pct{width:34px;font-family:var(--mono);font-size:10px;text-align:right;flex-shrink:0;font-weight:500;}
+.dim-ctr{width:30px;font-family:var(--mono);font-size:8px;color:var(--dm);text-align:right;flex-shrink:0;}
+
+/* ELEMENT LEVEL */
+.elem-section{margin-top:1rem;}
+.elem-hd{display:flex;align-items:center;gap:8px;margin-bottom:.6rem;}
+.elem-hd-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.16em;color:var(--mt);text-transform:uppercase;}
+.elem-warning{font-family:var(--mono);font-size:9px;padding:3px 9px;border-radius:10px;background:rgba(248,113,113,0.1);color:var(--a4);border:1px solid rgba(248,113,113,0.25);}
+.elem-ok{font-family:var(--mono);font-size:9px;padding:3px 9px;border-radius:10px;background:rgba(52,211,153,0.1);color:var(--a2);border:1px solid rgba(52,211,153,0.25);}
+.elem-rows{display:flex;flex-direction:column;gap:5px;}
+.elem-row{display:flex;align-items:center;gap:9px;padding:5px 8px;background:var(--s2);border-radius:var(--rs);border:1px solid var(--bd);}
+.elem-idx{font-family:var(--mono);font-size:8px;color:var(--dm);width:16px;flex-shrink:0;}
+.elem-text{flex:1;font-size:10px;color:var(--mt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.elem-bar-bg{width:60px;height:4px;background:var(--s3);border-radius:2px;overflow:hidden;flex-shrink:0;}
+.elem-bar-fill{height:100%;border-radius:2px;}
+.elem-pct{font-family:var(--mono);font-size:9px;width:32px;text-align:right;flex-shrink:0;font-weight:500;}
+
+.pen-box{margin-top:.9rem;background:rgba(248,113,113,0.07);border:1px solid rgba(248,113,113,0.2);border-radius:var(--rs);
+  padding:.6rem .85rem;font-family:var(--mono);font-size:10px;color:var(--a4);display:none;line-height:1.5;}
+.pen-box.vis{display:block;}
+.tier-desc-box{margin-top:.7rem;padding:.6rem .85rem;border-radius:var(--rs);font-size:12px;line-height:1.55;border:1px solid;}
+.tier-desc-box.H{background:rgba(248,113,113,0.07);border-color:rgba(248,113,113,0.2);color:var(--a4);}
+.tier-desc-box.M{background:rgba(245,158,11,0.07);border-color:rgba(245,158,11,0.2);color:var(--a3);}
+.tier-desc-box.L{background:rgba(52,211,153,0.07);border-color:rgba(52,211,153,0.2);color:var(--a2);}
+
+/* INFO BOX */
+.info-box{background:rgba(192,132,252,0.06);border:1px solid rgba(192,132,252,0.2);border-radius:var(--rs);
+  padding:.65rem .9rem;font-family:var(--mono);font-size:10px;color:var(--a5);line-height:1.6;}
+.info-box a{color:var(--a5);text-decoration:underline;}
+
+/* VERIFY */
+.vfy-row{display:none;align-items:center;gap:7px;margin-top:.9rem;padding:.65rem .9rem;
+  background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);}
+.vfy-row.vis{display:flex;}
+.vfy-lbl{font-family:var(--mono);font-size:9px;color:var(--mt);flex:1;}
+.btn-vfy{padding:4px 12px;border-radius:var(--rs);border:1px solid;font-family:var(--mono);font-size:9px;font-weight:500;cursor:pointer;transition:all .2s;}
+.btn-vfy.sep{background:rgba(52,211,153,0.09);color:var(--a2);border-color:rgba(52,211,153,0.3);}
+.btn-vfy.sep:hover{background:rgba(52,211,153,0.18);}
+.btn-vfy.non{background:rgba(248,113,113,0.07);color:var(--a4);border-color:rgba(248,113,113,0.3);}
+.btn-vfy.non:hover{background:rgba(248,113,113,0.17);}
+.vfy-badge{display:none;font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:10px;font-weight:500;}
+.vfy-badge.sep{display:inline;background:rgba(52,211,153,0.09);color:var(--a2);border:1px solid rgba(52,211,153,0.3);}
+.vfy-badge.non{display:inline;background:rgba(248,113,113,0.07);color:var(--a4);border:1px solid rgba(248,113,113,0.3);}
+
+/* OUT CARD */
+.out-card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;display:none;animation:rise .3s ease;}
+.out-card.vis{display:block;}
+.out-hd{padding:.55rem .9rem;background:var(--s2);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;}
+.out-title{font-family:var(--mono);font-size:8px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--a1);}
+.out-body{padding:.9rem 1rem;font-family:var(--mono);font-size:11px;color:var(--mt);white-space:pre-wrap;word-break:break-word;max-height:480px;overflow-y:auto;line-height:1.8;scrollbar-width:thin;scrollbar-color:var(--bdm) transparent;}
+.btn-copy{background:transparent;border:1px solid var(--bd);border-radius:var(--rs);color:var(--mt);font-family:var(--mono);font-size:8px;padding:2px 7px;cursor:pointer;}
+.btn-copy:hover{border-color:var(--a2);color:var(--a2);}
+
+/* BATCH */
+.batch-rows{display:flex;flex-direction:column;gap:4px;margin-top:.9rem;}
+.b-row{display:flex;align-items:center;gap:9px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:6px 10px;}
+.b-rank{font-family:var(--mono);font-size:9px;color:var(--dm);width:14px;flex-shrink:0;}
+.b-score{font-family:var(--mono);font-size:13px;font-weight:500;width:36px;flex-shrink:0;}
+.b-id{font-family:var(--mono);font-size:10px;color:var(--a1);width:130px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.b-prev{flex:1;font-family:var(--mono);font-size:9px;color:var(--mt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.b-elem{font-family:var(--mono);font-size:9px;width:60px;flex-shrink:0;text-align:right;}
+
+/* DB */
+.db-panel{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;display:none;margin:0 1.75rem 1.5rem;}
+.db-panel.vis{display:block;}
+.db-ph{padding:.55rem .9rem;background:var(--s2);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;}
+.db-title{font-family:var(--mono);font-size:8px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--a2);}
+.db-acts{display:flex;gap:4px;}
+.btn-da{background:transparent;border:1px solid var(--bd);border-radius:var(--rs);color:var(--mt);font-family:var(--mono);font-size:8px;padding:2px 7px;cursor:pointer;}
+.btn-da:hover{border-color:var(--a2);color:var(--a2);}
+.btn-da.d:hover{border-color:var(--a4);color:var(--a4);}
+.db-sr{display:flex;gap:5px;padding:.6rem .9rem;border-bottom:1px solid var(--bd);}
+.db-st{flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:5px 7px;text-align:center;}
+.db-st .n{font-family:var(--mono);font-size:15px;font-weight:300;display:block;line-height:1;}
+.db-st .l{font-size:8px;color:var(--mt);margin-top:2px;}
+.db-st.t .n{color:var(--a1);}
+.db-st.s .n{color:var(--a2);}
+.db-st.x .n{color:var(--a4);}
+.db-st.p .n{color:var(--dm);}
+.db-tw{max-height:200px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--bdm) transparent;}
+.db-tbl{width:100%;border-collapse:collapse;}
+.db-tbl th{font-family:var(--mono);font-size:8px;font-weight:500;letter-spacing:.1em;color:var(--dm);text-transform:uppercase;padding:5px 9px;border-bottom:1px solid var(--bd);text-align:left;position:sticky;top:0;background:var(--s1);}
+.db-tbl td{padding:4px 9px;border-bottom:1px solid rgba(120,130,255,0.04);color:var(--mt);font-family:var(--mono);font-size:9px;}
+
+/* LOADING */
+.overlay{display:none;position:fixed;inset:0;background:rgba(7,8,15,.9);backdrop-filter:blur(8px);z-index:999;align-items:center;justify-content:center;}
+.overlay.vis{display:flex;}
+.loader{background:var(--s1);border:1px solid var(--bdm);border-radius:12px;padding:2rem 2.25rem;text-align:center;min-width:240px;}
+.spin{width:30px;height:30px;border:2px solid var(--s3);border-top-color:var(--a1);border-radius:50%;animation:spin .65s linear infinite;margin:0 auto .9rem;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ls{font-family:var(--mono);font-size:11px;color:var(--a1);margin-bottom:3px;}
+.lb{margin-top:.875rem;height:2px;background:var(--s3);border-radius:1px;overflow:hidden;}
+.lbf{height:100%;background:linear-gradient(90deg,var(--a1),var(--a2));border-radius:1px;transition:width .4s ease;}
+
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--bdm);border-radius:2px;}
+
+@media(max-width:820px){
+  .shell{grid-template-columns:1fr;}
+  aside{flex-direction:row;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--bd);}
+  .bk-grid{grid-template-columns:repeat(2,1fr);}
+  .score-hd{grid-template-columns:auto 1fr;}
+  .score-meta{display:none;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">PAT</div>
+  <div>
+    <div class="logo-text">專利相似度比對</div>
+    <div class="logo-sub">Patent Similarity Analyzer</div>
+  </div>
+  <span class="logo-ver">v2.0</span>
+  <div class="hdr-r">
+    <div class="badge local">8D 純本地</div>
+    <div class="badge sbert" id="sbertPill">PatentSBERTa: 未連線</div>
+    <div class="badge ok">無需 OpenAI</div>
+  </div>
+</header>
+
+<div class="overlay" id="overlay">
+  <div class="loader">
+    <div class="spin"></div>
+    <div class="ls" id="ls">計算中...</div>
+    <div class="lb"><div class="lbf" id="lbf" style="width:10%"></div></div>
+  </div>
+</div>
+
+<div class="shell">
+  <aside>
+    <!-- PatentSBERTa 端點設定 -->
+    <div>
+      <div class="sb-hd">PatentSBERTa API</div>
+      <div class="ep-block">
+        <div class="ep-label">⚡ Colab 端點網址</div>
+        <input class="ep-input" id="epUrl" type="text" placeholder="https://xxxx.ngrok.io" />
+        <div class="ep-status" id="epStatus">未設定（僅使用 8D 本地計算）</div>
+        <button class="btn-ep" onclick="saveEndpoint()">儲存並測試連線</button>
+      </div>
+      <div style="margin-top:6px;font-family:var(--mono);font-size:8px;color:var(--dm);line-height:1.6;">
+        在 Colab 執行 PatentSBERTa_Server.ipynb<br>複製 ngrok URL 貼上後儲存
+      </div>
+    </div>
+
+    <!-- 8D 權重 -->
+    <div>
+      <div class="sb-hd">8 維屬性權重</div>
+      <div class="w-list" id="wList"></div>
+    </div>
+
+    <!-- 歷史 -->
+    <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-height:0;">
+      <div class="sb-hd">比對歷史</div>
+      <div class="hist-list" id="histList"><div class="hist-empty">尚無紀錄</div></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('compare',this)">相似度比對</button>
+      <button class="tab-btn" onclick="switchTab('multi',this)">批量引證</button>
+      <button class="tab-btn" onclick="switchTab('keyword',this)">關鍵字提取</button>
+      <button class="tab-btn" onclick="switchTab('draft',this)">制式意見稿</button>
+    </div>
+
+    <!-- ══ TAB 1: 相似度比對 ══ -->
+    <div class="tab-pane active" id="tab-compare">
+      <div class="content">
+
+        <!-- PatentSBERTa 說明 -->
+        <div class="info-box">
+          🔬 <strong>v2 升級：PatentSBERTa + 元件級比對</strong><br>
+          ① <strong>8D 純本地</strong>：trigram 相似度，隨時可用｜
+          ② <strong>PatentSBERTa 語意</strong>：需連接 Colab（左側設定端點）｜
+          ③ <strong>融合分數</strong>：語意 60% + 8D 40%，最準確<br>
+          ④ <strong>元件最小值（新增）</strong>：每個請求項元件分別比對，min 值反映最弱元件——符合 TIPO 審查邏輯「最弱特徵決定進步性」
+        </div>
+
+        <div class="card">
+          <div class="card-hd"><div class="step-num">1</div><div class="card-title">本案請求項</div><div class="card-sub">貼入獨立項全文</div></div>
+          <div class="card-body">
+            <div class="frow">
+              <div class="fg sm"><label>專利公開號</label><input type="text" id="patId" placeholder="US2014/0146883A1" /></div>
+              <div class="fg xs"><label>請求項</label><input type="text" id="clNum" placeholder="Claim 1" /></div>
+            </div>
+            <div class="fg"><label>請求項全文</label>
+              <textarea id="claimTxt" rows="6" placeholder="A method for intra prediction in video coding, comprising:&#10;  selecting one of a plurality of prediction modes;&#10;  applying the selected mode to generate a prediction block..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd"><div class="step-num g">2</div><div class="card-title">引證 / 規格書段落</div><div class="card-sub">比對對象</div></div>
+          <div class="card-body">
+            <div class="fg xs" style="max-width:220px;"><label>引證案號（選填）</label><input type="text" id="citId" placeholder="US20180234567A1" /></div>
+            <div class="fg"><label>引證內容</label>
+              <textarea id="citTxt" rows="7" placeholder="[0005] A method for encoding video data comprising:&#10;  receiving input image data;&#10;  selecting an intra prediction mode from a mode list..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn-run" id="runBtn" onclick="runCompare()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            8D 本地計算
+          </button>
+          <button class="btn-sbert" id="sbertBtn" onclick="runWithSBERT()" disabled>
+            ⚡ + PatentSBERTa 語意分析
+          </button>
+          <button class="btn-ghost" onclick="clearAll()">清除</button>
+        </div>
+
+        <!-- 結果 -->
+        <div class="score-card" id="scoreCard">
+          <div class="score-hd">
+            <div style="display:flex;align-items:baseline;gap:5px;">
+              <div class="score-big" id="scoreBig">—</div>
+              <div class="score-den">/100</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;padding-top:4px;">
+              <div class="tier-chip" id="tierChip">—</div>
+              <div style="font-size:11px;color:var(--mt);margin-top:2px;" id="tierLine">—</div>
+            </div>
+            <div class="score-meta">
+              <div class="score-pid" id="rPid">—</div>
+              <div class="score-sub" id="rCit">—</div>
+            </div>
+          </div>
+          <div class="score-body">
+            <!-- Layer 切換 -->
+            <div class="slayer-tabs">
+              <button class="slayer-btn active" onclick="showLayer('8d',this)">8D 維度</button>
+              <button class="slayer-btn" id="sbertLayerBtn" onclick="showLayer('sbert',this)">PatentSBERTa</button>
+              <button class="slayer-btn" id="fuseLayerBtn" onclick="showLayer('fused',this)">融合結果</button>
+            </div>
+
+            <!-- 8D layer -->
+            <div class="slayer-pane active" id="layer-8d">
+              <div class="bk-grid" style="grid-template-columns:repeat(3,1fr);">
+                <div class="bk-item"><div class="bk-lbl">基礎幾何距離</div><div class="bk-val a1" id="bkRaw">—</div></div>
+                <div class="bk-item"><div class="bk-lbl">膨脹校正後</div><div class="bk-val" id="bkInf">—</div></div>
+                <div class="bk-item"><div class="bk-lbl">核心屬性均值</div><div class="bk-val a2" id="bkCore">—</div></div>
+              </div>
+              <div class="dim-hd"><div class="dim-hd-lbl">8 維屬性相似度</div><div class="dim-hd-line"></div></div>
+              <div class="dim-rows" id="dimRows"></div>
+              <div class="pen-box" id="penBox"></div>
+              <div class="tier-desc-box" id="tierDescBox"></div>
+            </div>
+
+            <!-- PatentSBERTa layer -->
+            <div class="slayer-pane" id="layer-sbert">
+              <div class="bk-grid" style="grid-template-columns:repeat(3,1fr);">
+                <div class="bk-item"><div class="bk-lbl">整體語意相似度</div><div class="bk-val a5" id="sbertOverall">—</div></div>
+                <div class="bk-item"><div class="bk-lbl">元件均值</div><div class="bk-val a1" id="sbertElemAvg">—</div></div>
+                <div class="bk-item"><div class="bk-lbl">元件最小值 ⚠</div><div class="bk-val" id="sbertElemMin">—</div></div>
+              </div>
+              <div class="elem-section">
+                <div class="elem-hd">
+                  <div class="elem-hd-lbl">元件級比對（PatentSBERTa）</div>
+                  <div class="elem-hd-line" style="flex:1;height:1px;background:var(--bd);margin-left:8px;"></div>
+                  <div id="elemWarningChip" style="margin-left:8px;"></div>
+                </div>
+                <div class="elem-rows" id="elemRows">
+                  <div style="font-family:var(--mono);font-size:9px;color:var(--dm);padding:8px;">請先連接 PatentSBERTa 端點並執行語意分析</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 融合 layer -->
+            <div class="slayer-pane" id="layer-fused">
+              <div class="bk-grid" style="grid-template-columns:repeat(4,1fr);">
+                <div class="bk-item"><div class="bk-lbl">8D 分數</div><div class="bk-val a1" id="fuse8d">—</div></div>
+                <div class="bk-item"><div class="bk-lbl">語意分數</div><div class="bk-val a5" id="fuseSem">—</div></div>
+                <div class="bk-item"><div class="bk-lbl">元件 min</div><div class="bk-val" id="fuseMin">—</div></div>
+                <div class="bk-item"><div class="bk-lbl">融合最終分數</div><div class="bk-val fuse" id="fuseFinal">—</div></div>
+              </div>
+              <div style="font-family:var(--mono);font-size:10px;color:var(--mt);line-height:1.7;padding:4px 0;" id="fuseExplain"></div>
+            </div>
+
+          </div>
+          <div style="padding:0 1.25rem 1rem;">
+            <div class="vfy-row" id="vfyRow">
+              <span class="vfy-lbl">人工驗證標記：</span>
+              <span class="vfy-badge" id="vfyBadge"></span>
+              <button class="btn-vfy sep" onclick="doVerify(1)">✅ 確認為 SEP</button>
+              <button class="btn-vfy non" onclick="doVerify(0)">❌ 確認非 SEP</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ TAB 2: 批量引證 ══ -->
+    <div class="tab-pane" id="tab-multi">
+      <div class="content">
+        <div class="card">
+          <div class="card-hd"><div class="step-num">A</div><div class="card-title">批量引證比對</div><div class="card-sub">同一請求項 vs 多筆引證｜元件 min 值輔助判斷</div></div>
+          <div class="card-body">
+            <div class="fg"><label>請求項全文</label><textarea id="mClaim" rows="5" placeholder="A method for intra prediction..."></textarea></div>
+            <div class="fg"><label>批量引證（每筆以「===」或兩個空行分隔，第一行可填案號）</label>
+              <textarea id="mCits" rows="12" placeholder="US20140146883A1&#10;A method for encoding comprising intra prediction mode selection...&#10;===&#10;KR20140083046A&#10;一種視訊編碼方法，包含選擇幀內預測模式...&#10;===&#10;JP2015-123456&#10;A video coding apparatus wherein..."></textarea>
+            </div>
+            <div class="btn-row">
+              <button class="btn-run" id="mBtn" onclick="runMulti()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>批量計算（8D）
+              </button>
+              <button class="btn-sbert" id="mSbertBtn" onclick="runMultiSbert()" disabled>⚡ + PatentSBERTa 批量</button>
+            </div>
+            <div class="batch-rows" id="mRows"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TAB 3: 關鍵字 ══ -->
+    <div class="tab-pane" id="tab-keyword">
+      <div class="content">
+        <div class="card">
+          <div class="card-hd"><div class="step-num y">KW</div><div class="card-title">關鍵字提取 + 布林檢索式</div><div class="card-sub">純 JS 詞頻分析，無需 AI</div></div>
+          <div class="card-body">
+            <div class="fg"><label>請求項 / 技術段落</label><textarea id="kwTxt" rows="8" placeholder="貼入請求項或技術段落..."></textarea></div>
+            <div class="frow">
+              <div class="fg xs"><label>IPC 分類號（選填）</label><input type="text" id="kwIpc" placeholder="H04N 19/00" /></div>
+              <div class="fg xs"><label>關鍵字數量</label>
+                <select id="kwCount">
+                  <option value="5">5 個</option>
+                  <option value="8" selected>8 個</option>
+                  <option value="12">12 個</option>
+                </select>
+              </div>
+            </div>
+            <div class="btn-row"><button class="btn-local" onclick="runKeyword()">🔍 提取關鍵字 + 生成檢索式</button></div>
+            <div class="out-card" id="kwCard">
+              <div class="out-hd"><div class="out-title">關鍵字 + 布林檢索式</div><button class="btn-copy" onclick="copyEl('kwBody')">複製</button></div>
+              <div class="out-body" id="kwBody"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TAB 4: 制式意見稿 ══ -->
+    <div class="tab-pane" id="tab-draft">
+      <div class="content">
+        <div class="card">
+          <div class="card-hd"><div class="step-num r">D</div><div class="card-title">制式審查意見稿</div><div class="card-sub">填入欄位 → 自動套入格式</div></div>
+          <div class="card-body">
+            <div class="frow">
+              <div class="fg"><label>發明名稱</label><input type="text" id="dInv" placeholder="具有自適應迴圈濾波器的視訊編碼方法" /></div>
+            </div>
+            <div class="frow">
+              <div class="fg xs"><label>請求項總數</label><input type="text" id="dTotal" placeholder="20" /></div>
+              <div class="fg xs"><label>獨立項（逗號分隔）</label><input type="text" id="dIndep" placeholder="1, 11" /></div>
+              <div class="fg xs"><label>通知函號</label><input type="text" id="dNoticeNum" placeholder="11221140370" /></div>
+            </div>
+            <div class="card" style="border-color:var(--bdm);">
+              <div class="card-hd" style="background:transparent;"><div class="card-title" style="font-size:11px;">引證設定</div></div>
+              <div class="card-body" style="gap:.5rem;">
+                <div class="frow">
+                  <div class="fg"><label>引證1 案號</label><input type="text" id="dCit1Id" placeholder="US2014/0146883A1" /></div>
+                  <div class="fg"><label>引證1 技術摘要</label><input type="text" id="dCit1Abs" placeholder="揭露一種包含幀內預測之視訊編碼方法" /></div>
+                </div>
+                <div class="frow">
+                  <div class="fg"><label>引證2 案號（選填）</label><input type="text" id="dCit2Id" /></div>
+                  <div class="fg"><label>引證2 技術摘要（選填）</label><input type="text" id="dCit2Abs" /></div>
+                </div>
+              </div>
+            </div>
+            <div class="card" style="border-color:var(--bdm);">
+              <div class="card-hd" style="background:transparent;"><div class="card-title" style="font-size:11px;">各請求項比對結果</div></div>
+              <div class="card-body" style="gap:.6rem;" id="claimRows"></div>
+              <div style="padding:.5rem 1rem;">
+                <button class="btn-local" style="font-size:9px;padding:5px 10px;" onclick="addClaimRow()">+ 新增請求項</button>
+              </div>
+            </div>
+            <div class="frow">
+              <div class="fg"><label>意見稿類型</label>
+                <select id="dType">
+                  <option value="rej">核駁（不具進步性）</option>
+                  <option value="approve">核准建議</option>
+                  <option value="appeal">申復不成立</option>
+                </select>
+              </div>
+              <div class="fg"><label>技術差異核心</label><input type="text" id="dDiff" placeholder="本案額外揭露自適應迴圈濾波器的開關旗標" /></div>
+            </div>
+            <div class="btn-row">
+              <button class="btn-run" onclick="genDraft()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                產生制式意見稿
+              </button>
+            </div>
+            <div class="out-card" id="draftCard">
+              <div class="out-hd"><div class="out-title">審查意見稿</div><button class="btn-copy" onclick="copyEl('draftBody')">複製</button></div>
+              <div class="out-body" id="draftBody"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DB Panel -->
+    <div class="db-panel" id="dbPanel">
+      <div class="db-ph">
+        <div class="db-title">▣ 驗證紀錄庫</div>
+        <div class="db-acts">
+          <button class="btn-da" onclick="exportDB()">↓ 匯出</button>
+          <button class="btn-da" onclick="document.getElementById('impInput').click()">↑ 載入</button>
+          <button class="btn-da d" onclick="clearDB()">清除</button>
+        </div>
+      </div>
+      <div class="db-sr">
+        <div class="db-st t"><span class="n" id="dbTot">0</span><span class="l">總筆數</span></div>
+        <div class="db-st s"><span class="n" id="dbSep">0</span><span class="l">SEP</span></div>
+        <div class="db-st x"><span class="n" id="dbNon">0</span><span class="l">非SEP</span></div>
+        <div class="db-st p"><span class="n" id="dbPnd">0</span><span class="l">待驗</span></div>
+      </div>
+      <div class="db-tw">
+        <table class="db-tbl">
+          <thead><tr><th>案號</th><th>8D</th><th>語意</th><th>融合</th><th>標籤</th><th>日期</th><th></th></tr></thead>
+          <tbody id="dbBody"><tr><td colspan="7" style="text-align:center;color:var(--dm);padding:12px;font-family:var(--mono);font-size:9px;">尚無驗證紀錄</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <input type="file" id="impInput" accept=".json" style="display:none" onchange="importDB(event)"/>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// 8D CORE (保留原有邏輯，完整呈現)
+// ═══════════════════════════════════════
+const ATTRS=[
+  {name:"元件",    key:"components",        weight:0.25,color:"#818cf8"},
+  {name:"步驟",    key:"steps",             weight:0.15,color:"#818cf8"},
+  {name:"流程",    key:"process_flow",      weight:0.15,color:"#818cf8"},
+  {name:"數學式",  key:"math_formula",      weight:0.15,color:"#818cf8"},
+  {name:"程式碼",  key:"pseudocode",        weight:0.10,color:"#67e8f9"},
+  {name:"相對位置",key:"relative_position", weight:0.08,color:"#34d399"},
+  {name:"順序",    key:"sequence",          weight:0.07,color:"#34d399"},
+  {name:"關聯性",  key:"relevance",         weight:0.05,color:"#34d399"},
+];
+
+let GOLDEN=[
+  {s:[0.36,0.31,0.26,0.15,0.10,0.40,0.25,0.35],l:1},
+  {s:[0.85,0.80,0.75,0.70,0.65,0.72,0.60,0.55],l:1},
+  {s:[0.78,0.72,0.68,0.55,0.50,0.65,0.45,0.40],l:1},
+  {s:[0.70,0.65,0.70,0.60,0.55,0.58,0.50,0.45],l:1},
+  {s:[0.65,0.60,0.55,0.50,0.45,0.50,0.40,0.35],l:1},
+  {s:[0.40,0.35,0.30,0.20,0.15,0.38,0.30,0.25],l:1},
+  {s:[0.15,0.10,0.12,0.05,0.08,0.10,0.05,0.03],l:0},
+  {s:[0.10,0.08,0.05,0.03,0.02,0.06,0.02,0.01],l:0},
+  {s:[0.20,0.15,0.10,0.08,0.05,0.12,0.05,0.03],l:0},
+  {s:[0.30,0.20,0.15,0.10,0.08,0.18,0.08,0.05],l:0},
+];
+
+const ZH_EN=[
+  [/編碼單元/g,'coding unit CU'],[/編碼樹單元/g,'coding tree unit CTU'],
+  [/預測單元/g,'prediction unit PU'],[/轉換單元/g,'transform unit TU'],
+  [/四叉樹/g,'quadtree'],[/分割/g,'partition'],
+  [/運動向量/g,'motion vector'],[/運動補償/g,'motion compensation inter prediction'],
+  [/幀間預測/g,'inter prediction'],[/幀內預測/g,'intra prediction'],
+  [/去方塊濾波器?/g,'deblocking filter loop filter'],
+  [/取樣自適應偏移/g,'sample adaptive offset SAO'],
+  [/熵編碼/g,'entropy coding CABAC'],[/量化參數/g,'quantization parameter QP'],
+  [/離散餘弦轉換/g,'discrete cosine transform DCT'],
+  [/位元流/g,'bitstream'],[/亮度/g,'luma'],[/色度/g,'chroma'],
+  [/像素/g,'pixel sample'],[/解碼/g,'decoding'],[/編碼/g,'encoding'],
+  [/包括[：:]?/g,'comprising'],[/其中/g,'wherein'],[/所述/g,'the'],
+  [/確定/g,'determining'],[/選擇/g,'selecting'],[/使用/g,'using'],
+  [/接收/g,'receiving'],[/傳輸/g,'transmitting'],[/產生/g,'generating'],
+  [/[\u4e00-\u9fff\uff00-\uffef（）【】、，。：；！？「」]+/g,' '],
+];
+const SYN=[
+  [/\bFIR\b/gi,'interp-filter FIR'],[/\bDCT\b/gi,'discrete cosine transform DCT'],
+  [/\bCABAC\b/gi,'context-adaptive binary arithmetic coding CABAC'],
+  [/\bMVD\b/gi,'motion vector difference'],[/\bMVP\b/gi,'motion vector predictor AMVP'],
+  [/\bsub-?pixel\b/gi,'fractional sample'],[/\bmacroblock\b/gi,'coding unit CU'],
+  [/\bdeblocking filter\b/gi,'deblocking filter loop filter'],
+  [/\bSAO\b/gi,'sample adaptive offset SAO'],
+  [/\breference frame\b/gi,'reference picture'],
+  [/\bmotion compensat\w+/gi,'motion compensation inter prediction'],
+  [/\bcandidate list\b/gi,'merge candidate list MVP candidate'],
+  [/\bfilter tap[s]?\b/gi,'interp-filter tap coefficient'],
+  [/\bhalf-?pixel\b/gi,'half-pel fractional sample'],
+  [/\bquarter-?pixel\b/gi,'1/4-pel fractional sample'],
+  [/\bMPM\b/gi,'most probable mode MPM intra prediction'],
+  [/\bprediction error\b/gi,'prediction residual'],
+];
+const PATS={
+  components:[/\b(filter|unit|block|module|encoder|decoder|buffer|coefficient|parameter|flag|index|value|mode|frame|slice|CTU|CU|PU|TU|luma|chroma|pixel|sample|bit|rate|level|signal|output|input|reference|candidate|list|vector|transform|quantiz\w+|predict\w+|interpolat\w+|motion|intra|inter|deblock\w+|SAO|CABAC|entropy|syntax|partition|codeword|bitstream|structure|layer)\b/gi],
+  steps:[/\b(determin\w+|calculat\w+|comput\w+|deriv\w+|generat\w+|select\w+|apply\w+|perform\w+|obtain\w+|process\w+|encod\w+|decod\w+|estimat\w+|initializ\w+|predict\w+|reconstruct\w+|transform\w+|quantiz\w+|filter\w+|signal\w+|receiv\w+|transmit\w+|convert\w+)\b/gi],
+  process_flow:[/\b(first|then|next|after|before|when|if|else|while|until|based on|according to|in order to|such that|wherein|whereby|step|phase|stage|procedure|process|method|algorithm|equal to|greater than|less than|corresponds|disabled|enabled|subsequently|prior to)\b/gi],
+  math_formula:[/([A-Z][a-z]?\s*[=<>≤≥]\s*[\w\s\+\-\*\/\(\)\.]+)|(\b\d+[\-\/]\w+\b)|(\b(formula|equation|threshold|coefficient|ratio|offset|QP|lambda|alpha|beta|delta|max|min|abs|log|floor|ceil|clip|shift|round)\b)/gi],
+  pseudocode:[/\b(if\s*\(|for\s*\(|while\s*\(|else\b|return\b|true|false|bool|int|flag|syntax|condition|loop|iterate|assign|\w+\[\w+\]|pStateIdx|valMps|enabled_flag|disabled|partMode|predMode)\b/gi],
+  relative_position:[/\b(left|right|above|below|top|bottom|adjacent|neighbor\w*|boundary|inside|outside|between|within|upper|lower|horizontal|vertical|diagonal|position\w*|spatial|region|area|edge|corner|center|collocat\w*)\b/gi],
+  sequence:[/\b(first|second|third|1st|2nd|3rd|\d+th|initial\w*|final\w*|last|previous|next|current|prior|subsequent|following|order|sequen\w*|consecutive|successive|temporal|timing|earlier|later)\b/gi],
+  relevance:[/\b(depend\w*|based on|correlat\w*|associat\w*|relat\w*|connect\w*|function\w*|correspond\w*|affect\w*|contribut\w*|enable\w*|allow\w*|support\w*|requir\w*|link\w*|interact\w*)\b/gi],
+};
+
+function normTxt(text){
+  let t=text;
+  if(/[\u4e00-\u9fff]/.test(t))for(const[p,r]of ZH_EN)t=t.replace(p,' '+r+' ');
+  for(const[p,r]of SYN)t=t.replace(p,' '+r+' ');
+  return t.replace(/\s+/g,' ').trim();
+}
+function extractAttrs(text){
+  const n=normTxt(text);
+  const sents=n.replace(/\n+/g,' ').split(/(?<=[.;])\s+/).map(s=>s.trim()).filter(s=>s.length>12);
+  const res={};
+  for(const[key,pats]of Object.entries(PATS)){
+    const scored=sents.map(s=>{let h=0;for(const p of pats){const m=s.match(new RegExp(p.source,p.flags));h+=m?m.length:0;}return{s,h};});
+    const top=scored.filter(x=>x.h>0).sort((a,b)=>b.h-a.h).slice(0,2).map(x=>x.s);
+    res[key]=top.length?top.join(' '):'無明確對應';
+  }
+  return res;
+}
+function tfidf(a,b){
+  if(!a||!b||a.includes('無明確對應')||b.includes('無明確對應'))return 0;
+  const ng=(s,n)=>{const r={};for(let i=0;i<=s.length-n;i++){const g=s.slice(i,i+n);r[g]=(r[g]||0)+1;}return r;};
+  const ga=ng(a.toLowerCase(),3),gb=ng(b.toLowerCase(),3);
+  const ks=new Set([...Object.keys(ga),...Object.keys(gb)]);
+  let dot=0,na=0,nb=0;
+  for(const k of ks){const va=ga[k]||0,vb=gb[k]||0;dot+=va*vb;na+=va*va;nb+=vb*vb;}
+  return na&&nb?Math.max(0,Math.min(1,dot/(Math.sqrt(na)*Math.sqrt(nb)))):0;
+}
+function compute8D(specText,claimText){
+  const sA=extractAttrs(specText),cA=extractAttrs(claimText);
+  const sims=ATTRS.map(a=>tfidf(sA[a.key]||'',cA[a.key]||''));
+  const ws=ATTRS.map(a=>a.weight);
+  const wS=sims.map((s,i)=>s*Math.sqrt(ws[i]));
+  const raw=Math.sqrt(ws.reduce((a,w)=>a+w,0))>0?Math.sqrt(wS.reduce((a,v)=>a+v*v,0))/Math.sqrt(ws.reduce((a,w)=>a+w,0))*100:0;
+  const inf=Math.pow(raw/100,0.45)*100;
+  let sS=0,sN=0,nS=0,nN=0;
+  for(const d of GOLDEN){
+    const dot=d.s.reduce((a,v,i)=>a+v*sims[i],0);
+    const nx=Math.sqrt(d.s.reduce((a,v)=>a+v*v,0)),ns=Math.sqrt(sims.reduce((a,v)=>a+v*v,0));
+    const sim=nx&&ns?dot/(nx*ns):0;
+    if(d.l===1){sS+=sim;sN++;}else{nS+=sim;nN++;}
+  }
+  const xgb=(sN&&nN)?(sS/sN)/((sS/sN)+(nS/nN))*40:20;
+  const core=(sims[0]+sims[1]+sims[2]+sims[3])/4;
+  let pen=0,penR=[];
+  if(core<0.20){const p=(0.20-core)*250;pen+=p;penR.push(`核心均值${(core*100).toFixed(1)}%極低`);}
+  else if(core<0.35){const p=(0.35-core)*120;pen+=p;penR.push(`核心均值${(core*100).toFixed(1)}%偏低`);}
+  if(sims[0]<0.15)pen+=(0.15-sims[0])*200;else if(sims[0]<0.25)pen+=(0.25-sims[0])*80;
+  const lowC=sims.slice(0,4).filter(s=>s<0.25).length;
+  if(lowC>=3){pen+=lowC*8;penR.push(`${lowC}/4核心<25%`);}
+  const score=Math.max(0,Math.min(100,inf+xgb-pen));
+  const tier=score>=70?'H':score>=45?'M':'L';
+  return{
+    score:Math.round(score*10)/10,raw:Math.round(raw*10)/10,inf:Math.round(inf*10)/10,
+    pen:Math.round(pen*10)/10,penR:penR.join(' | '),tier,sims,core:Math.round(core*1000)/1000,
+    tierLabel:{H:'高度相似 (HIGH)',M:'中度相似 (MID)',L:'低度相似 (LOW)'}[tier],
+    tierDesc:{H:'技術特徵高度重疊，可能為標準必要專利',M:'部分技術特徵吻合，需進一步人工確認',L:'技術關聯性較低'}[tier],
+  };
+}
+
+// ═══════════════════════════════════════
+// PatentSBERTa API 呼叫（打 Colab server）
+// ═══════════════════════════════════════
+let _endpoint='';
+
+function saveEndpoint(){
+  const url=document.getElementById('epUrl').value.trim().replace(/\/$/,'');
+  if(!url){toast('請輸入 ngrok URL',true);return;}
+  _endpoint=url;
+  sessionStorage.setItem('sbert_ep',url);
+  document.getElementById('epStatus').textContent='測試連線中...';
+  testEndpoint(url);
+}
+
+async function testEndpoint(url){
+  try{
+    const r=await fetch(url+'/health',{signal:AbortSignal.timeout(8000)});
+    if(r.ok){
+      const d=await r.json();
+      document.getElementById('epStatus').textContent='✓ 已連線：'+d.model;
+      document.getElementById('epStatus').style.color='var(--a2)';
+      document.getElementById('sbertPill').textContent='PatentSBERTa: 已連線';
+      document.getElementById('sbertPill').className='badge sbert ok';
+      document.getElementById('sbertBtn').disabled=false;
+      document.getElementById('mSbertBtn').disabled=false;
+      toast('PatentSBERTa 連線成功');
+    }else throw new Error('HTTP '+r.status);
+  }catch(e){
+    document.getElementById('epStatus').textContent='✗ 連線失敗：'+e.message;
+    document.getElementById('epStatus').style.color='var(--a4)';
+    toast('連線失敗：'+e.message,true);
+  }
+}
+
+// 呼叫 /similarity → {overall, elements:[{text,score}]}
+async function callSBERT(claimText, citText){
+  if(!_endpoint)throw new Error('請先設定 Colab 端點');
+  const r=await fetch(_endpoint+'/similarity',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({claim:claimText,citation:citText}),
+    signal:AbortSignal.timeout(30000),
+  });
+  if(!r.ok)throw new Error('API HTTP '+r.status);
+  return await r.json();
+}
+
+// ═══════════════════════════════════════
+// TAB 1: 相似度比對
+// ═══════════════════════════════════════
+let _lastR=null,_lastSbert=null,_hist=[];
+
+async function runCompare(){
+  const claim=document.getElementById('claimTxt').value.trim();
+  const cit  =document.getElementById('citTxt').value.trim();
+  if(!claim){toast('請輸入請求項全文',true);return;}
+  if(!cit)  {toast('請輸入引證/規格書段落',true);return;}
+  const pid=document.getElementById('patId').value.trim()||'未指定';
+  const cl =document.getElementById('clNum').value.trim()||'Claim 1';
+  const btn=document.getElementById('runBtn');
+  btn.disabled=true;showLoad(true);step('提取 8D 屬性...',40);
+  await sleep(60);
+  const r=compute8D(cit,claim);
+  step('計算向量距離...',80);await sleep(50);
+  showLoad(false);btn.disabled=false;
+  _lastR=r;_lastSbert=null;
+  renderScore(r,pid,cl,null);
+  _hist.unshift({pid,score:r.score,tier:r.tier});
+  if(_hist.length>20)_hist.pop();
+  renderHist();
+  autoSave(pid,r,null);
+}
+
+async function runWithSBERT(){
+  const claim=document.getElementById('claimTxt').value.trim();
+  const cit  =document.getElementById('citTxt').value.trim();
+  if(!claim||!cit){toast('請先填入請求項與引證',true);return;}
+  const pid=document.getElementById('patId').value.trim()||'未指定';
+  const cl =document.getElementById('clNum').value.trim()||'Claim 1';
+  const btn=document.getElementById('sbertBtn');
+  btn.disabled=true;showLoad(true);step('PatentSBERTa 語意分析...',30);
+  try{
+    // 先跑 8D（如果還沒跑）
+    if(!_lastR){
+      step('8D 計算中...',15);
+      _lastR=compute8D(cit,claim);
+    }
+    step('PatentSBERTa 呼叫中...',50);
+    const sbert=await callSBERT(claim,cit);
+    step('融合分數計算...',85);await sleep(80);
+    _lastSbert=sbert;
+    showLoad(false);
+    renderScore(_lastR,pid,cl,sbert);
+    autoSave(pid,_lastR,sbert);
+    // 自動切到 fused layer
+    showLayer('fused',document.querySelectorAll('.slayer-btn')[2]);
+    toast('PatentSBERTa 分析完成');
+  }catch(e){showLoad(false);toast('PatentSBERTa 失敗：'+e.message,true);}
+  finally{btn.disabled=false;}
+}
+
+function renderScore(r,pid,cl,sbert){
+  const card=document.getElementById('scoreCard');card.classList.add('vis');
+  // 決定顯示哪個主分數
+  let displayScore=r.score,displayTier=r.tier;
+  if(sbert){
+    // 融合分：語意 60% + 8D 40%，但若 elem min 極低則懲罰
+    const sem=sbert.overall*100;
+    const elemMin=sbert.element_min*100;
+    let fused=sem*0.6+r.score*0.4;
+    if(elemMin<40)fused=Math.min(fused,elemMin+10); // 最弱元件拉低融合上限
+    displayScore=Math.round(Math.max(0,Math.min(100,fused))*10)/10;
+    displayTier=displayScore>=70?'H':displayScore>=45?'M':'L';
+    // 更新融合欄
+    document.getElementById('fuse8d').textContent=r.score;
+    document.getElementById('fuseSem').textContent=Math.round(sem*10)/10;
+    document.getElementById('fuseMin').textContent=Math.round(elemMin*10)/10;
+    document.getElementById('fuseFinal').textContent=displayScore;
+    document.getElementById('fuseMin').style.color=elemMin<40?'var(--a4)':elemMin<60?'var(--a3)':'var(--a2)';
+    // 解釋
+    let explain=`融合計算：語意(${Math.round(sem*10)/10}) × 60% + 8D(${r.score}) × 40% = ${Math.round((sem*0.6+r.score*0.4)*10)/10}`;
+    if(elemMin<40)explain+=`\n⚠ 元件最小值(${Math.round(elemMin*10)/10})過低，融合上限被限制為 ${Math.round(elemMin+10)}`;
+    explain+=`\n→ 最終融合分數：${displayScore}`;
+    document.getElementById('fuseExplain').textContent=explain;
+    document.getElementById('fuseLayerBtn').classList.add('fused-active');
+    // PatentSBERTa layer
+    document.getElementById('sbertOverall').textContent=Math.round(sbert.overall*1000)/10+'%';
+    document.getElementById('sbertElemAvg').textContent=Math.round(sbert.element_avg*1000)/10+'%';
+    const minPct=Math.round(sbert.element_min*1000)/10;
+    document.getElementById('sbertElemMin').textContent=minPct+'%';
+    document.getElementById('sbertElemMin').style.color=sbert.element_min<0.4?'var(--a4)':sbert.element_min<0.6?'var(--a3)':'var(--a2)';
+    // 元件警告
+    const warnEl=document.getElementById('elemWarningChip');
+    if(sbert.element_min<0.4)warnEl.innerHTML='<span class="elem-warning">⚠ 最弱元件未揭露（min<40%）</span>';
+    else if(sbert.element_min<0.6)warnEl.innerHTML='<span class="elem-warning">△ 最弱元件偏低</span>';
+    else warnEl.innerHTML='<span class="elem-ok">✓ 所有元件均有揭露</span>';
+    // 元件列表
+    document.getElementById('elemRows').innerHTML=(sbert.elements||[]).map((e,i)=>{
+      const pct=Math.round(e.score*100);
+      const c=e.score>0.6?'#34d399':e.score>0.4?'#f59e0b':'#f87171';
+      return`<div class="elem-row">
+        <div class="elem-idx">${i+1}</div>
+        <div class="elem-text" title="${e.text}">${e.text}</div>
+        <div class="elem-bar-bg"><div class="elem-bar-fill" style="width:${pct}%;background:${c}"></div></div>
+        <div class="elem-pct" style="color:${c}">${pct}%</div>
+      </div>`;
+    }).join('');
+    document.getElementById('sbertLayerBtn').classList.add('sbert-active');
+  }
+  const big=document.getElementById('scoreBig');big.textContent=displayScore;big.className='score-big '+displayTier;
+  const chip=document.getElementById('tierChip');
+  const LABELS={H:'高度相似 (HIGH)',M:'中度相似 (MID)',L:'低度相似 (LOW)'};
+  chip.textContent=LABELS[displayTier];chip.className='tier-chip '+displayTier;
+  document.getElementById('tierLine').textContent=sbert?'（融合分數）':'（8D 純本地）';
+  document.getElementById('rPid').textContent=pid+' · '+cl;
+  document.getElementById('rCit').textContent=document.getElementById('citId').value.trim()||'引證段落';
+  // 8D breakdown
+  document.getElementById('bkRaw').textContent=r.raw;
+  document.getElementById('bkInf').textContent=r.inf;
+  document.getElementById('bkCore').textContent=(r.core*100).toFixed(1)+'%';
+  document.getElementById('dimRows').innerHTML=ATTRS.map((a,i)=>{
+    const s=r.sims[i],p=Math.round(s*100);
+    const c=s>0.6?'#34d399':s>0.35?'#f59e0b':'#f87171';
+    return`<div class="dim-row">
+      <div class="dim-name">${a.name}</div><div class="dim-w">${Math.round(a.weight*100)}%</div>
+      <div class="dim-bg"><div class="dim-fill" style="width:${p}%;background:${c}"></div></div>
+      <div class="dim-pct" style="color:${c}">${p}%</div>
+      <div class="dim-ctr">${(s*a.weight*100).toFixed(1)}</div></div>`;
+  }).join('');
+  const pb=document.getElementById('penBox');
+  if(r.pen>0){pb.textContent=`⚠ 懲罰扣分 -${r.pen}：${r.penR}`;pb.classList.add('vis');}
+  else pb.classList.remove('vis');
+  const db2=document.getElementById('tierDescBox');
+  const DESCS={H:'技術特徵高度重疊，可能為標準必要專利',M:'部分技術特徵吻合，需進一步人工確認',L:'技術關聯性較低'};
+  db2.textContent=DESCS[displayTier];db2.className='tier-desc-box '+displayTier;
+  document.getElementById('vfyRow').classList.add('vis');
+  const vb=document.getElementById('vfyBadge');vb.className='vfy-badge';vb.textContent='';
+  const dbData=dbLoad();const ex=dbData.cases.find(c=>c.id===pid);
+  if(ex){vb.className='vfy-badge '+(ex.label===1?'sep':'non');vb.textContent=ex.label===1?'✅ SEP':'❌ 非 SEP';}
+  document.getElementById('dbPanel').classList.add('vis');
+  card.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function showLayer(id,btn){
+  document.querySelectorAll('.slayer-btn').forEach(b=>b.classList.remove('active','sbert-active','fused-active'));
+  document.querySelectorAll('.slayer-pane').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('layer-'+id).classList.add('active');
+}
+
+function clearAll(){
+  document.getElementById('scoreCard').classList.remove('vis');
+  ['claimTxt','citTxt','patId','clNum','citId'].forEach(id=>document.getElementById(id).value='');
+  _lastR=null;_lastSbert=null;
+}
+function renderHist(){
+  const el=document.getElementById('histList');
+  if(!_hist.length){el.innerHTML='<div class="hist-empty">尚無紀錄</div>';return;}
+  const c={H:'var(--a4)',M:'var(--a3)',L:'var(--a2)'};
+  el.innerHTML=_hist.map(h=>`<div class="hist-row"><div class="hist-sc" style="color:${c[h.tier]}">${h.score}</div><div class="hist-id">${h.pid}</div></div>`).join('');
+}
+
+// ═══════════════════════════════════════
+// TAB 2: 批量引證
+// ═══════════════════════════════════════
+async function runMulti(){
+  const claim=document.getElementById('mClaim').value.trim();
+  const raw  =document.getElementById('mCits').value.trim();
+  if(!claim||!raw){toast('請填寫請求項與引證清單',true);return;}
+  const blocks=raw.split(/\n\s*===\s*\n|\n\s*\n\s*\n/).map(b=>b.trim()).filter(Boolean);
+  if(!blocks.length){toast('未偵測到引證',true);return;}
+  const btn=document.getElementById('mBtn');btn.disabled=true;
+  showLoad(true);step('8D 批量計算中...',20);await sleep(60);
+  const results=[];
+  for(let i=0;i<blocks.length;i++){
+    const lines=blocks[i].split('\n').map(l=>l.trim()).filter(Boolean);
+    let id='引證'+(i+1),content='';
+    if(lines.length>1&&/^[A-Z]{2}[\dA-Z.\-]{3,}/.test(lines[0])){id=lines[0];content=lines.slice(1).join(' ');}
+    else content=blocks[i];
+    step(`[${i+1}/${blocks.length}] 計算 ${id}...`,20+Math.round(i/blocks.length*70));
+    const r=compute8D(content,claim);
+    results.push({id,score:r.score,tier:r.tier,sims:r.sims,preview:content.substring(0,70)});
+  }
+  results.sort((a,b)=>b.score-a.score);showLoad(false);btn.disabled=false;
+  renderMultiRows(results,false);
+}
+
+async function runMultiSbert(){
+  const claim=document.getElementById('mClaim').value.trim();
+  const raw  =document.getElementById('mCits').value.trim();
+  if(!claim||!raw){toast('請填寫請求項與引證清單',true);return;}
+  const blocks=raw.split(/\n\s*===\s*\n|\n\s*\n\s*\n/).map(b=>b.trim()).filter(Boolean);
+  const btn=document.getElementById('mSbertBtn');btn.disabled=true;
+  showLoad(true);step('PatentSBERTa 批量分析中...',10);
+  const results=[];
+  for(let i=0;i<blocks.length;i++){
+    const lines=blocks[i].split('\n').map(l=>l.trim()).filter(Boolean);
+    let id='引證'+(i+1),content='';
+    if(lines.length>1&&/^[A-Z]{2}[\dA-Z.\-]{3,}/.test(lines[0])){id=lines[0];content=lines.slice(1).join(' ');}
+    else content=blocks[i];
+    step(`[${i+1}/${blocks.length}] ${id} 8D+語意...`,10+Math.round(i/blocks.length*80));
+    const r8d=compute8D(content,claim);
+    let elemMin=null;
+    try{const sb=await callSBERT(claim,content);elemMin=sb.element_min;}catch(e){}
+    results.push({id,score:r8d.score,tier:r8d.tier,elemMin,preview:content.substring(0,70)});
+  }
+  results.sort((a,b)=>b.score-a.score);showLoad(false);btn.disabled=false;
+  renderMultiRows(results,true);
+}
+
+function renderMultiRows(results,hasSbert){
+  const c={H:'var(--a4)',M:'var(--a3)',L:'var(--a2)'};
+  document.getElementById('mRows').innerHTML=results.map((r,i)=>{
+    const minStr=hasSbert&&r.elemMin!==null
+      ?`<div class="b-elem" style="color:${r.elemMin<0.4?'var(--a4)':r.elemMin<0.6?'var(--a3)':'var(--a2)'}">${Math.round(r.elemMin*100)}% min</div>`
+      :'';
+    return`<div class="b-row">
+      <div class="b-rank">${i+1}</div>
+      <div class="b-score" style="color:${c[r.tier]}">${r.score}</div>
+      <span style="font-size:8px;padding:2px 6px;border-radius:10px;background:${c[r.tier]}22;color:${c[r.tier]};border:1px solid ${c[r.tier]}44;font-family:var(--mono);flex-shrink:0;">${r.tier}</span>
+      <div class="b-id">${r.id}</div>
+      ${minStr}
+      <div class="b-prev">${r.preview}</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+// TAB 3: 關鍵字提取
+// ═══════════════════════════════════════
+const STOPWORDS=new Set(['a','an','the','is','are','was','were','be','been','have','has','had','do','does','did','will','would','could','should','may','might','shall','can','in','on','at','to','for','of','with','by','from','as','into','through','that','this','which','where','when','or','and','but','not','also','if','then','it','its','said','such','each','any','all','both','other','than','about','after','before','between']);
+const SYN_TABLE={'prediction':['prediction','estimation','forecasting'],'encoding':['encoding','coding','compression'],'filter':['filter','filtering','filtration'],'motion':['motion','movement','displacement'],'block':['block','unit','segment'],'intra':['intra','intra-prediction'],'inter':['inter','inter-prediction'],'quantiz':['quantization','quantisation'],'transform':['transform','DCT','transformation'],'pixel':['pixel','sample','pel'],'mode':['mode','type','option'],'image':['image','picture','frame'],'video':['video','sequence','stream'],'partition':['partition','split','division'],'interpolat':['interpolation','interp'],'coefficient':['coefficient','factor','weight']};
+
+function runKeyword(){
+  const txt=document.getElementById('kwTxt').value.trim();
+  if(!txt){toast('請先貼入請求項或技術段落',true);return;}
+  const ipc=document.getElementById('kwIpc').value.trim();
+  const count=parseInt(document.getElementById('kwCount').value)||8;
+  const normalized=normTxt(txt);
+  const tokens=normalized.toLowerCase().replace(/[^a-z0-9\s\-\/]/g,' ').split(/\s+/).filter(w=>w.length>2&&!STOPWORDS.has(w)&&!/^\d+$/.test(w));
+  const freq={};
+  for(const t of tokens)freq[t]=(freq[t]||0)+1;
+  for(let i=0;i<tokens.length-1;i++){
+    const bi=tokens[i]+' '+tokens[i+1];
+    if(!STOPWORDS.has(tokens[i])&&!STOPWORDS.has(tokens[i+1])&&tokens[i].length>2&&tokens[i+1].length>2)
+      freq[bi]=(freq[bi]||0)+0.6;
+  }
+  const sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]);
+  const topBi=sorted.filter(([w])=>w.includes(' ')).slice(0,Math.floor(count/2)).map(([w])=>w);
+  const topUni=sorted.filter(([w])=>!w.includes(' ')&&!topBi.some(b=>b.includes(w))).slice(0,count).map(([w])=>w);
+  const keywords=[...topBi,...topUni].slice(0,count);
+  const groups=keywords.map(kw=>{
+    const base=kw.split(' ');
+    const syns=new Set([kw]);
+    for(const b of base)for(const[key,vals]of Object.entries(SYN_TABLE))if(b.startsWith(key)||key.startsWith(b.substring(0,5))){vals.forEach(v=>syns.add(v));break;}
+    const arr=[...syns];
+    return arr.length>1?`(${arr.join(' OR ')})`:kw;
+  });
+  const prefix=ipc?`IC=${ipc} AND `:'';
+  const bool=prefix+groups.join(' AND ');
+  const out=['【提取關鍵字】',keywords.map((k,i)=>`  ${i+1}. ${k}`).join('\n'),'','【布林檢索式（可貼至 Google Patents / TIPO 全文資料庫）】',bool,'','【使用說明】','• 括號內為同義詞，OR 連接｜AND 串接不同技術特徵','• 建議搭配 PatentSBERTa 批量比對驗證結果'].join('\n');
+  const card=document.getElementById('kwCard');card.classList.add('vis');
+  document.getElementById('kwBody').textContent=out;
+}
+
+// ═══════════════════════════════════════
+// TAB 4: 制式意見稿
+// ═══════════════════════════════════════
+let _claimRowCount=0;
+function addClaimRow(num='',diff='',citRef='',type='indep'){
+  _claimRowCount++;
+  const div=document.createElement('div');
+  div.style.cssText='display:flex;gap:.5rem;align-items:center;padding:5px 0;border-bottom:1px solid var(--bd);';
+  div.innerHTML=`
+    <div style="font-family:var(--mono);font-size:10px;color:var(--mt);flex-shrink:0;width:22px;">項</div>
+    <input type="text" style="max-width:60px;" placeholder="1" value="${num}" class="cr-num" />
+    <input type="text" style="flex:1;" placeholder="差異特徵（若有）" value="${diff}" class="cr-diff" />
+    <input type="text" style="max-width:130px;" placeholder="引用段落" value="${citRef}" class="cr-cit" />
+    <select class="cr-type" style="max-width:90px;font-size:9px;">
+      <option value="indep" ${type==='indep'?'selected':''}>獨立項</option>
+      <option value="dep" ${type==='dep'?'selected':''}>附屬項</option>
+      <option value="method" ${type==='method'?'selected':''}>方法對應</option>
+    </select>
+    <button onclick="this.parentElement.remove()" style="background:transparent;border:none;color:var(--mt);cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>`;
+  document.getElementById('claimRows').appendChild(div);
+}
+
+function genDraft(){
+  const inv   =document.getElementById('dInv').value.trim()||'【發明名稱】';
+  const total =document.getElementById('dTotal').value.trim()||'X';
+  const indep =document.getElementById('dIndep').value.trim()||'1';
+  const noticeNum=document.getElementById('dNoticeNum').value.trim()||'XXXXXXXXXX';
+  const cit1Id =document.getElementById('dCit1Id').value.trim()||'引證1';
+  const cit1Abs=document.getElementById('dCit1Abs').value.trim()||'揭露相關技術特徵';
+  const cit2Id =document.getElementById('dCit2Id').value.trim();
+  const cit2Abs=document.getElementById('dCit2Abs').value.trim();
+  const diff   =document.getElementById('dDiff').value.trim()||'【技術差異】';
+  const type   =document.getElementById('dType').value;
+  const rows=[...document.querySelectorAll('#claimRows > div')].map(d=>({
+    num: d.querySelector('.cr-num')?.value.trim()||'?',
+    diff:d.querySelector('.cr-diff')?.value.trim()||'',
+    cit: d.querySelector('.cr-cit')?.value.trim()||'[說明書段落XXXX]',
+    type:d.querySelector('.cr-type')?.value||'indep',
+  }));
+  const today=new Date();
+  const yr=today.getFullYear()-1911,mo=today.getMonth()+1,da=today.getDate();
+  const dateStr=`${yr}年${mo}月${da}日`;
+  let out='';
+  const nonClaims=rows.map(r=>r.num).join('、');
+  if(type==='rej'){
+    out+=`(一)本案「${inv}」，依申請時所提說明書、申請專利範圍及圖式進行審查，請求項共${total}項，其中第${indep}項為獨立項，其餘為附屬項。\n\n`;
+    out+=`(二)依據引證1（${cit1Id}）已揭露內容，本案請求項${nonClaims}不符專利法第22條第2項之規定。\n`;
+    for(const r of rows){
+      if(r.type==='indep'){
+        out+=`\n${r.num}、本案請求項${r.num}，經查引證1（${cit1Id}）【${r.cit}】已揭露：「${cit1Abs}」。`;
+        out+=`本請求項相較前述引證1差異僅在於本案揭露「★${r.diff||diff}」，惟本項發明為所屬技術領域具有通常知識者可參酌引證1`;
+        if(cit2Id)out+=`及引證2（${cit2Id}）`;
+        out+=`依使用者需求簡單變更，故本項發明不具進步性。\n`;
+      }else if(r.type==='dep'){
+        out+=`\n${r.num}、本案請求項${r.num}，除請求項${parseInt(r.num)-1||1}之論述外，經查引證1【${r.cit}】已揭露：「${r.diff||cit1Abs}」，故本項發明不具進步性。\n`;
+      }else if(r.type==='method'){
+        out+=`\n${r.num}、本案請求項${r.num}，為對應請求項${r.diff||'1'}之步驟方法，其不具進步性理由如請求項${r.diff||'1'}所述。\n`;
+      }
+    }
+    out+=`\n(三)引用文獻：\n1、${cit1Id}`;
+    if(cit2Id)out+=`\n2、${cit2Id}`;
+  }else if(type==='approve'){
+    out+=`(一)本案「${inv}」，依申請時所提說明書、申請專利範圍及圖式進行審查，請求項共${total}項，其中第${indep}項為獨立項，其餘為附屬項。\n\n`;
+    out+=`(二)依據引證1（${cit1Id}）揭示內容，本案請求項1至${total}具新穎性及進步性。\n\n`;
+    out+=`1、本案請求項1，引證1（${cit1Id}）【${rows[0]?.cit||'說明書段落'}】雖已揭露：「${cit1Abs}」，惟本案請求項1額外揭露「★${diff}」，此非為所屬技術領域中具有通常知識者依申請前先前技術所能輕易完成者，故具進步性；另請求項2至${total}所附加之技術特徵均限縮在本項，故一併具有進步性。\n\n`;
+    out+=`(三)本案請求項1至${total}，已確認符合專利法第21條、第22條之規定，應准予專利。\n\n`;
+    out+=`(四)引用文獻：\n1、${cit1Id}`;
+    if(cit2Id)out+=`\n2、${cit2Id}`;
+  }else if(type==='appeal'){
+    out+=`(一)本案「${inv}」，本局前審查意見通知函（通知函號：${noticeNum}）通知申請人申復，申請人於${dateStr}提出申復理由書，經審酌後認定申復不成立，理由如下：\n\n`;
+    out+=`(二)依申復理由所記載之內容主要包括：\n1. 申請人主張引證1（${cit1Id}）未揭露本案「${diff}」之技術特徵，故本案具進步性。\n\n`;
+    out+=`(三)惟經審酌，有下列申復不成立之理由：\n`;
+    out+=`(1)就申請人認為引證1（${cit1Id}）未揭露「${diff}」一節：\n　　查引證1【${rows[0]?.cit||'說明書段落'}】已揭露：「${cit1Abs}」，對本發明所屬技術領域通常知識者而言，上述技術已充分揭示相關技術特徵，且「${diff}」屬所屬技術領域通常知識者依通常知識可輕易完成之設計選擇，故此點申復不成立。\n`;
+    for(let i=0;i<rows.length;i++){const r=rows[i];out+=`\n(${i+2})關於請求項${r.num}，其不具進步性之理由同前開審查意見通知函所載，申復理由不成立。\n`;}
+    out+=`\n(四)引用文獻：\n1、${cit1Id}`;
+    if(cit2Id)out+=`\n2、${cit2Id}`;
+  }
+  const card=document.getElementById('draftCard');card.classList.add('vis');
+  document.getElementById('draftBody').textContent=out;
+  card.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ═══════════════════════════════════════
+// VERIFIED DB
+// ═══════════════════════════════════════
+const DB_KEY='pat_sim_v2_db';
+function dbLoad(){try{const r=localStorage.getItem(DB_KEY);return r?JSON.parse(r):{cases:[]};}catch{return{cases:[]};}}
+function dbSave(db){localStorage.setItem(DB_KEY,JSON.stringify(db));}
+function autoSave(pid,r,sbert){
+  const claim=document.getElementById('claimTxt').value.trim();
+  const entry={id:pid,claim:claim.substring(0,400),label:null,score_8d:r.score,tier:r.tier,sims:r.sims,
+    score_sbert:sbert?Math.round(sbert.overall*1000)/10:null,
+    elem_min:sbert?Math.round(sbert.element_min*1000)/10:null,
+    detected_at:new Date().toISOString()};
+  const db=dbLoad();
+  const i=db.cases.findIndex(c=>c.id===pid);
+  if(i>=0){if(db.cases[i].label!==null)return;db.cases[i]=entry;}else db.cases.push(entry);
+  dbSave(db);renderDB();
+}
+function doVerify(label){
+  if(!_lastR){toast('請先執行比對',true);return;}
+  const pid=document.getElementById('patId').value.trim()||'未指定';
+  const db=dbLoad();
+  const entry={id:pid,claim:document.getElementById('claimTxt').value.trim().substring(0,400),
+    label,score_8d:_lastR.score,tier:_lastR.tier,sims:_lastR.sims,
+    score_sbert:_lastSbert?Math.round(_lastSbert.overall*1000)/10:null,
+    elem_min:_lastSbert?Math.round(_lastSbert.element_min*1000)/10:null,
+    verified_at:new Date().toISOString()};
+  const i=db.cases.findIndex(c=>c.id===pid);
+  if(i>=0)db.cases[i]=entry;else db.cases.push(entry);
+  dbSave(db);
+  const vb=document.getElementById('vfyBadge');
+  vb.className='vfy-badge '+(label===1?'sep':'non');
+  vb.textContent=label===1?'✅ SEP':'❌ 非 SEP';
+  rebuildGolden();renderDB();
+  toast(`已記錄：${pid} → ${label===1?'SEP':'非 SEP'}`);
+}
+function rebuildGolden(){
+  const BASE=[
+    {s:[0.36,0.31,0.26,0.15,0.10,0.40,0.25,0.35],l:1},{s:[0.85,0.80,0.75,0.70,0.65,0.72,0.60,0.55],l:1},
+    {s:[0.78,0.72,0.68,0.55,0.50,0.65,0.45,0.40],l:1},{s:[0.70,0.65,0.70,0.60,0.55,0.58,0.50,0.45],l:1},
+    {s:[0.65,0.60,0.55,0.50,0.45,0.50,0.40,0.35],l:1},{s:[0.40,0.35,0.30,0.20,0.15,0.38,0.30,0.25],l:1},
+    {s:[0.15,0.10,0.12,0.05,0.08,0.10,0.05,0.03],l:0},{s:[0.10,0.08,0.05,0.03,0.02,0.06,0.02,0.01],l:0},
+    {s:[0.20,0.15,0.10,0.08,0.05,0.12,0.05,0.03],l:0},{s:[0.30,0.20,0.15,0.10,0.08,0.18,0.08,0.05],l:0},
+  ];
+  const db=dbLoad();
+  const v=db.cases.filter(c=>c.sims?.length===8&&c.label!==null&&c.label!==undefined).map(c=>({s:c.sims,l:c.label}));
+  GOLDEN=[...BASE,...v];
+}
+function renderDB(){
+  const db=dbLoad();const cs=db.cases||[];
+  document.getElementById('dbTot').textContent=cs.length;
+  document.getElementById('dbSep').textContent=cs.filter(c=>c.label===1).length;
+  document.getElementById('dbNon').textContent=cs.filter(c=>c.label===0).length;
+  document.getElementById('dbPnd').textContent=cs.filter(c=>c.label===null||c.label===undefined).length;
+  const tb=document.getElementById('dbBody');
+  if(!cs.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--dm);padding:12px;font-family:var(--mono);font-size:9px;">尚無紀錄</td></tr>';return;}
+  const c={H:'var(--a4)',M:'var(--a3)',L:'var(--a2)'};
+  tb.innerHTML=[...cs].reverse().map((r,i)=>{
+    const lbl=r.label===1?`<span style="color:var(--a2);font-weight:700">SEP</span>`:r.label===0?`<span style="color:var(--a4);font-weight:700">非SEP</span>`:`<span style="color:var(--dm)">待驗</span>`;
+    const dt=(r.verified_at||r.detected_at||'').substring(0,10);
+    const semStr=r.score_sbert!=null?r.score_sbert+'%':'—';
+    const minStr=r.elem_min!=null?`<span style="color:${r.elem_min<40?'var(--a4)':r.elem_min<60?'var(--a3)':'var(--a2)'}">${r.elem_min}%</span>`:'—';
+    return`<tr>
+      <td style="color:var(--a1)">${r.id}</td>
+      <td style="color:${c[r.tier]||'var(--mt)'};font-weight:700">${r.score_8d}</td>
+      <td>${semStr}</td><td>${minStr}</td>
+      <td>${lbl}</td><td style="color:var(--dm)">${dt}</td>
+      <td><button onclick="delCase(${cs.length-1-i})" style="background:none;border:none;color:var(--dm);cursor:pointer;font-size:10px;">✕</button></td></tr>`;
+  }).join('');
+}
+function delCase(i){const db=dbLoad();db.cases.splice(i,1);dbSave(db);rebuildGolden();renderDB();}
+function exportDB(){
+  const db=dbLoad();const b=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='pat_sim_v2_'+new Date().toISOString().substring(0,10)+'.json';a.click();
+  toast(`已匯出 ${db.cases.length} 筆`);
+}
+function importDB(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=ev=>{
+    try{const d=JSON.parse(ev.target.result);const cs=d.cases||(Array.isArray(d)?d:[]);
+      const db=dbLoad();let a=0,u=0;
+      cs.forEach(c=>{const i=db.cases.findIndex(x=>x.id===c.id);if(i>=0){db.cases[i]=c;u++;}else{db.cases.push(c);a++;}});
+      dbSave(db);rebuildGolden();renderDB();toast(`新增${a}，更新${u}`);
+    }catch{toast('JSON格式錯誤',true);}
+  };r.readAsText(f);e.target.value='';
+}
+function clearDB(){if(!confirm('確定清除所有驗證紀錄？'))return;localStorage.removeItem(DB_KEY);GOLDEN=GOLDEN.slice(0,10);renderDB();toast('已清除');}
+
+// ═══════════════════════════════════════
+// UI UTILS
+// ═══════════════════════════════════════
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');document.getElementById('tab-'+id).classList.add('active');
+}
+function showLoad(v){document.getElementById('overlay').classList.toggle('vis',v);}
+function step(txt,pct){document.getElementById('ls').textContent=txt;document.getElementById('lbf').style.width=pct+'%';}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function copyEl(id){
+  const t=document.getElementById(id).textContent;
+  navigator.clipboard.writeText(t).then(()=>toast('已複製')).catch(()=>toast('複製失敗',true));
+}
+function toast(msg,err=false){
+  const ex=document.querySelector('.toast-el');if(ex)ex.remove();
+  const t=document.createElement('div');t.className='toast-el';t.textContent=msg;
+  t.style.cssText=`position:fixed;bottom:20px;right:20px;background:${err?'#3d1f00':'#0d2e1e'};border:1px solid ${err?'var(--a3)':'var(--a2)'};color:${err?'var(--a3)':'var(--a2)'};font-family:var(--mono);font-size:11px;padding:8px 15px;border-radius:7px;z-index:9999;animation:fadeIn .2s ease`;
+  document.body.appendChild(t);setTimeout(()=>t.remove(),3000);
+}
+const _ss=document.createElement('style');_ss.textContent='@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}';document.head.appendChild(_ss);
+
+function init(){
+  document.getElementById('wList').innerHTML=ATTRS.map(a=>`
+    <div class="w-row"><div class="w-head"><div class="w-name">${a.name}</div><div class="w-pct">${Math.round(a.weight*100)}%</div></div>
+    <div class="w-bg"><div class="w-fill" style="width:${a.weight*100}%;background:${a.color}"></div></div></div>`).join('');
+  const savedEp=sessionStorage.getItem('sbert_ep');
+  if(savedEp){document.getElementById('epUrl').value=savedEp;_endpoint=savedEp;testEndpoint(savedEp);}
+  addClaimRow('1','','[說明書段落0001]','indep');
+  rebuildGolden();renderDB();
+}
+init();
+</script>
+</body>
+</html>
