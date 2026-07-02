@@ -1,13 +1,14 @@
+const VOCAB = require('../vocab.js');
+const ZH_EN = VOCAB.ZH_EN;
+const SYN = VOCAB.SYN;
+const PATS = VOCAB.PATS;
 
-// ═══════════════════════════════════════
-// 8D CORE (保留原有邏輯，完整呈現)
-// ═══════════════════════════════════════
 const ATTRS=[
-  {name:"元件",    key:"components",        weight:0.25,color:"#818cf8"},
-  {name:"步驟",    key:"steps",             weight:0.15,color:"#818cf8"},
-  {name:"流程",    key:"process_flow",      weight:0.15,color:"#818cf8"},
-  {name:"數學式",  key:"math_formula",      weight:0.15,color:"#818cf8"},
-  {name:"程式碼",  key:"pseudocode",        weight:0.10,color:"#67e8f9"},
+  {name:"元件",    key:"components",        weight:0.28,color:"#818cf8"},
+  {name:"步驟",    key:"steps",             weight:0.18,color:"#818cf8"},
+  {name:"流程",    key:"process_flow",      weight:0.18,color:"#818cf8"},
+  {name:"數學式",  key:"math_formula",      weight:0.10,color:"#818cf8"},
+  {name:"程式碼",  key:"pseudocode",        weight:0.06,color:"#67e8f9"},
   {name:"相對位置",key:"relative_position", weight:0.08,color:"#34d399"},
   {name:"順序",    key:"sequence",          weight:0.07,color:"#34d399"},
   {name:"關聯性",  key:"relevance",         weight:0.05,color:"#34d399"},
@@ -25,50 +26,6 @@ let GOLDEN=[
   {s:[0.20,0.15,0.10,0.08,0.05,0.12,0.05,0.03],l:0},
   {s:[0.30,0.20,0.15,0.10,0.08,0.18,0.08,0.05],l:0},
 ];
-
-const ZH_EN=[
-  [/編碼單元/g,'coding unit CU'],[/編碼樹單元/g,'coding tree unit CTU'],
-  [/預測單元/g,'prediction unit PU'],[/轉換單元/g,'transform unit TU'],
-  [/四叉樹/g,'quadtree'],[/分割/g,'partition'],
-  [/運動向量/g,'motion vector'],[/運動補償/g,'motion compensation inter prediction'],
-  [/幀間預測/g,'inter prediction'],[/幀內預測/g,'intra prediction'],
-  [/去方塊濾波器?/g,'deblocking filter loop filter'],
-  [/取樣自適應偏移/g,'sample adaptive offset SAO'],
-  [/熵編碼/g,'entropy coding CABAC'],[/量化參數/g,'quantization parameter QP'],
-  [/離散餘弦轉換/g,'discrete cosine transform DCT'],
-  [/位元流/g,'bitstream'],[/亮度/g,'luma'],[/色度/g,'chroma'],
-  [/像素/g,'pixel sample'],[/解碼/g,'decoding'],[/編碼/g,'encoding'],
-  [/包括[：:]?/g,'comprising'],[/其中/g,'wherein'],[/所述/g,'the'],
-  [/確定/g,'determining'],[/選擇/g,'selecting'],[/使用/g,'using'],
-  [/接收/g,'receiving'],[/傳輸/g,'transmitting'],[/產生/g,'generating'],
-  [/[\u4e00-\u9fff\uff00-\uffef（）【】、，。：；！？「」]+/g,' '],
-];
-const SYN=[
-  [/\bFIR\b/gi,'interp-filter FIR'],[/\bDCT\b/gi,'discrete cosine transform DCT'],
-  [/\bCABAC\b/gi,'context-adaptive binary arithmetic coding CABAC'],
-  [/\bMVD\b/gi,'motion vector difference'],[/\bMVP\b/gi,'motion vector predictor AMVP'],
-  [/\bsub-?pixel\b/gi,'fractional sample'],[/\bmacroblock\b/gi,'coding unit CU'],
-  [/\bdeblocking filter\b/gi,'deblocking filter loop filter'],
-  [/\bSAO\b/gi,'sample adaptive offset SAO'],
-  [/\breference frame\b/gi,'reference picture'],
-  [/\bmotion compensat\w+/gi,'motion compensation inter prediction'],
-  [/\bcandidate list\b/gi,'merge candidate list MVP candidate'],
-  [/\bfilter tap[s]?\b/gi,'interp-filter tap coefficient'],
-  [/\bhalf-?pixel\b/gi,'half-pel fractional sample'],
-  [/\bquarter-?pixel\b/gi,'1/4-pel fractional sample'],
-  [/\bMPM\b/gi,'most probable mode MPM intra prediction'],
-  [/\bprediction error\b/gi,'prediction residual'],
-];
-const PATS={
-  components:[/\b(filter|unit|block|module|encoder|decoder|buffer|coefficient|parameter|flag|index|value|mode|frame|slice|CTU|CU|PU|TU|luma|chroma|pixel|sample|bit|rate|level|signal|output|input|reference|candidate|list|vector|transform|quantiz\w+|predict\w+|interpolat\w+|motion|intra|inter|deblock\w+|SAO|CABAC|entropy|syntax|partition|codeword|bitstream|structure|layer)\b/gi],
-  steps:[/\b(determin\w+|calculat\w+|comput\w+|deriv\w+|generat\w+|select\w+|apply\w+|perform\w+|obtain\w+|process\w+|encod\w+|decod\w+|estimat\w+|initializ\w+|predict\w+|reconstruct\w+|transform\w+|quantiz\w+|filter\w+|signal\w+|receiv\w+|transmit\w+|convert\w+)\b/gi],
-  process_flow:[/\b(first|then|next|after|before|when|if|else|while|until|based on|according to|in order to|such that|wherein|whereby|step|phase|stage|procedure|process|method|algorithm|equal to|greater than|less than|corresponds|disabled|enabled|subsequently|prior to)\b/gi],
-  math_formula:[/([A-Z][a-z]?\s*[=<>≤≥]\s*[\w\s\+\-\*\/\(\)\.]+)|(\b\d+[\-\/]\w+\b)|(\b(formula|equation|threshold|coefficient|ratio|offset|QP|lambda|alpha|beta|delta|max|min|abs|log|floor|ceil|clip|shift|round)\b)/gi],
-  pseudocode:[/\b(if\s*\(|for\s*\(|while\s*\(|else\b|return\b|true|false|bool|int|flag|syntax|condition|loop|iterate|assign|\w+\[\w+\]|pStateIdx|valMps|enabled_flag|disabled|partMode|predMode)\b/gi],
-  relative_position:[/\b(left|right|above|below|top|bottom|adjacent|neighbor\w*|boundary|inside|outside|between|within|upper|lower|horizontal|vertical|diagonal|position\w*|spatial|region|area|edge|corner|center|collocat\w*)\b/gi],
-  sequence:[/\b(first|second|third|1st|2nd|3rd|\d+th|initial\w*|final\w*|last|previous|next|current|prior|subsequent|following|order|sequen\w*|consecutive|successive|temporal|timing|earlier|later)\b/gi],
-  relevance:[/\b(depend\w*|based on|correlat\w*|associat\w*|relat\w*|connect\w*|function\w*|correspond\w*|affect\w*|contribut\w*|enable\w*|allow\w*|support\w*|requir\w*|link\w*|interact\w*)\b/gi],
-};
 
 function normTxt(text){
   let t=text;
@@ -128,4 +85,5 @@ function compute8D(specText,claimText){
     tierDesc:{H:'技術特徵高度重疊，可能為標準必要專利',M:'部分技術特徵吻合，需進一步人工確認',L:'技術關聯性較低'}[tier],
   };
 }
+
 module.exports={normTxt,extractAttrs,tfidf,compute8D,ATTRS,GOLDEN};
