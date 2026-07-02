@@ -100,6 +100,20 @@ const rEdge = compute8D('', '');
 assert('empty/empty does not produce NaN score', !isNaN(rEdge.score));
 assert('empty/empty settles to tier L (no evidence = low similarity)', rEdge.tier === 'L');
 
+
+console.log('\n── 6. TFT 半導體領域驗收（2026-07 詞庫擴充 + 權重 v2）──');
+const TFT_CLAIM = `一種薄膜電晶體，包含：
+一種晶層，具有一非晶質結構；
+一主動層，與該種晶層重疊並包含一通道部分，該通道部分與該種晶層接觸並具有一結晶結構；以及
+一閘極電極，於該薄膜電晶體之一平面視角中與該種晶層以及該主動層之至少一部分重疊；
+其中該種晶層沿一第一方向之長度小於該閘極電極沿該第一方向之長度。`;
+const TFT_CIT = `The active layer ACT includes a channel portion CN overlapping the gate electrode, a first connection portion connected to a first side of the channel portion, the channel portion having a crystalline structure, and a second connection portion connected to a second side of the channel portion. The amorphous active layer 120 may overlap the first active layer 130 and contact the first active layer 130. The amorphous active layer 120 has an amorphous structure. The amorphous active layer may serve as a seed layer to stably crystallize the first active layer. As a result, the channel portion 130n of the first active layer 130 may have uniform crystallinity and maintain high mobility characteristics. The amorphous active layer 120 may have a thickness of 1nm to 5nm. The gate electrode 150 overlaps the channel portion 130n of the first active layer. The channel portion 120n of the amorphous active layer may have a carrier concentration lower than that of the channel portion 130n of the first active layer. The first active layer may be disposed between the amorphous active layer and the gate electrode.`;
+const rTFT = compute8D(TFT_CIT, TFT_CLAIM);
+assert('TFT 種晶層案例：分數 > 85（校準錨點）', rTFT.score > 85, `got ${rTFT.score}`);
+assert('TFT 種晶層案例：分級為 H', rTFT.tier === 'H');
+const rTFTun = compute8D(CIT_LOW, TFT_CLAIM);
+assert('TFT 請求項 vs 無關引證（麵包食譜）仍為低分', rTFTun.score < 45, `got ${rTFTun.score}`);
+
 console.log(`\n── RESULT: ${pass} passed, ${fail} failed ──`);
 if (fail > 0) {
   console.log('\nFailures:');
