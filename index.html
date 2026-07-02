@@ -761,7 +761,8 @@ function compute8D(specText,claimText){
     const sim=nx&&ns?dot/(nx*ns):0;
     if(d.l===1){sS+=sim;sN++;}else{nS+=sim;nN++;}
   }
-  const xgb=(sN&&nN)?(sS/sN)/((sS/sN)+(nS/nN))*40:20;
+  const posAvg=sN?sS/sN:0,negAvg=nN?nS/nN:0;
+  const xgb=(sN&&nN)?((posAvg+negAvg)>0?(posAvg/(posAvg+negAvg))*40:20):20;
   const core=(sims[0]+sims[1]+sims[2]+sims[3])/4;
   let pen=0,penR=[];
   if(core<0.20){const p=(0.20-core)*250;pen+=p;penR.push(`核心均值${(core*100).toFixed(1)}%極低`);}
