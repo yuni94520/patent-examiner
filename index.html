@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>專利相似度比對 v3.6.0</title>
+<title>專利相似度比對 v3.8.2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -295,6 +295,19 @@ select option{background:var(--s2);}
 .gate-box.vis{display:block;animation:fadeUp .2s var(--ease);}
 .closest-card{border:1px solid rgba(52,211,153,.45)!important;box-shadow:0 0 0 1px rgba(52,211,153,.08) inset,var(--shadow-1);}
 
+
+/* v3.8 EVIDENCE-FIRST BATCH */
+.screen-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:8px;}
+.screen-metric{background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:7px 8px;text-align:center;}
+.screen-metric .k{font-family:var(--mono);font-size:7px;color:var(--dm);letter-spacing:.08em;text-transform:uppercase;}
+.screen-metric .v{font-family:var(--mono);font-size:16px;margin-top:2px;}
+.evidence-list{display:flex;flex-direction:column;gap:5px;margin-top:8px;}
+.evidence-hit{font-family:var(--mono);font-size:9px;color:var(--mt);line-height:1.55;padding:6px 8px;background:rgba(129,140,248,.04);border-left:2px solid var(--a1);border-radius:0 var(--rs) var(--rs) 0;}
+.batch-detail{margin-top:6px;font-family:var(--mono);font-size:8px;color:var(--dm);display:flex;gap:10px;flex-wrap:wrap;}
+.claim-chip{display:inline-flex;padding:2px 7px;border-radius:10px;background:rgba(129,140,248,.1);border:1px solid rgba(129,140,248,.25);color:var(--a1);font-family:var(--mono);font-size:8px;}
+.screen-note{font-family:var(--mono);font-size:9px;color:var(--mt);line-height:1.6;}
+@media(max-width:820px){.screen-grid{grid-template-columns:repeat(2,1fr);}}
+
 /* DB */
 .db-panel{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;display:none;margin:0 1.75rem 1.6rem;box-shadow:var(--shadow-1);}
 .db-panel.vis{display:block;}
@@ -349,7 +362,7 @@ select option{background:var(--s2);}
     <div class="logo-text">專利相似度比對</div>
     <div class="logo-sub">Patent Similarity Analyzer</div>
   </div>
-  <span class="logo-ver">v3.6.0</span>
+  <span class="logo-ver">v3.8.2</span>
   <div class="hdr-r">
     <div class="badge local">Stable Local Hybrid</div>
     <div class="badge sbert">Isotonic Calibration</div>
@@ -404,7 +417,7 @@ select option{background:var(--s2);}
 
         <!-- PatentSBERTa 說明 -->
         <div class="info-box">
-          🔬 <strong>v3.6.0 Adaptive Citation Screener</strong><br>
+          🔬 <strong>v3.8.2 High-Relevance Preservation Engine + Search Strategy Generator</strong><br>
           ① <strong>元件級比對</strong>：自動拆解 Claim elements，逐一對齊引證句並保留 evidence｜
           ② <strong>Hybrid cosine</strong>：token cosine 60% + character trigram 40%，降低單純字面改寫造成的跳分<br>
           ③ <strong>融合核心</strong>：Element Avg 55% + 8D Structure 45%，並以 Element Min 作最弱特徵 gate<br>
@@ -437,7 +450,7 @@ select option{background:var(--s2);}
         <div class="btn-row">
           <button class="btn-run" id="runBtn" onclick="runCompare()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-            v3.6 混合計算（本地）
+            v3.8 詳細比對（Min Gate）
           </button>
           <button class="btn-ghost" onclick="clearAll()">清除</button>
         </div>
@@ -469,7 +482,7 @@ select option{background:var(--s2);}
               <div class="bk-grid" style="grid-template-columns:repeat(4,1fr);">
                 <div class="bk-item"><div class="bk-lbl">元件均值</div><div class="bk-val a1" id="ovElemAvg">—</div></div>
                 <div class="bk-item"><div class="bk-lbl">元件最小值 ⚠</div><div class="bk-val" id="ovElemMin">—</div></div>
-                <div class="bk-item"><div class="bk-lbl">8D 結構分</div><div class="bk-val a5" id="ovStruct">—</div></div>
+                <div class="bk-item"><div class="bk-lbl">Focused 8D</div><div class="bk-val a5" id="ovStruct">—</div></div>
                 <div class="bk-item"><div class="bk-lbl">校準後總分</div><div class="bk-val fuse" id="ovFinal">—</div></div>
               </div>
               <div style="font-family:var(--mono);font-size:10px;color:var(--mt);line-height:1.75;padding:4px 0;white-space:pre-wrap;" id="ovExplain"></div>
@@ -479,7 +492,7 @@ select option{background:var(--s2);}
 
             <div class="slayer-pane" id="layer-elem">
               <div class="elem-hd">
-                <div class="elem-hd-lbl">元件級對齊 + 引證證據</div>
+                <div class="elem-hd-lbl">元件級 Evidence-First 對齊</div>
                 <div style="flex:1;height:1px;background:var(--bd);margin-left:8px;"></div>
                 <div id="elemWarningChip" style="margin-left:8px;"></div>
               </div>
@@ -508,12 +521,12 @@ select option{background:var(--s2);}
     <div class="tab-pane" id="tab-multi">
       <div class="content">
         <div class="card">
-          <div class="card-hd"><div class="step-num">B</div><div class="card-title">引證批次初篩 (Batch Citation Screener)</div><div class="card-sub">同一 Claim → 多引證 → 同一 v3.6 scoring pipeline</div></div>
+          <div class="card-hd"><div class="step-num">B</div><div class="card-title">引證批次初篩 (Batch Citation Screener)</div><div class="card-sub">同一 Claim → 多引證 → 同一 frozen scoring pipeline</div></div>
           <div class="card-body">
             <div class="fg"><label>請求項內容</label><textarea id="mClaim" rows="5" placeholder="貼入欲比對之請求項..."></textarea></div>
             <div class="fg"><label>批次引證｜自動辨識 TIPO 清單 / PQAI TSV / 引證1(ID) / D1(ID) / Reference / ===</label>
               <textarea id="mCits" rows="12" placeholder="可直接貼上：&#10;① TIPO 檢索結果（1 / 2 / 3 + 公開號 / 摘要）&#10;② PQAI：Publication Number + Title + Abstract 的 TSV&#10;③ 引證1(US...) / D1(...) / Reference 1(...)&#10;④ === 分隔舊格式"></textarea>
-              <div id="batchParseInfo" style="margin-top:6px;font-family:var(--mono);font-size:9px;color:var(--mt);line-height:1.6;">尚未解析</div>
+              <div class="info-box" style="margin-top:2px;">v3.8 批次模式不使用 Element Min 硬封頂；它先從每篇長文擷取最相關 passage，再依 Critical / Semantic / Process / Architecture / Numeric 五維排序。正式單篇 Claim Chart 仍保留 Min Gate。</div><div id="batchParseInfo" style="margin-top:6px;font-family:var(--mono);font-size:9px;color:var(--mt);line-height:1.6;">尚未解析</div>
             </div>
             <div class="btn-row">
               <button class="btn-run" id="mBtn" onclick="runMulti()">
@@ -531,7 +544,7 @@ select option{background:var(--s2);}
     <div class="tab-pane" id="tab-keyword">
       <div class="content">
         <div class="card">
-          <div class="card-hd"><div class="step-num y">KW</div><div class="card-title">關鍵字提取 + 布林檢索式</div><div class="card-sub">純 JS 詞頻分析，無需 AI</div></div>
+          <div class="card-hd"><div class="step-num y">KW</div><div class="card-title">v3.7 專利檢索策略產生器</div><div class="card-sub">技術特徵抽取｜A 動作視角 + B 架構視角</div></div>
           <div class="card-body">
             <div class="fg"><label>請求項 / 技術段落</label><textarea id="kwTxt" rows="8" placeholder="貼入請求項或技術段落..."></textarea></div>
             <div class="frow">
@@ -544,9 +557,10 @@ select option{background:var(--s2);}
                 </select>
               </div>
             </div>
-            <div class="btn-row"><button class="btn-local" onclick="runKeyword()">🔍 提取關鍵字 + 生成檢索式</button></div>
+            <div class="info-box" style="margin:2px 0 4px;">v3.7 會先排除 claim boilerplate（例如 comprising / wherein / forming / 該 / 其中 / 包含），再依技術動作與系統架構分組；每組最多 5 個中英文同義詞。</div>
+            <div class="btn-row"><button class="btn-local" onclick="runKeyword()">🔍 產生 A/B 專利檢索式</button></div>
             <div class="out-card" id="kwCard">
-              <div class="out-hd"><div class="out-title">關鍵字 + 布林檢索式</div><button class="btn-copy" onclick="copyEl('kwBody')">複製</button></div>
+              <div class="out-hd"><div class="out-title">v3.7 專利檢索策略</div><button class="btn-copy" onclick="copyEl('kwBody')">複製</button></div>
               <div class="out-body" id="kwBody"></div>
             </div>
           </div>
@@ -682,10 +696,10 @@ let GOLDEN=[
 ];
 
 // ═══════════════════════════════════════
-// v3.6.0 ADAPTIVE CITATION SCREENER · STABLE LOCAL HYBRID SCORING CORE
+// v3.8.0 EVIDENCE-FIRST PRIOR ART SCREENER · DUAL-MODE ENGINE
 // Frozen scoring contract: element 55% + 8D 45% + min gate + optional isotonic calibration
 // ═══════════════════════════════════════
-const SCORING_VERSION = 'v3.6.0-adaptive-citation-screener';
+const SCORING_VERSION = 'v3.8.2-high-relevance-preservation';
 // Keep v3.5 storage keys so existing verification/calibration data survives the v3.6 UI/parser upgrade.
 const DB_KEY='pat_sim_v35_db';
 const CALIB_KEY='pat_sim_v35_calibration';
@@ -693,7 +707,7 @@ const AUDIT_KEY='pat_sim_v35_audit';
 const MIN_CALIB_SAMPLES=8;
 
 const _V = (typeof window!=='undefined' && window.VOCAB) || null;
-if(!_V){ console.warn('vocab.js 未載入：v3.6 將使用內建 normalization fallback'); }
+if(!_V){ console.warn('vocab.js 未載入：v3.8 將使用內建 normalization fallback'); }
 const ZH_EN = _V ? (_V.ZH_EN||[]) : [];
 const SYN   = _V ? (_V.SYN||[]) : [];
 const PATS  = _V ? (_V.PATS||{}) : {};
@@ -744,21 +758,67 @@ function splitClaimElements(text=''){
   }
   const seen=new Set();return parts.filter(p=>{const k=normTxt(p);if(seen.has(k))return false;seen.add(k);return true;}).slice(0,24);
 }
+// v3.8.1: unified Evidence-First retrieval for detailed single-document comparison.
+// Every claim element searches the full specification passage-by-passage.
+// The strict Min Gate is applied only AFTER retrieval, so long documents no longer dilute evidence.
 function bestEvidence(element,citation){
-  const sents=splitSentences(citation);if(!sents.length)return {score:hybridSimilarity(element,citation),evidence:String(citation).slice(0,240)};
-  let best={score:-1,evidence:''};
-  for(const s of sents){const score=hybridSimilarity(element,s);if(score>best.score)best={score,evidence:s};}
-  return best;
+  const passages=splitCitationPassages(citation);
+  if(!passages.length){
+    return {score:passageConceptSimilarity(element,citation),evidence:String(citation).slice(0,500),top3:[]};
+  }
+  const ranked=[];
+  for(const p of passages){
+    const score=passageConceptSimilarity(element,p.text);
+    if(ranked.length<3){
+      ranked.push({score,text:p.text,kind:p.kind});
+      ranked.sort((a,b)=>b.score-a.score);
+    }else if(score>ranked[2].score){
+      ranked[2]={score,text:p.text,kind:p.kind};
+      ranked.sort((a,b)=>b.score-a.score);
+    }
+  }
+  const best=ranked[0]||{score:0,text:'',kind:''};
+  return {score:best.score,evidence:best.text,top3:ranked};
 }
 function evaluateElements(claim,citation){
-  const els=splitClaimElements(claim);const elements=(els.length?els:[claim]).map((text,i)=>{
-    const m=bestEvidence(text,citation);return {index:i+1,text,score:clamp(m.score),evidence:m.evidence};
+  const els=splitClaimElements(claim);
+  const elements=(els.length?els:[claim]).map((text,i)=>{
+    const m=bestEvidence(text,citation);
+    return {
+      index:i+1,
+      text,
+      score:clamp(m.score),
+      evidence:m.evidence,
+      top3:m.top3||[]
+    };
   });
-  const vals=elements.map(e=>e.score*100);return {
+  const vals=elements.map(e=>e.score*100);
+  return {
     elements,
     element_avg:vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length),
-    element_min:Math.min(...vals),
+    element_min:vals.length?Math.min(...vals):0,
   };
+}
+function buildFocusedCitation(elements,citation){
+  // Use the strongest retrieved evidence passages for structural comparison.
+  // Deduplicate passages while preserving the most relevant technical context.
+  const seen=new Set(),parts=[];
+  const add=s=>{
+    const txt=String(s||'').replace(/\s+/g,' ').trim();
+    if(txt.length<20)return;
+    const key=normTxt(txt).slice(0,600);
+    if(seen.has(key))return;
+    seen.add(key);parts.push(txt);
+  };
+  for(const e of elements||[]){
+    add(e.evidence);
+    for(const x of (e.top3||[]).slice(1,2))add(x.text);
+  }
+  // If retrieval is sparse, include a compact beginning context rather than the entire document.
+  if(parts.length<2){
+    splitCitationPassages(citation).slice(0,6).forEach(p=>add(p.text));
+  }
+  return parts.slice(0,48).join('\n');
 }
 function extractAttrs(text){
   const n=normTxt(text),sents=splitSentences(n);const res={};
@@ -827,37 +887,208 @@ function renderCalibInfo(){
   el.innerHTML=`已標記樣本 <b>${l.length}</b> 筆<br>${m?`模式：Isotonic · ${m.n} samples`:'模式：Baseline raw score'}`;
 }
 function tierOf(score){return score>=70?'H':score>=45?'M':'L';}
+
+// ═══════════════════════════════════════
+// v3.8.2 HIGH-RELEVANCE PRESERVATION
+// Prevent a technically strong citation from being discarded solely by a low Min Gate.
+// This is a technical-relevance preservation rule, not a novelty/obviousness conclusion.
+// ═══════════════════════════════════════
+const HIGH_VALUE_PAIRS = [
+  ['regrowth','etch'],
+  ['regrowth','pgan'],
+  ['regrowth','barrier'],
+  ['regrowth','lithography'],
+  ['regrowth','hemt']
+];
+
+function matchedConceptIds(claim,citation){
+  const qc=new Set(extractScreenConcepts(claim).map(x=>x.id));
+  const dc=new Set(extractScreenConcepts(citation).map(x=>x.id));
+  return [...qc].filter(id=>dc.has(id));
+}
+function matchedConceptPairs(claim,citation){
+  const ids=new Set(matchedConceptIds(claim,citation));
+  return HIGH_VALUE_PAIRS
+    .filter(([a,b])=>ids.has(a)&&ids.has(b))
+    .map(([a,b])=>`${a.toUpperCase()}+${b.toUpperCase()}`);
+}
+function computeHighRelevancePreservation(claim,citation,normalScore,elementMin){
+  const s=runScreeningEvaluation(claim,citation);
+  const matched=matchedConceptIds(claim,citation);
+  const pairs=matchedConceptPairs(claim,citation);
+
+  // Pair evidence raises confidence because these paired mechanisms are much more
+  // discriminative than generic substrate/gate/source/drain overlap.
+  let critical=Number(s.critical)||0;
+  let process=Number(s.process)||0;
+  if(pairs.length===1){critical=Math.min(100,critical+6);process=Math.min(100,process+6);}
+  if(pairs.length>=2){critical=Math.min(100,critical+10);process=Math.min(100,process+10);}
+
+  const semantic=Number(s.semantic)||0;
+  const architecture=Number(s.architecture)||0;
+  const coverage=Number(s.coverage)||0;
+
+  const coreScore =
+      0.40*critical +
+      0.25*semantic +
+      0.20*process +
+      0.15*architecture;
+
+  const strongDimensions=[
+    critical>=65,
+    semantic>=45,
+    process>=60,
+    architecture>=55,
+    coverage>=40
+  ].filter(Boolean).length;
+
+  const hasCritical = matched.some(id=>['regrowth','pgan','etch','lithography','spacing','hemt'].includes(id));
+  const preserveTrigger =
+      hasCritical &&
+      (pairs.length>=1 || matched.filter(id=>['regrowth','pgan','etch','lithography','spacing','hemt','barrier'].includes(id)).length>=2) &&
+      strongDimensions>=2 &&
+      (s.final_score>=55 || coreScore>=60);
+
+  // Stronger rule: once the citation already behaves like a 75+ screening reference,
+  // detailed mode may not demote it below the must-review band just because one narrow
+  // element has a very low score.
+  const mustReviewTrigger =
+      preserveTrigger &&
+      (
+        s.final_score>=72 ||
+        coreScore>=72 ||
+        (pairs.length>=2 && critical>=75 && process>=70)
+      );
+
+  let floor=0;
+  if(preserveTrigger){
+    floor=Math.max(coreScore*0.86, s.final_score*0.92, 58);
+  }
+  if(mustReviewTrigger){
+    floor=Math.max(floor,75);
+  }
+
+  const final=Math.max(Number(normalScore)||0, Math.min(92,floor));
+
+  return {
+    override_triggered: preserveTrigger,
+    must_review_triggered: mustReviewTrigger,
+    matched_critical_concepts: matched.map(x=>x.toUpperCase()),
+    matched_pairs:pairs,
+    original_detailed_score:+(Number(normalScore)||0).toFixed(1),
+    screening_score:+(Number(s.final_score)||0).toFixed(1),
+    critical:+critical.toFixed(1),
+    semantic:+semantic.toFixed(1),
+    process:+process.toFixed(1),
+    architecture:+architecture.toFixed(1),
+    coverage:+coverage.toFixed(1),
+    core_score:+coreScore.toFixed(1),
+    override_floor:+floor.toFixed(1),
+    final_preserved_score:+final.toFixed(1),
+    weakest_element:+(Number(elementMin)||0).toFixed(1),
+    reason: mustReviewTrigger
+      ? 'high-relevance evidence confirmed; score preserved in must-review band'
+      : preserveTrigger
+        ? 'central technical mechanism strongly matched; low Min cannot collapse relevance'
+        : 'no preservation override'
+  };
+}
+
 function evaluatePair(claim,citation){
-  const elem=evaluateElements(claim,citation),struct=compute8D(citation,claim),f=fuseRaw(elem.element_avg,struct.score,elem.element_min),cal=calibrate(f.raw);
-  return {scoring_version:SCORING_VERSION,final_score:cal,raw_score:+f.raw.toFixed(1),element_avg:+elem.element_avg.toFixed(1),element_min:+elem.element_min.toFixed(1),elements:elem.elements,structure_score:struct.score,sims:struct.sims,gate:f.gate,tier:tierOf(cal)};
+  const elem=evaluateElements(claim,citation);
+  const focusedCitation=buildFocusedCitation(elem.elements,citation);
+  const struct=compute8D(focusedCitation||citation,claim);
+
+  // Keep the historical Min-Gate result for audit/debugging.
+  const f=fuseRaw(elem.element_avg,struct.score,elem.element_min);
+  const calibratedNormal=calibrate(f.raw);
+
+  // v3.8.2 preservation layer: high-relevance evidence can override a destructive Min Gate.
+  const preservation=computeHighRelevancePreservation(
+    claim,citation,calibratedNormal,elem.element_min
+  );
+  const final=preservation.override_triggered
+    ? Math.max(calibratedNormal,preservation.final_preserved_score)
+    : calibratedNormal;
+
+  const gateText=preservation.override_triggered
+    ? `${f.gate?f.gate+' ｜ ':''}HIGH-RELEVANCE PRESERVATION ON：Min Gate 不得將高相關引證降出人工審閱區`
+    : f.gate;
+
+  return {
+    scoring_version:SCORING_VERSION,
+    mode:'detailed-evidence-first-preserved',
+    final_score:+final.toFixed(1),
+    normal_detailed_score:+calibratedNormal.toFixed(1),
+    raw_score:+f.raw.toFixed(1),
+    element_avg:+elem.element_avg.toFixed(1),
+    element_min:+elem.element_min.toFixed(1),
+    elements:elem.elements,
+    structure_score:struct.score,
+    sims:struct.sims,
+    focused_citation:focusedCitation,
+    gate:gateText,
+    tier:tierOf(final),
+    override_triggered:preservation.override_triggered,
+    must_review_triggered:preservation.must_review_triggered,
+    matched_critical_concepts:preservation.matched_critical_concepts,
+    matched_pairs:preservation.matched_pairs,
+    screening_score:preservation.screening_score,
+    critical_score:preservation.critical,
+    semantic_score:preservation.semantic,
+    process_score:preservation.process,
+    architecture_score:preservation.architecture,
+    coverage_score:preservation.coverage,
+    core_score:preservation.core_score,
+    override_floor:preservation.override_floor,
+    override_reason:preservation.reason
+  };
 }
 let _lastR=null,_hist=[];
 function auditLoad(){try{return JSON.parse(localStorage.getItem(AUDIT_KEY)||'[]');}catch{return[];}}
 function auditSave(a){localStorage.setItem(AUDIT_KEY,JSON.stringify(a.slice(-300)));}
 function recordAudit(pid,claim,citation,r,mode='single'){
-  const a=auditLoad();a.push({timestamp:new Date().toISOString(),id:pid,mode,scoring_version:SCORING_VERSION,calibration_version:calibLoad()?.version||'baseline',claim,citation,raw_score:r.raw_score,final_score:r.final_score,element_avg:r.element_avg,element_min:r.element_min,structure_score:r.structure_score,elements:r.elements,sims:r.sims});auditSave(a);renderAudit();
+  const a=auditLoad();a.push({timestamp:new Date().toISOString(),id:pid,mode,scoring_version:SCORING_VERSION,calibration_version:calibLoad()?.version||'baseline',claim,citation,raw_score:r.raw_score,final_score:r.final_score,element_avg:r.element_avg,element_min:r.element_min,structure_score:r.structure_score,elements:r.elements,sims:r.sims,focused_citation:r.focused_citation||'',override_triggered:r.override_triggered||false,must_review_triggered:r.must_review_triggered||false,matched_critical_concepts:r.matched_critical_concepts||[],matched_pairs:r.matched_pairs||[],normal_detailed_score:r.normal_detailed_score,screening_score:r.screening_score,core_score:r.core_score,override_floor:r.override_floor,override_reason:r.override_reason||''});auditSave(a);renderAudit();
 }
 async function runCompare(){
   const claim=document.getElementById('claimTxt').value.trim(),cit=document.getElementById('citTxt').value.trim();
   if(!claim||!cit){toast('請填入請求項與引證內容',true);return;}
   const pid=document.getElementById('patId').value.trim()||'未指定',cl=document.getElementById('clNum').value.trim()||'Claim 1';
   const btn=document.getElementById('runBtn');btn.disabled=true;showLoad(true);step('拆解 Claim elements...',25);await sleep(40);
-  step('Hybrid cosine + evidence alignment...',55);await sleep(40);const r=evaluatePair(claim,cit);
-  step('8D fusion + calibration...',90);await sleep(40);showLoad(false);btn.disabled=false;_lastR=r;
+  step('Evidence-First passage retrieval...',55);await sleep(40);const r=evaluatePair(claim,cit);
+  step('Focused 8D + Min Gate + calibration...',90);await sleep(40);showLoad(false);btn.disabled=false;_lastR=r;
   renderScoreV35(r,pid,cl);autoSave(pid,r);recordAudit(pid,claim,cit,r,'single');
   _hist.unshift({pid,score:r.final_score,tier:r.tier});if(_hist.length>20)_hist.pop();renderHist();
 }
 function renderScoreV35(r,pid,cl){
   document.getElementById('scoreCard').classList.add('vis');const big=document.getElementById('scoreBig');big.textContent=r.final_score;big.className='score-big '+r.tier;
   const chip=document.getElementById('tierChip'),labels={H:'高度相似 (HIGH)',M:'中度相似 (MID)',L:'低度相似 (LOW)'};chip.textContent=labels[r.tier];chip.className='tier-chip '+r.tier;
-  document.getElementById('tierLine').textContent=`v3.6 calibrated · raw ${r.raw_score}`;document.getElementById('rPid').textContent=pid+' · '+cl;document.getElementById('rCit').textContent=document.getElementById('citId').value.trim()||'引證段落';
+  document.getElementById('tierLine').textContent=`v3.8.2 preserved detailed · normal ${r.normal_detailed_score} · final ${r.final_score}`;document.getElementById('rPid').textContent=pid+' · '+cl;document.getElementById('rCit').textContent=document.getElementById('citId').value.trim()||'引證段落';
   document.getElementById('ovElemAvg').textContent=r.element_avg+'%';document.getElementById('ovElemMin').textContent=r.element_min+'%';document.getElementById('ovStruct').textContent=r.structure_score;document.getElementById('ovFinal').textContent=r.final_score;
   document.getElementById('ovElemMin').style.color=r.element_min<40?'var(--a4)':r.element_min<60?'var(--a3)':'var(--a2)';
-  document.getElementById('ovExplain').textContent=`Raw = Element Avg(${r.element_avg}) × 55% + 8D Structure(${r.structure_score}) × 45%\nCalibration = ${calibLoad()?'Isotonic fitted model':'baseline identity'}\nScoring version = ${SCORING_VERSION}`;
+  document.getElementById('ovExplain').textContent=`Evidence-First Detailed + High-Relevance Preservation
+Normal detailed score = ${r.normal_detailed_score}
+Final technical relevance = ${r.final_score}
+Element Avg = ${r.element_avg}% ｜ Element Min = ${r.element_min}% ｜ Focused 8D = ${r.structure_score}
+${r.override_triggered?`OVERRIDE ON ｜ Screening ${r.screening_score} ｜ Core ${r.core_score} ｜ Floor ${r.override_floor}
+Critical ${r.critical_score} ｜ Semantic ${r.semantic_score} ｜ Process ${r.process_score} ｜ Architecture ${r.architecture_score} ｜ Coverage ${r.coverage_score}%
+Matched concepts: ${(r.matched_critical_concepts||[]).join(', ')||'—'}
+Matched pairs: ${(r.matched_pairs||[]).join(', ')||'—'}`:'Override not triggered'}
+Scoring version = ${SCORING_VERSION}`;
   const gb=document.getElementById('gateBox');if(r.gate){gb.textContent='⚠ '+r.gate;gb.classList.add('vis');}else gb.classList.remove('vis');
-  const desc=document.getElementById('tierDescBox'),descs={H:'技術特徵高度重疊，建議優先進行人工 claim chart 核對。',M:'部分技術特徵吻合，建議檢查最弱元件與證據脈絡。',L:'目前關聯度較低，但仍應以實際揭露內容人工確認。'};desc.textContent=descs[r.tier];desc.className='tier-desc-box '+r.tier;
+  const desc=document.getElementById('tierDescBox'),descs={H:'技術特徵高度重疊，建議優先進行人工 claim chart 核對。',M:'部分技術特徵吻合，建議檢查最弱元件與證據脈絡。',L:'目前關聯度較低，但仍應以實際揭露內容人工確認。'};
+  desc.textContent=r.must_review_triggered
+    ? '★ 高相關保留：核心技術機制已高度命中；即使存在缺漏限定，本引證不得在初步比對階段被剔除，必須人工審閱。'
+    : r.override_triggered
+      ? '◇ 關聯保留：核心機制與多個技術維度命中，低 Element Min 僅作缺漏警示，不再單獨壓低整體技術相關度。'
+      : descs[r.tier];
+  desc.className='tier-desc-box '+r.tier;
   const warn=document.getElementById('elemWarningChip');warn.innerHTML=r.element_min<40?'<span class="elem-warning">⚠ 最弱元件 &lt;40%</span>':r.element_min<60?'<span class="elem-warning">△ 最弱元件偏低</span>':'<span class="elem-ok">✓ 元件覆蓋穩定</span>';
-  document.getElementById('elemRows').innerHTML=r.elements.map(e=>{const pct=Math.round(e.score*100),c=pct>=60?'#34d399':pct>=40?'#f5a623':'#f87171';return `<div class="elem-row-v35"><div class="elem-top-v35"><div class="elem-idx">${e.index}</div><div class="elem-text" title="${esc(e.text)}">${esc(e.text)}</div><div class="elem-bar-bg"><div class="elem-bar-fill" style="width:${pct}%;background:${c}"></div></div><div class="elem-pct" style="color:${c}">${pct}%</div></div><div class="ev-sent" title="${esc(e.evidence)}">${esc(e.evidence)}</div></div>`;}).join('');
+  document.getElementById('elemRows').innerHTML=r.elements.map(e=>{
+    const pct=Math.round(e.score*100),c=pct>=60?'#34d399':pct>=40?'#f5a623':'#f87171';
+    const more=(e.top3||[]).slice(1).map((x,i)=>`Top ${i+2} ${Math.round(x.score*100)}% · ${x.text}`).join('\n');
+    return `<div class="elem-row-v35"><div class="elem-top-v35"><div class="elem-idx">${e.index}</div><div class="elem-text" title="${esc(e.text)}">${esc(e.text)}</div><div class="elem-bar-bg"><div class="elem-bar-fill" style="width:${pct}%;background:${c}"></div></div><div class="elem-pct" style="color:${c}">${pct}%</div></div><div class="ev-sent" title="${esc((e.evidence||'')+(more?'\n\n'+more:''))}">${esc(e.evidence)}</div></div>`;
+  }).join('');
   document.getElementById('dimRows').innerHTML=ATTRS.map((a,i)=>{const p=Math.round(r.sims[i]*100),c=p>=60?'#34d399':p>=35?'#f5a623':'#f87171';return `<div class="dim-row"><div class="dim-name">${a.name}</div><div class="dim-w">${Math.round(a.weight*100)}%</div><div class="dim-bg"><div class="dim-fill" style="width:${p}%;background:${c}"></div></div><div class="dim-pct" style="color:${c}">${p}%</div><div class="dim-ctr">${(r.sims[i]*a.weight*100).toFixed(1)}</div></div>`;}).join('');
   document.getElementById('vfyRow').classList.add('vis');const vb=document.getElementById('vfyBadge');vb.className='vfy-badge';vb.textContent='';const ex=(dbLoad().cases||[]).find(c=>c.id===pid);if(ex&&(ex.label===0||ex.label===1)){vb.className='vfy-badge '+(ex.label===1?'sep':'non');vb.textContent=ex.label===1?'✅ SEP':'❌ 非 SEP';}
   document.getElementById('dbPanel').classList.add('vis');document.getElementById('auditPanel').classList.add('vis');
@@ -867,7 +1098,7 @@ function showLayer(id,btn){document.querySelectorAll('.slayer-btn').forEach(b=>b
 function clearAll(){document.getElementById('scoreCard').classList.remove('vis');['claimTxt','citTxt','patId','clNum','citId'].forEach(id=>document.getElementById(id).value='');_lastR=null;}
 function renderHist(){const el=document.getElementById('histList');if(!_hist.length){el.innerHTML='<div class="hist-empty">尚無紀錄</div>';return;}const c={H:'var(--a4)',M:'var(--a3)',L:'var(--a2)'};el.innerHTML=_hist.map(h=>`<div class="hist-row"><div class="hist-sc" style="color:${c[h.tier]}">${h.score}</div><div class="hist-id">${esc(h.pid)}</div></div>`).join('');}
 
-// Batch parser v3.6.0: adaptive format detection for TIPO / PQAI / standard citations / TSV (scoring core unchanged)
+// Adaptive parser retained from v3.6: TIPO / PQAI / marked citations / TSV
 const PATENT_ID_RE=/^(?:[A-Z]{2,3}\d{4,}[A-Z]\d?|TW[I]?\d{5,}[A-Z]?|I\d{5,}|\d{7,10})$/i;
 const TIPO_LABELS=['公告號','公告日','公開號','公開日','申請號','申請日','專利名稱','優先權','IPC','發明人','申請人','代理人','類別碼','摘要'];
 
@@ -967,8 +1198,12 @@ function parseTIPOBlock(block,idx){
     const prev=lines.slice(0,i).reverse().find(x=>x.trim());
     if(prev&&/^專利名稱\s*[:：\t ]/.test(prev.trim()))title.push(line);
   }
-  let firstUseful=lines.find(x=>looksLikePatentId(x.trim()));
-  const id=(meta.publication_no||firstUseful||meta.grant_no||meta.application_no||`TIPO_${idx+1}`).replace(/\s+/g,'');
+  // v3.8: publication number has highest priority. If TIPO omits the "公開號" label
+  // for the first record, prefer a standalone patent number appearing before bibliographic fields.
+  const firstLabelIndex=lines.findIndex(x=>/^(公告號|公告日|公開號|公開日|申請號|申請日|專利名稱|優先權|IPC|發明人|申請人|代理人|類別碼|摘要)\s*[:：\t ]/.test(x.trim()));
+  const preamble=(firstLabelIndex>0?lines.slice(0,firstLabelIndex):lines.slice(0,3))
+    .map(x=>x.trim().replace(/\s+/g,'')).find(x=>looksLikePatentId(x));
+  const id=(meta.publication_no||preamble||meta.grant_no||meta.application_no||`TIPO_${idx+1}`).replace(/\s+/g,'');
   let scoring=[...title,...abstract].filter(Boolean).join('\n').trim();
   if(!scoring){
     // Defensive fallback: remove pure bibliographic rows, retain technical prose.
@@ -1020,63 +1255,422 @@ function updateBatchParseInfo(){
 let _batchParseTimer=null;
 document.addEventListener('input',e=>{if(e.target&&e.target.id==='mCits'){clearTimeout(_batchParseTimer);_batchParseTimer=setTimeout(updateBatchParseInfo,180);}});
 
+
+// ═══════════════════════════════════════
+// v3.8 EVIDENCE-FIRST PRIOR ART SCREENING ENGINE
+// Batch goal: rank documents worth opening, NOT decide anticipation.
+// Detailed single-document mode above keeps the strict Element-Min gate.
+// ═══════════════════════════════════════
+function parseClaimSet(text=''){
+  const raw=String(text).replace(/\r/g,'\n').trim();
+  const re=/(?:【\s*請求項\s*(\d+)\s*】|\[\s*Claim\s*(\d+)\s*\]|(?:^|\n)\s*Claim\s+(\d+)\s*[:：.]?)/gi;
+  const ms=[...raw.matchAll(re)];
+  if(!ms.length)return [{number:'1',text:raw,dependent_on:null,is_independent:true}];
+  const claims=[];
+  for(let i=0;i<ms.length;i++){
+    const n=ms[i][1]||ms[i][2]||ms[i][3]||String(i+1);
+    const body=raw.slice(ms[i].index+ms[i][0].length,i+1<ms.length?ms[i+1].index:raw.length).trim();
+    const depZh=body.match(/如\s*請求項\s*(\d+)\s*所述|依(?:據)?\s*請求項\s*(\d+)/);
+    const depEn=body.match(/(?:according to|of)\s+claim\s+(\d+)/i);
+    const dep=(depZh&&(depZh[1]||depZh[2]))||(depEn&&depEn[1])||null;
+    claims.push({number:String(n),text:body,dependent_on:dep,is_independent:!dep});
+  }
+  return claims.filter(c=>c.text);
+}
+function buildClaimProfiles(text=''){
+  const claims=parseClaimSet(text);
+  let indep=claims.filter(c=>c.is_independent);
+  if(!indep.length)indep=[claims[0]];
+  // Avoid turning a malformed paste into dozens of independent claims.
+  if(indep.length>8)indep=indep.slice(0,8);
+  return indep.map(c=>({
+    claim_number:c.number,
+    claim_text:c.text,
+    elements:splitClaimElements(c.text),
+    concepts:extractScreenConcepts(c.text),
+    numerics:extractNumericFeatures(c.text)
+  }));
+}
+function splitCitationPassages(text=''){
+  const raw=String(text).replace(/\r/g,'\n').trim();
+  const passages=[],seen=new Set();
+  const add=(s,kind='paragraph')=>{
+    s=String(s||'').replace(/\s+/g,' ').trim();
+    if(s.length<24)return;
+    const key=normTxt(s).slice(0,500);
+    if(seen.has(key))return;seen.add(key);
+    passages.push({text:s,kind});
+  };
+  // Patent paragraph markers / natural paragraphs first.
+  raw.split(/\n\s*\n+/).forEach(p=>add(p,'paragraph'));
+  raw.split(/\n+/).forEach(p=>{
+    if(/^\s*(?:\[\d{3,5}\]|【.*?】|摘要|發明內容|實施方式|BACKGROUND|SUMMARY|ABSTRACT|DETAILED DESCRIPTION)/i.test(p)||p.length>=80)add(p,'line');
+  });
+  // Sliding sentence windows preserve relations split across sentence boundaries.
+  const sents=splitSentences(raw);
+  for(let i=0;i<sents.length;i++){
+    add(sents.slice(i,Math.min(i+3,sents.length)).join(' '),'window3');
+    if(i+1<sents.length)add(sents.slice(i,Math.min(i+2,sents.length)).join(' '),'window2');
+  }
+  if(!passages.length)add(raw,'whole');
+  return passages.slice(0,900);
+}
+function extractScreenConcepts(text=''){
+  const t=String(text);
+  const concepts=[];
+  if(typeof SEARCH_CONCEPTS!=='undefined'){
+    for(const c of SEARCH_CONCEPTS){
+      let hit=false;
+      for(const p of c.patterns||[]){try{if(p.test(t)){hit=true;break;}}catch{}}
+      if(hit)concepts.push({id:c.id,view:c.view||'both',weight:Number(c.score)||5,terms:c.terms||[]});
+    }
+  }
+  // Extra process concepts useful before/without the search dictionary.
+  const extras=[
+    {id:'regrowth',view:'both',weight:12,re:/再生長|再成長|\bre-?growth\b|\bregrown\b/i},
+    {id:'etch',view:'action',weight:10,re:/蝕刻|\betch(?:ing|ed)?\b/i},
+    {id:'lithography',view:'action',weight:10,re:/微影|光罩|二氧化矽保護光罩|\blithograph|\bphotoresist\b|\bmask\b/i},
+    {id:'deposition',view:'action',weight:8,re:/沉積|磊晶成長|磊晶生長|\bdeposit|\bepitax/i},
+    {id:'pgan',view:'arch',weight:11,re:/p\s*型\s*氮化鎵|\bp-?gan\b|p-type\s+(?:gan|gallium nitride)/i},
+    {id:'barrier',view:'arch',weight:8,re:/位障層|阻障層|\bbarrier\s+layer\b/i},
+    {id:'channel',view:'arch',weight:6,re:/通道層|\bchannel\s+layer\b|\b2deg\b/i},
+    {id:'spacing',view:'both',weight:10,re:/相隔.*距離|未物理性接觸|spaced\s+apart|separated\s+from|non[-\s]?contact/i},
+    {id:'hemt',view:'arch',weight:10,re:/高電子遷移率電晶體|高電子移動率電晶體|\bHEMT\b|high[-\s]?electron[-\s]?mobility transistor/i}
+  ];
+  const have=new Set(concepts.map(x=>x.id));
+  for(const e of extras)if(!have.has(e.id)&&e.re.test(t))concepts.push({id:e.id,view:e.view,weight:e.weight,terms:[]});
+  return concepts;
+}
+function conceptCoverageScore(claimConcepts,citConcepts,filterFn=()=>true){
+  const cc=(claimConcepts||[]).filter(filterFn);
+  if(!cc.length)return 50;
+  const ids=new Set((citConcepts||[]).map(x=>x.id));
+  const den=cc.reduce((s,c)=>s+c.weight,0)||1;
+  const num=cc.reduce((s,c)=>s+(ids.has(c.id)?c.weight:0),0);
+  return clamp(num/den*100,0,100);
+}
+function extractNumericFeatures(text=''){
+  const t=String(text);
+  const out=[];
+  const re=/(\d+(?:\.\d+)?)\s*(?:至|到|~|–|-)\s*(\d+(?:\.\d+)?)\s*(nm|奈米|μm|um|微米|mm|毫米|%|v|伏特)?|(\d+(?:\.\d+)?)\s*(nm|奈米|μm|um|微米|mm|毫米|%|v|伏特)/gi;
+  let m;
+  while((m=re.exec(t))&&out.length<20){
+    out.push({raw:m[0],a:Number(m[1]||m[4]),b:m[2]?Number(m[2]):null,unit:(m[3]||m[5]||'').toLowerCase()});
+  }
+  return out;
+}
+function numericFeatureScore(claimNums,citationText){
+  if(!claimNums?.length)return 100;
+  const cnums=extractNumericFeatures(citationText);
+  if(!cnums.length)return 0;
+  let hit=0;
+  for(const q of claimNums){
+    const ok=cnums.some(c=>{
+      const unitOK=!q.unit||!c.unit||q.unit===c.unit;
+      if(!unitOK)return false;
+      if(q.b!=null&&c.b!=null)return Math.max(q.a,c.a)<=Math.min(q.b,c.b);
+      const qv=q.a,cv=c.a;
+      return Math.abs(qv-cv)<=Math.max(1,Math.abs(qv)*0.12);
+    });
+    if(ok)hit++;
+  }
+  return hit/claimNums.length*100;
+}
+function passageConceptSimilarity(a,b){
+  const lexical=hybridSimilarity(a,b);
+  const ac=extractScreenConcepts(a),bc=extractScreenConcepts(b);
+  const sem=conceptCoverageScore(ac,bc,()=>true)/100;
+  return clamp(lexical*0.62+sem*0.38);
+}
+function retrieveEvidenceForProfile(profile,citationText){
+  const passages=splitCitationPassages(citationText);
+  const els=(profile.elements?.length?profile.elements:[profile.claim_text]).slice(0,24);
+  const matches=els.map((element,index)=>{
+    let best=[];
+    for(const p of passages){
+      const s=passageConceptSimilarity(element,p.text);
+      if(best.length<3){best.push({score:s,text:p.text,kind:p.kind});best.sort((a,b)=>b.score-a.score);}
+      else if(s>best[2].score){best[2]={score:s,text:p.text,kind:p.kind};best.sort((a,b)=>b.score-a.score);}
+    }
+    const top=best[0]||{score:0,text:'',kind:''};
+    return {index:index+1,element,score:top.score,evidence:top.text,top3:best};
+  });
+  return {passages,matches};
+}
+function scoreOneClaimProfile(profile,citationText){
+  const ret=retrieveEvidenceForProfile(profile,citationText);
+  const bestScores=ret.matches.map(x=>x.score*100);
+  const semantic=bestScores.length?bestScores.reduce((a,b)=>a+b,0)/bestScores.length:0;
+  const coverage=bestScores.length?bestScores.filter(x=>x>=30).length/bestScores.length:0;
+  const weakest=bestScores.length?Math.min(...bestScores):0;
+  const citConcepts=extractScreenConcepts(citationText);
+  const critical=conceptCoverageScore(profile.concepts,citConcepts,c=>c.weight>=9);
+  const process=conceptCoverageScore(profile.concepts,citConcepts,c=>c.view==='action'||c.view==='both');
+  const architecture=conceptCoverageScore(profile.concepts,citConcepts,c=>c.view==='arch'||c.view==='both');
+  const numeric=numericFeatureScore(profile.numerics,citationText);
+  const raw=0.35*critical+0.25*semantic+0.20*process+0.15*architecture+0.05*numeric;
+  // Coverage is a soft correction only; a missing dependent/numeric detail can never hard-kill screening.
+  const final=clamp(raw*(0.85+0.15*coverage),0,100);
+  const evidence=[...ret.matches].sort((a,b)=>b.score-a.score)
+    .filter(x=>x.evidence).slice(0,3)
+    .map(x=>({element:x.element,score:+(x.score*100).toFixed(1),text:x.evidence}));
+  return {
+    claim_number:profile.claim_number,
+    screening_score:+final.toFixed(1),
+    screening_raw:+raw.toFixed(1),
+    critical:+critical.toFixed(1),
+    semantic:+semantic.toFixed(1),
+    process:+process.toFixed(1),
+    architecture:+architecture.toFixed(1),
+    numeric:+numeric.toFixed(1),
+    coverage:+(coverage*100).toFixed(1),
+    weakest:+weakest.toFixed(1),
+    evidence,
+    element_matches:ret.matches
+  };
+}
+function runScreeningEvaluation(claimText,citationText){
+  const profiles=buildClaimProfiles(claimText);
+  const claim_results=profiles.map(p=>scoreOneClaimProfile(p,citationText)).sort((a,b)=>b.screening_score-a.screening_score);
+  const best=claim_results[0]||{screening_score:0,critical:0,semantic:0,process:0,architecture:0,numeric:0,coverage:0,weakest:0,evidence:[],claim_number:'1'};
+  return {
+    scoring_version:SCORING_VERSION,
+    mode:'screening',
+    final_score:best.screening_score,
+    raw_score:best.screening_raw,
+    tier:tierOf(best.screening_score),
+    best_claim:best.claim_number,
+    critical:best.critical,
+    semantic:best.semantic,
+    process:best.process,
+    architecture:best.architecture,
+    numeric:best.numeric,
+    coverage:best.coverage,
+    element_min:best.weakest, // display-only warning in screening mode
+    evidence_snippets:best.evidence,
+    claim_results
+  };
+}
+function recordScreeningAudit(pid,claim,citation,r,format){
+  const a=auditLoad();
+  a.push({
+    timestamp:new Date().toISOString(),id:pid,mode:'screening:'+format,
+    scoring_version:SCORING_VERSION,claim,citation,
+    screening_score:r.final_score,best_claim:r.best_claim,
+    critical:r.critical,semantic:r.semantic,process:r.process,
+    architecture:r.architecture,numeric:r.numeric,coverage:r.coverage,
+    weakest:r.element_min,evidence:r.evidence_snippets
+  });
+  auditSave(a);renderAudit();
+}
 async function runMulti(){
-  const claim=document.getElementById('mClaim').value.trim(),raw=document.getElementById('mCits').value.trim();if(!claim||!raw){toast('請填寫請求項與引證清單',true);return;}
-  const parsed=parseBatchCitationsDetailed(raw),citations=parsed.citations;if(!citations.length){toast('未能解析有效引證',true);return;}
-  updateBatchParseInfo();toast(`已辨識 ${parsed.format}：${citations.length} 筆`);
+  const claim=document.getElementById('mClaim').value.trim(),raw=document.getElementById('mCits').value.trim();
+  if(!claim||!raw){toast('請填寫請求項與引證清單',true);return;}
+  const parsed=parseBatchCitationsDetailed(raw),citations=parsed.citations;
+  if(!citations.length){toast('未能解析有效引證',true);return;}
+  const profiles=buildClaimProfiles(claim);
+  updateBatchParseInfo();
+  toast(`v3.8：${parsed.format} ${citations.length} 筆｜獨立項 ${profiles.map(p=>p.claim_number).join(', ')}`);
   const btn=document.getElementById('mBtn');btn.disabled=true;showLoad(true);const out=[];
   try{
     for(let i=0;i<citations.length;i++){
-      const c=citations[i];step(`[${i+1}/${citations.length}] ${c.citation_id}`,10+Math.round((i/citations.length)*80));await sleep(20);
-      // IMPORTANT: score citation_text only. Bibliographic metadata stays outside scoring.
-      const r=evaluatePair(claim,c.citation_text);
+      const c=citations[i];
+      step(`[${i+1}/${citations.length}] Passage retrieval · ${c.citation_id}`,8+Math.round((i/citations.length)*86));
+      await sleep(12);
+      const r=runScreeningEvaluation(claim,c.citation_text);
       out.push({...r,citation_id:c.citation_id,citation_text:c.citation_text,metadata:c.metadata||{},source_format:c.source_format||parsed.format,rank:0});
-      recordAudit(c.citation_id,claim,c.citation_text,r,'batch:'+parsed.format);
+      recordScreeningAudit(c.citation_id,claim,c.citation_text,r,parsed.format);
     }
-    out.sort((a,b)=>b.final_score-a.final_score);out.forEach((r,i)=>r.rank=i+1);renderMultiRows(out);document.getElementById('auditPanel').classList.add('vis');
+    out.sort((a,b)=>b.final_score-a.final_score);out.forEach((r,i)=>r.rank=i+1);
+    renderMultiRows(out);document.getElementById('auditPanel').classList.add('vis');
   }finally{showLoad(false);btn.disabled=false;}
 }
+function renderMetric(k,v,color='var(--tx)'){
+  return `<div class="screen-metric"><div class="k">${k}</div><div class="v" style="color:${color}">${v}</div></div>`;
+}
 function renderMultiRows(results){
-  const top=results[0],topEl=document.getElementById('batchTop');topEl.style.display='block';topEl.innerHTML=`<div class="card closest-card"><div class="card-hd" style="background:rgba(52,211,153,.07)"><span class="step-num g">★</span><span class="card-title">最接近引證：${esc(top.citation_id)}</span><span class="card-sub">Score ${top.final_score} · Min ${top.element_min}%</span></div><div class="card-body"><div style="font-family:var(--mono);font-size:10px;color:var(--mt)">Raw ${top.raw_score} ｜ Element Avg ${top.element_avg}% ｜ 8D ${top.structure_score} ｜ ${esc(top.source_format||'')}</div></div></div>`;
-  const colors={H:'var(--a4)',M:'var(--a3)',L:'var(--a2)'};document.getElementById('mRows').innerHTML=results.map(r=>`<div class="b-row"><span class="b-rank">#${r.rank}</span><span class="b-score" style="color:${colors[r.tier]}">${r.final_score}</span><span class="b-id" title="${esc(r.citation_id)}">${esc(r.citation_id)}</span><span class="b-prev" title="${esc(r.citation_text)}">${esc(r.citation_text)}</span><span class="b-elem" style="color:${r.element_min<40?'var(--a4)':r.element_min<60?'var(--a3)':'var(--a2)'}">Min ${Math.round(r.element_min)}%</span></div>`).join('');
+  const top=results[0],topEl=document.getElementById('batchTop');
+  topEl.style.display='block';
+  const ev=(top.evidence_snippets||[]).map(e=>`<div class="evidence-hit"><b style="color:var(--a1)">E ${e.score}%</b> · ${esc(e.text)}</div>`).join('');
+  topEl.innerHTML=`
+    <div class="card closest-card">
+      <div class="card-hd" style="background:rgba(52,211,153,.07)">
+        <span class="step-num g">★</span>
+        <span class="card-title">最接近引證：${esc(top.citation_id)}</span>
+        <span class="claim-chip">Best Claim ${esc(top.best_claim)}</span>
+        <span class="card-sub">Screening ${top.final_score} · Weakest ${top.element_min}% ⚠</span>
+      </div>
+      <div class="card-body">
+        <div class="screen-note">Evidence-First Screening：Element Min 僅作「缺漏警示」，不會封頂。請選入單篇詳細比對後，再使用嚴格 Min Gate。</div>
+        <div class="screen-grid">
+          ${renderMetric('Critical',top.critical,top.critical>=70?'var(--a2)':'var(--a3)')}
+          ${renderMetric('Semantic',top.semantic)}
+          ${renderMetric('Process',top.process)}
+          ${renderMetric('Architecture',top.architecture)}
+          ${renderMetric('Coverage',top.coverage+'%')}
+        </div>
+        <div class="evidence-list">${ev||'<div class="screen-note">未擷取到高信心 evidence passage。</div>'}</div>
+      </div>
+    </div>`;
+  const colors={H:'var(--a4)',M:'var(--a3)',L:'var(--a2)'};
+  document.getElementById('mRows').innerHTML=results.map(r=>`
+    <div class="b-row" style="align-items:flex-start">
+      <span class="b-rank">#${r.rank}</span>
+      <span class="b-score" style="color:${colors[r.tier]}">${r.final_score}</span>
+      <span class="b-id" title="${esc(r.citation_id)}">${esc(r.citation_id)}</span>
+      <span class="b-prev">
+        <span title="${esc(r.citation_text)}">${esc(r.citation_text)}</span>
+        <span class="batch-detail">
+          <span>Claim ${esc(r.best_claim)}</span>
+          <span>Critical ${r.critical}</span>
+          <span>Semantic ${r.semantic}</span>
+          <span>Process ${r.process}</span>
+          <span>Arch ${r.architecture}</span>
+          <span>Coverage ${r.coverage}%</span>
+        </span>
+      </span>
+      <span class="b-elem" style="color:${r.element_min<30?'var(--a4)':r.element_min<50?'var(--a3)':'var(--a2)'}">Weak ${Math.round(r.element_min)}%</span>
+    </div>`).join('');
 }
 
 // ═══════════════════════════════════════
-// TAB 3: 關鍵字提取
+// TAB 3: v3.7 專利檢索策略產生器
+// 目的：從「詞頻」升級為「技術特徵」抽取，避免 comprising / wherein / forming 等 boilerplate 污染檢索式
 // ═══════════════════════════════════════
-const STOPWORDS=new Set(['a','an','the','is','are','was','were','be','been','have','has','had','do','does','did','will','would','could','should','may','might','shall','can','in','on','at','to','for','of','with','by','from','as','into','through','that','this','which','where','when','or','and','but','not','also','if','then','it','its','said','such','each','any','all','both','other','than','about','after','before','between']);
-const SYN_TABLE={'prediction':['prediction','estimation','forecasting'],'encoding':['encoding','coding','compression'],'filter':['filter','filtering','filtration'],'motion':['motion','movement','displacement'],'block':['block','unit','segment'],'intra':['intra','intra-prediction'],'inter':['inter','inter-prediction'],'quantiz':['quantization','quantisation'],'transform':['transform','DCT','transformation'],'pixel':['pixel','sample','pel'],'mode':['mode','type','option'],'image':['image','picture','frame'],'video':['video','sequence','stream'],'partition':['partition','split','division'],'interpolat':['interpolation','interp'],'coefficient':['coefficient','factor','weight']};
+const KW_STOP_EN=new Set([
+  'a','an','the','is','are','was','were','be','been','being','have','has','had','do','does','did','will','would','could','should','may','might','shall','can',
+  'in','on','at','to','for','of','with','by','from','as','into','through','that','this','which','where','when','or','and','but','not','also','if','then','it','its',
+  'said','such','each','any','all','both','other','than','about','after','before','between','thereof','therein','thereon','thereto','respectively','according',
+  'comprising','comprise','comprises','comprised','including','include','includes','included','wherein','whereby','configured','adapted','configured-to',
+  'forming','formed','form','forms','provided','providing','disposed','arranged','located','positioned','having','consisting','containing','contain','contains',
+  'one','first','second','third','fourth','plurality','least','portion','part','region','area','side','upper','lower','above','below','therebetween','among'
+]);
+const KW_STOP_ZH=[
+  '一種','一個','一','該','前述','所述','其中','包含','包括','具有','以及','並且','且','或','至少','其中至少','之一','一者','複數個','第一','第二','第三','第四',
+  '形成於','形成在','形成','設置於','設置在','設置','位於','配置於','配置','提供','包括以下','材質為','用於','方法','裝置','系統','元件','區域','部分','上方','下方','之間'
+];
+const GENERIC_TECH=new Set(['layer','structure','device','method','system','apparatus','module','unit','element','component','transistor','semiconductor','electrode','substrate','forming','channel']);
 
-function runKeyword(){
-  const txt=document.getElementById('kwTxt').value.trim();
-  if(!txt){toast('請先貼入請求項或技術段落',true);return;}
-  const ipc=document.getElementById('kwIpc').value.trim();
-  const count=parseInt(document.getElementById('kwCount').value)||8;
-  const normalized=normTxt(txt);
-  const tokens=normalized.toLowerCase().replace(/[^a-z0-9\s\-\/]/g,' ').split(/\s+/).filter(w=>w.length>2&&!STOPWORDS.has(w)&&!/^\d+$/.test(w));
-  const freq={};
-  for(const t of tokens)freq[t]=(freq[t]||0)+1;
-  for(let i=0;i<tokens.length-1;i++){
-    const bi=tokens[i]+' '+tokens[i+1];
-    if(!STOPWORDS.has(tokens[i])&&!STOPWORDS.has(tokens[i+1])&&tokens[i].length>2&&tokens[i+1].length>2)
-      freq[bi]=(freq[bi]||0)+0.6;
+// 每個概念最多 5 個檢索詞；第一個詞盡量保留中文，後面放國際標準英文/縮寫
+const SEARCH_CONCEPTS=[
+  {id:'regrowth',view:'both',score:12,terms:['再生長','再成長','regrowth','regrown','regrown layer'],patterns:[/再生長|再成長/i,/\bregrow(?:th|n|ing)?\b/i]},
+  {id:'pgan',view:'arch',score:12,terms:['p型氮化鎵','p-GaN','p-type GaN','p-type gallium nitride'],patterns:[/p\s*型\s*氮化鎵/i,/\bp[-\s]?gan\b/i,/p[-\s]?type\s+(?:gallium\s+nitride|gan)/i]},
+  {id:'barrier',view:'arch',score:9,terms:['位障層','阻障層','barrier layer','AlGaN barrier'],patterns:[/位障層|阻障層/i,/\bbarrier\s+layer\b/i,/\balgan\s+barrier\b/i]},
+  {id:'channel',view:'arch',score:7,terms:['通道層','channel layer','GaN channel','2DEG channel'],patterns:[/通道層/i,/\bchannel\s+layer\b/i,/\b2deg\b/i]},
+  {id:'buffer',view:'arch',score:6,terms:['緩衝層','buffer layer','GaN buffer'],patterns:[/緩衝層/i,/\bbuffer\s+layer\b/i]},
+  {id:'heteroepi',view:'arch',score:8,terms:['異質磊晶','異質外延','heteroepitaxy','heteroepitaxial'],patterns:[/異質磊晶|異質外延/i,/\bhetero[-\s]?epitax/i]},
+  {id:'hemt',view:'arch',score:8,terms:['高電子遷移率電晶體','HEMT','high electron mobility transistor','III-nitride transistor'],patterns:[/高電子遷移率電晶體/i,/\bhemt\b/i,/high[-\s]?electron[-\s]?mobility[-\s]?transistor/i]},
+  {id:'etch',view:'action',score:10,terms:['蝕刻','etch','etching','dry etch','plasma etch'],patterns:[/蝕刻/i,/\betch(?:ing|ed)?\b/i]},
+  {id:'etchstop',view:'both',score:11,terms:['蝕刻停止層','etch stop layer','etch-stop layer'],patterns:[/蝕刻停止層/i,/etch[-\s]?stop\s+layer/i]},
+  {id:'lithography',view:'action',score:9,terms:['微影','光罩','lithography','mask','photolithography'],patterns:[/微影|光罩/i,/\blithograph(?:y|ic)?\b/i,/\bphotolithograph(?:y|ic)?\b/i,/\bmask\b/i]},
+  {id:'deposition',view:'action',score:8,terms:['沉積','deposition','deposit','epitaxial growth','epitaxy'],patterns:[/沉積|磊晶成長|磊晶生長/i,/\bdeposit(?:ion|ed|ing)?\b/i,/\bepitax(?:y|ial)\b/i]},
+  {id:'sourceDrain',view:'arch',score:5,terms:['源極汲極','source drain','source electrode','drain electrode'],patterns:[/源極.*汲極|汲極.*源極/i,/source\s+(?:and\s+)?drain/i]},
+  {id:'gate',view:'arch',score:5,terms:['閘極','gate','gate electrode','gate structure'],patterns:[/閘極/i,/\bgate(?:\s+electrode|\s+structure)?\b/i]},
+  {id:'spacing',view:'both',score:10,terms:['相隔距離','spaced apart','separated from','non-contact','physical separation'],patterns:[/相隔.*距離|未物理性接觸|不接觸/i,/spaced\s+apart|separated\s+from|non[-\s]?contact/i]},
+  {id:'nitrideGroupIII',view:'arch',score:7,terms:['III族氮化物','III-nitride','group III nitride','InAlGaN'],patterns:[/氮化物.*(?:銦|鋁|鎵)|III族氮化物/i,/\biii[-\s]?nitride\b|group\s+iii\s+nitride|inalgan/i]},
+  {id:'thickness',view:'action',score:4,terms:['厚度','thickness','layer thickness'],patterns:[/厚度/i,/\bthickness\b/i]},
+  {id:'distance',view:'action',score:5,terms:['間距','距離','spacing','separation distance'],patterns:[/間距|距離/i,/\bspacing\b|separation\s+distance/i]},
+  {id:'nucleation',view:'arch',score:5,terms:['成核層','nucleation layer','nucleation'],patterns:[/成核層/i,/\bnucleation\s+layer\b/i]},
+  {id:'backbarrier',view:'arch',score:7,terms:['背位障層','back barrier layer','back-barrier'],patterns:[/背位障層|背阻障層/i,/back[-\s]?barrier(?:\s+layer)?/i]},
+  {id:'spacer',view:'arch',score:5,terms:['間隔層','spacer layer','spacer'],patterns:[/間隔層/i,/\bspacer\s+layer\b/i]}
+];
+
+function cleanClaimForSearch(text=''){
+  let t=String(text).normalize('NFKC')
+    .replace(/第\s*\d+\s*頁[^\n]*/g,' ')
+    .replace(/【[^】]*(?:請求項|發明申請專利範圍)[^】]*】/g,' ')
+    .replace(/【請求項\s*\d+】/g,' ')
+    .replace(/如請求項\s*\d+\s*所述/g,' ');
+  for(const z of KW_STOP_ZH)t=t.split(z).join(' ');
+  return t.replace(/\s+/g,' ').trim();
+}
+function countConceptHits(text,concept){
+  let hits=0;for(const p of concept.patterns){const m=String(text).match(new RegExp(p.source,p.flags.includes('g')?p.flags:p.flags+'g'));if(m)hits+=m.length;}
+  return hits;
+}
+function detectConcepts(text){
+  const raw=String(text), cleaned=cleanClaimForSearch(raw), normalized=normTxt(cleaned);
+  return SEARCH_CONCEPTS.map(c=>{
+    const hits=countConceptHits(raw,c)+countConceptHits(normalized,c);
+    return {...c,hits,rankScore:c.score+(Math.min(hits,4)*1.6)};
+  }).filter(c=>c.hits>0).sort((a,b)=>b.rankScore-a.rankScore);
+}
+function extractFallbackPhrases(text,count=8){
+  const cleaned=cleanClaimForSearch(text), normalized=normTxt(cleaned).toLowerCase();
+  const toks=(normalized.match(/[a-z0-9]+(?:[-_/][a-z0-9]+)*/g)||[]).filter(w=>w.length>2&&!KW_STOP_EN.has(w)&&!/^\d+(?:\.\d+)?$/.test(w));
+  const freq=new Map();
+  const add=(p,w)=>freq.set(p,(freq.get(p)||0)+w);
+  toks.forEach(t=>{if(!GENERIC_TECH.has(t))add(t,1)});
+  for(let i=0;i<toks.length-1;i++){
+    const a=toks[i],b=toks[i+1]; if(KW_STOP_EN.has(a)||KW_STOP_EN.has(b))continue;
+    const p=a+' '+b; if(/\b(?:wherein|comprising|forming|formed|including|provided)\b/.test(p))continue;
+    const genericPenalty=(GENERIC_TECH.has(a)?0.45:1)*(GENERIC_TECH.has(b)?0.45:1);
+    add(p,2.2*genericPenalty);
   }
-  const sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]);
-  const topBi=sorted.filter(([w])=>w.includes(' ')).slice(0,Math.floor(count/2)).map(([w])=>w);
-  const topUni=sorted.filter(([w])=>!w.includes(' ')&&!topBi.some(b=>b.includes(w))).slice(0,count).map(([w])=>w);
-  const keywords=[...topBi,...topUni].slice(0,count);
-  const groups=keywords.map(kw=>{
-    const base=kw.split(' ');
-    const syns=new Set([kw]);
-    for(const b of base)for(const[key,vals]of Object.entries(SYN_TABLE))if(b.startsWith(key)||key.startsWith(b.substring(0,5))){vals.forEach(v=>syns.add(v));break;}
-    const arr=[...syns];
-    return arr.length>1?`(${arr.join(' OR ')})`:kw;
-  });
-  const prefix=ipc?`IC=${ipc} AND `:'';
-  const bool=prefix+groups.join(' AND ');
-  const out=['【提取關鍵字】',keywords.map((k,i)=>`  ${i+1}. ${k}`).join('\n'),'','【布林檢索式（可貼至 Google Patents / TIPO 全文資料庫）】',bool,'','【使用說明】','• 括號內為同義詞，OR 連接｜AND 串接不同技術特徵','• 建議搭配 PatentSBERTa 批量比對驗證結果'].join('\n');
-  const card=document.getElementById('kwCard');card.classList.add('vis');
-  document.getElementById('kwBody').textContent=out;
+  for(let i=0;i<toks.length-2;i++){
+    const p=toks.slice(i,i+3).join(' ');if(/\b(?:wherein|comprising|forming|formed|including|provided)\b/.test(p))continue;
+    add(p,2.8);
+  }
+  return [...freq.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]).filter((p,i,a)=>!a.slice(0,i).some(q=>q.includes(p)||p.includes(q)&&q.split(' ').length>=2)).slice(0,count);
+}
+function qTerm(t){return /\s/.test(t)&&!/^[\u4e00-\u9fff\s]+$/.test(t)?`"${t}"`:t;}
+function conceptGroup(c){return '('+c.terms.slice(0,5).map(qTerm).join(' OR ')+')';}
+function fallbackGroup(term){return '('+qTerm(term)+')';}
+function normalizeIPCInput(ipc){
+  const vals=String(ipc||'').split(/[,;、\n]+/).map(x=>x.trim()).filter(Boolean).slice(0,4);
+  if(!vals.length)return '';
+  return `IC=(${vals.join(' OR ')})`;
+}
+function inferIPC(text){
+  const t=(String(text)+' '+normTxt(text)).toLowerCase();
+  if(/p[-\s]?gan|hemt|氮化鎵|gan|algan|iii[-\s]?nitride/.test(t)) return ['H10D30/47','H10D30/01','H10D62/80'];
+  if(/wireless|5g|gnb|oran|o-ran|無線|基地台/.test(t)) return ['H04W','H04L'];
+  if(/neural|machine learning|artificial intelligence|神經網路|人工智慧/.test(t)) return ['G06N'];
+  return [];
+}
+function buildQuery(ipcPrefix,groups){return [ipcPrefix,...groups].filter(Boolean).join(' AND ');}
+function selectConceptGroups(concepts,view,max){
+  const preferred=concepts.filter(c=>c.view===view||c.view==='both');
+  const used=new Set(),out=[];
+  for(const c of preferred){if(used.has(c.id))continue;used.add(c.id);out.push(c);if(out.length>=max)break;}
+  return out;
+}
+function runKeyword(){
+  const txt=document.getElementById('kwTxt').value.trim();if(!txt){toast('請先貼入請求項或技術段落',true);return;}
+  const requested=parseInt(document.getElementById('kwCount').value)||8;
+  let ipcPrefix=normalizeIPCInput(document.getElementById('kwIpc').value.trim());
+  let ipcMode='使用者指定 IPC';
+  if(!ipcPrefix){const inferred=inferIPC(txt);if(inferred.length){ipcPrefix=`IC=(${inferred.join(' OR ')})`;ipcMode='本地規則推定 IPC';}else ipcMode='未指定 IPC';}
+
+  const concepts=detectConcepts(txt);
+  const fallback=extractFallbackPhrases(txt,Math.max(8,requested));
+  let action=selectConceptGroups(concepts,'action',4);
+  let arch=selectConceptGroups(concepts,'arch',4);
+  // 技術動作不足時，以「both」及高辨識 fallback 補齊；架構不足時同理
+  const both=concepts.filter(c=>c.view==='both');
+  for(const c of both){if(action.length<4&&!action.some(x=>x.id===c.id))action.push(c);if(arch.length<4&&!arch.some(x=>x.id===c.id))arch.push(c);}
+  const fallbackIter=fallback[Symbol.iterator]();
+  while(action.length<3){const n=fallbackIter.next();if(n.done)break;action.push({id:'fb-a-'+action.length,terms:[n.value]});}
+  const fallbackIter2=fallback[Symbol.iterator]();
+  while(arch.length<3){const n=fallbackIter2.next();if(n.done)break;arch.push({id:'fb-b-'+arch.length,terms:[n.value]});}
+
+  const aStd=action.slice(0,4).map(c=>c.terms.length>1?conceptGroup(c):fallbackGroup(c.terms[0]));
+  const aBroad=action.slice(0,3).map(c=>c.terms.length>1?conceptGroup(c):fallbackGroup(c.terms[0]));
+  const bStd=arch.slice(0,4).map(c=>c.terms.length>1?conceptGroup(c):fallbackGroup(c.terms[0]));
+  const bBroad=arch.slice(0,3).map(c=>c.terms.length>1?conceptGroup(c):fallbackGroup(c.terms[0]));
+
+  const diagnostic=concepts.slice(0,Math.min(requested,12)).map(c=>c.terms[0]);
+  const out=[
+    `A標準式：${buildQuery(ipcPrefix,aStd)}`,
+    `A放寬式：${buildQuery(ipcPrefix,aBroad)}`,
+    `B標準式：${buildQuery(ipcPrefix,bStd)}`,
+    `B放寬式：${buildQuery(ipcPrefix,bBroad)}`,
+    '',
+    `【v3.7 本地抽取診斷】${ipcMode}`,
+    diagnostic.length?`核心技術特徵：${diagnostic.join('｜')}`:'核心技術特徵：未命中領域詞典，已使用 n-gram fallback',
+    '已排除：comprising / wherein / forming / said / 該 / 其中 / 包含 / 形成於 等 claim boilerplate'
+  ].join('\n');
+  const card=document.getElementById('kwCard');card.classList.add('vis');document.getElementById('kwBody').textContent=out;
 }
 
 // ═══════════════════════════════════════
@@ -1181,7 +1775,7 @@ function renderDB(){
   tb.innerHTML=[...cs].reverse().map((r,i)=>{const lbl=r.label===1?'<span style="color:var(--a2);font-weight:700">SEP</span>':r.label===0?'<span style="color:var(--a4);font-weight:700">非SEP</span>':'<span style="color:var(--dm)">待驗</span>',dt=(r.verified_at||r.detected_at||'').slice(0,10);return `<tr><td style="color:var(--a1)">${esc(r.id)}</td><td>${r.raw_score??'—'}</td><td>${r.calibrated_score??'—'}</td><td>${r.elem_min!=null?r.elem_min+'%':'—'}</td><td>${lbl}</td><td style="color:var(--dm)">${dt}</td><td><button onclick="delCase(${cs.length-1-i})" style="background:none;border:none;color:var(--dm);cursor:pointer">✕</button></td></tr>`;}).join('');
 }
 function delCase(i){const db=dbLoad();db.cases.splice(i,1);dbSave(db);refitCalib(false);renderDB();renderCalibInfo();}
-function exportDB(){const db=dbLoad(),b=new Blob([JSON.stringify({schema:'pat_sim_v36',scoring_version:SCORING_VERSION,...db},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='pat_sim_v36_'+new Date().toISOString().slice(0,10)+'.json';a.click();toast(`已匯出 ${db.cases.length} 筆`);}
+function exportDB(){const db=dbLoad(),b=new Blob([JSON.stringify({schema:'pat_sim_v38',scoring_version:SCORING_VERSION,...db},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='pat_sim_v38_'+new Date().toISOString().slice(0,10)+'.json';a.click();toast(`已匯出 ${db.cases.length} 筆`);}
 function importDB(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result),cs=d.cases||(Array.isArray(d)?d:[]),db=dbLoad();let a=0,u=0;for(const c of cs){const i=db.cases.findIndex(x=>x.id===c.id);if(i>=0){db.cases[i]=c;u++;}else{db.cases.push(c);a++;}}dbSave(db);refitCalib(false);renderDB();renderCalibInfo();toast(`新增${a}，更新${u}`);}catch{toast('JSON 格式錯誤',true);}};r.readAsText(f);e.target.value='';}
 function clearDB(){if(!confirm('確定清除所有驗證紀錄與校準模型？'))return;localStorage.removeItem(DB_KEY);localStorage.removeItem(CALIB_KEY);renderDB();renderCalibInfo();toast('已清除驗證庫');}
 function renderAudit(){const rows=auditLoad(),tb=document.getElementById('auditBody');if(!tb)return;if(!rows.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--dm);padding:12px;font-family:var(--mono);font-size:9px;">尚無稽核紀錄</td></tr>';return;}tb.innerHTML=[...rows].reverse().slice(0,120).map(r=>`<tr><td>${r.timestamp.slice(0,19).replace('T',' ')}</td><td style="color:var(--a1)">${esc(r.id)}</td><td>${esc(r.scoring_version)}</td><td>${r.raw_score}</td><td>${r.final_score}</td><td>${r.element_min}%</td><td>${r.mode}</td></tr>`).join('');}
