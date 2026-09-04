@@ -1,7 +1,7 @@
 # VOCAL — Patent Examiner Scoring Rules
 
-Version: 3.8.2-draft
-Status: scoring governance / exception rules
+Version: 3.8.2
+Status: scoring governance / high-relevance preservation
 
 ## Purpose
 
@@ -318,21 +318,39 @@ Example audit object:
 
 ---
 
-## Rule 11 — No arbitrary target-score fitting
+## Rule 11 — High-Relevance Preservation Band
 
-Never write logic such as:
+The engine MUST preserve a technically high-relevance reference in the manual-review band when the evidence supports it.
 
-```js
-if (citationId === 'I850962') return 78;
-```
+The rule is triggered when:
 
-or:
+1. `CRITICAL_FEATURE_OVERRIDE` is already true; and
+2. at least one of the following is true:
+   - Evidence-First screening score is at least 72;
+   - `core_score` is at least 72;
+   - two or more high-value concept pairs match, with `critical >= 75` and `process >= 70`.
 
-```js
-if (text.includes('regrowth')) score = 78;
-```
+When triggered:
 
-The objective is not to reproduce one AI-generated score exactly. The objective is to prevent systematic false negatives and produce stable, explainable ranking behavior across future semiconductor, telecom, AI, and standards-related cases.
+`HIGH_RELEVANCE_PRESERVATION = true`
+
+and:
+
+`final_detailed_score = max(normal_detailed_score, 75, override_floor)`
+
+The preservation floor is capped below 100 and does not assert novelty, inventive step, or anticipation. It means only: **the citation is too relevant to be discarded automatically and must remain in the human-review set.**
+
+The engine MUST NOT use a patent publication number, application number, assignee, or a single literal keyword as the trigger. The trigger must come from reproducible evidence dimensions and matched canonical concept pairs.
+
+Examples of qualifying evidence:
+
+- REGROWTH + ETCH
+- REGROWTH + P_GAN
+- REGROWTH + HEMT
+- REGROWTH + BARRIER_LAYER
+- REGROWTH + LITHOGRAPHY_MASK
+
+A low numeric or dependent limitation remains visible as a missing limitation, but cannot demote a qualifying high-relevance reference below the 75-point must-review band.
 
 ---
 
@@ -355,7 +373,7 @@ Recommended bands:
 - 35–54: partially related
 - 0–34: weak relation
 
-A scoring change should not be merged if it causes a known highly relevant reference to collapse below 35 solely because of one numeric or dependent limitation.
+A scoring change should not be merged if a reference independently labeled as highly relevant (75–100) is demoted below the 75-point must-review band solely because of one numeric, dependent, or narrow spatial limitation while its central technical mechanism is strongly matched.
 
 ---
 
@@ -363,6 +381,6 @@ A scoring change should not be merged if it causes a known highly relevant refer
 
 For v3.8.x, the highest-priority correction is:
 
-> If Evidence-First retrieval confirms a strong match to the central technical mechanism, a zero or very low Element Min caused by secondary / numeric limitations must not collapse the detailed technical-relevance score into the low-relevance range.
+> If Evidence-First retrieval confirms a high-relevance reference and the preservation trigger is met, a zero or very low Element Min caused by secondary / numeric limitations must not demote that reference below the 75-point must-review band.
 
 The missing limitation must remain visible; the reference must remain reviewable.
