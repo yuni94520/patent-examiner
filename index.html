@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>專利相似度比對 v3.5.0</title>
+<title>專利相似度比對 v3.6.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -280,7 +280,7 @@ select option{background:var(--s2);}
 .b-elem{font-family:var(--mono);font-size:9px;width:60px;flex-shrink:0;text-align:right;}
 
 
-/* v3.5 STABLE BASELINE */
+/* v3.6 ADAPTIVE CITATION SCREENER · v3.5 SCORING CORE */
 .calib-block{background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.22);border-radius:var(--r);padding:10px;}
 .calib-label{font-family:var(--mono);font-size:8px;color:var(--a2);letter-spacing:.1em;margin-bottom:6px;font-weight:500;}
 .calib-line{font-family:var(--mono);font-size:9px;color:var(--mt);line-height:1.7;}
@@ -349,7 +349,7 @@ select option{background:var(--s2);}
     <div class="logo-text">專利相似度比對</div>
     <div class="logo-sub">Patent Similarity Analyzer</div>
   </div>
-  <span class="logo-ver">v3.5.0</span>
+  <span class="logo-ver">v3.6.0</span>
   <div class="hdr-r">
     <div class="badge local">Stable Local Hybrid</div>
     <div class="badge sbert">Isotonic Calibration</div>
@@ -367,7 +367,7 @@ select option{background:var(--s2);}
 
 <div class="shell">
   <aside>
-    <!-- v3.5 校準引擎 -->
+    <!-- v3.6 校準引擎（沿用 v3.5 scoring core） -->
     <div>
       <div class="sb-hd">校準引擎</div>
       <div class="calib-block">
@@ -404,7 +404,7 @@ select option{background:var(--s2);}
 
         <!-- PatentSBERTa 說明 -->
         <div class="info-box">
-          🔬 <strong>v3.5.0 Stable Local Hybrid Baseline</strong><br>
+          🔬 <strong>v3.6.0 Adaptive Citation Screener</strong><br>
           ① <strong>元件級比對</strong>：自動拆解 Claim elements，逐一對齊引證句並保留 evidence｜
           ② <strong>Hybrid cosine</strong>：token cosine 60% + character trigram 40%，降低單純字面改寫造成的跳分<br>
           ③ <strong>融合核心</strong>：Element Avg 55% + 8D Structure 45%，並以 Element Min 作最弱特徵 gate<br>
@@ -437,7 +437,7 @@ select option{background:var(--s2);}
         <div class="btn-row">
           <button class="btn-run" id="runBtn" onclick="runCompare()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-            v3.5 混合計算（本地）
+            v3.6 混合計算（本地）
           </button>
           <button class="btn-ghost" onclick="clearAll()">清除</button>
         </div>
@@ -508,11 +508,12 @@ select option{background:var(--s2);}
     <div class="tab-pane" id="tab-multi">
       <div class="content">
         <div class="card">
-          <div class="card-hd"><div class="step-num">B</div><div class="card-title">引證批次初篩 (Batch Citation Screener)</div><div class="card-sub">同一 Claim → 多引證 → 同一 v3.5 scoring pipeline</div></div>
+          <div class="card-hd"><div class="step-num">B</div><div class="card-title">引證批次初篩 (Batch Citation Screener)</div><div class="card-sub">同一 Claim → 多引證 → 同一 v3.6 scoring pipeline</div></div>
           <div class="card-body">
             <div class="fg"><label>請求項內容</label><textarea id="mClaim" rows="5" placeholder="貼入欲比對之請求項..."></textarea></div>
-            <div class="fg"><label>批次引證｜支援 引證1(ID)、D1(ID)、Reference 1(ID)，亦相容 === 分隔</label>
-              <textarea id="mCits" rows="12" placeholder="引證1(US10123456B2)&#10;本文或摘要內容...&#10;&#10;引證2(EP3293931A1)&#10;本文或摘要內容..."></textarea>
+            <div class="fg"><label>批次引證｜自動辨識 TIPO 清單 / PQAI TSV / 引證1(ID) / D1(ID) / Reference / ===</label>
+              <textarea id="mCits" rows="12" placeholder="可直接貼上：&#10;① TIPO 檢索結果（1 / 2 / 3 + 公開號 / 摘要）&#10;② PQAI：Publication Number + Title + Abstract 的 TSV&#10;③ 引證1(US...) / D1(...) / Reference 1(...)&#10;④ === 分隔舊格式"></textarea>
+              <div id="batchParseInfo" style="margin-top:6px;font-family:var(--mono);font-size:9px;color:var(--mt);line-height:1.6;">尚未解析</div>
             </div>
             <div class="btn-row">
               <button class="btn-run" id="mBtn" onclick="runMulti()">
@@ -612,7 +613,7 @@ select option{background:var(--s2);}
       </div>
     </div>
 
-    <!-- v3.5 Verification DB -->
+    <!-- v3.6 Verification DB · backward-compatible storage -->
     <div class="db-panel" id="dbPanel">
       <div class="db-ph">
         <div class="db-title">▣ 驗證紀錄庫（餵給校準引擎）</div>
@@ -681,17 +682,18 @@ let GOLDEN=[
 ];
 
 // ═══════════════════════════════════════
-// v3.5.0 STABLE LOCAL HYBRID BASELINE
+// v3.6.0 ADAPTIVE CITATION SCREENER · STABLE LOCAL HYBRID SCORING CORE
 // Frozen scoring contract: element 55% + 8D 45% + min gate + optional isotonic calibration
 // ═══════════════════════════════════════
-const SCORING_VERSION = 'v3.5.0-stable-local-hybrid';
+const SCORING_VERSION = 'v3.6.0-adaptive-citation-screener';
+// Keep v3.5 storage keys so existing verification/calibration data survives the v3.6 UI/parser upgrade.
 const DB_KEY='pat_sim_v35_db';
 const CALIB_KEY='pat_sim_v35_calibration';
 const AUDIT_KEY='pat_sim_v35_audit';
 const MIN_CALIB_SAMPLES=8;
 
 const _V = (typeof window!=='undefined' && window.VOCAB) || null;
-if(!_V){ console.warn('vocab.js 未載入：v3.5 將使用內建 normalization fallback'); }
+if(!_V){ console.warn('vocab.js 未載入：v3.6 將使用內建 normalization fallback'); }
 const ZH_EN = _V ? (_V.ZH_EN||[]) : [];
 const SYN   = _V ? (_V.SYN||[]) : [];
 const PATS  = _V ? (_V.PATS||{}) : {};
@@ -848,7 +850,7 @@ async function runCompare(){
 function renderScoreV35(r,pid,cl){
   document.getElementById('scoreCard').classList.add('vis');const big=document.getElementById('scoreBig');big.textContent=r.final_score;big.className='score-big '+r.tier;
   const chip=document.getElementById('tierChip'),labels={H:'高度相似 (HIGH)',M:'中度相似 (MID)',L:'低度相似 (LOW)'};chip.textContent=labels[r.tier];chip.className='tier-chip '+r.tier;
-  document.getElementById('tierLine').textContent=`v3.5 calibrated · raw ${r.raw_score}`;document.getElementById('rPid').textContent=pid+' · '+cl;document.getElementById('rCit').textContent=document.getElementById('citId').value.trim()||'引證段落';
+  document.getElementById('tierLine').textContent=`v3.6 calibrated · raw ${r.raw_score}`;document.getElementById('rPid').textContent=pid+' · '+cl;document.getElementById('rCit').textContent=document.getElementById('citId').value.trim()||'引證段落';
   document.getElementById('ovElemAvg').textContent=r.element_avg+'%';document.getElementById('ovElemMin').textContent=r.element_min+'%';document.getElementById('ovStruct').textContent=r.structure_score;document.getElementById('ovFinal').textContent=r.final_score;
   document.getElementById('ovElemMin').style.color=r.element_min<40?'var(--a4)':r.element_min<60?'var(--a3)':'var(--a2)';
   document.getElementById('ovExplain').textContent=`Raw = Element Avg(${r.element_avg}) × 55% + 8D Structure(${r.structure_score}) × 45%\nCalibration = ${calibLoad()?'Isotonic fitted model':'baseline identity'}\nScoring version = ${SCORING_VERSION}`;
@@ -865,23 +867,177 @@ function showLayer(id,btn){document.querySelectorAll('.slayer-btn').forEach(b=>b
 function clearAll(){document.getElementById('scoreCard').classList.remove('vis');['claimTxt','citTxt','patId','clNum','citId'].forEach(id=>document.getElementById(id).value='');_lastR=null;}
 function renderHist(){const el=document.getElementById('histList');if(!_hist.length){el.innerHTML='<div class="hist-empty">尚無紀錄</div>';return;}const c={H:'var(--a4)',M:'var(--a3)',L:'var(--a2)'};el.innerHTML=_hist.map(h=>`<div class="hist-row"><div class="hist-sc" style="color:${c[h.tier]}">${h.score}</div><div class="hist-id">${esc(h.pid)}</div></div>`).join('');}
 
-// Batch parser: 標準格式 + legacy === fallback
-function parseBatchCitations(rawText){
-  if(!rawText||!rawText.trim())return [];
-  const pattern=/(?:引證\s*\d+|D\d+|Reference\s*\d+)\s*[\(（]([^）\)]+)[\)）]/gi,matches=[...rawText.matchAll(pattern)];
-  if(matches.length){return matches.map((m,i)=>({citation_id:m[1].trim(),citation_text:rawText.substring(m.index+m[0].length,i+1<matches.length?matches[i+1].index:rawText.length).trim()})).filter(x=>x.citation_text);}
-  const blocks=rawText.split(/\n\s*===\s*\n|\n\s*\n\s*\n/).map(x=>x.trim()).filter(Boolean);
-  return blocks.map((b,i)=>{const lines=b.split(/\n/).map(x=>x.trim()).filter(Boolean);if(lines.length>1&&/^[A-Z]{2}[A-Z0-9.\/\-]{3,}$/i.test(lines[0]))return{citation_id:lines[0],citation_text:lines.slice(1).join('\n')};return{citation_id:`Citation_${i+1}`,citation_text:b};});
+// Batch parser v3.6.0: adaptive format detection for TIPO / PQAI / standard citations / TSV (scoring core unchanged)
+const PATENT_ID_RE=/^(?:[A-Z]{2,3}\d{4,}[A-Z]\d?|TW[I]?\d{5,}[A-Z]?|I\d{5,}|\d{7,10})$/i;
+const TIPO_LABELS=['公告號','公告日','公開號','公開日','申請號','申請日','專利名稱','優先權','IPC','發明人','申請人','代理人','類別碼','摘要'];
+
+function normalizeBatchText(raw=''){
+  return String(raw).replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n').replace(/\u00a0/g,' ').trim();
 }
+function looksLikePatentId(v=''){return PATENT_ID_RE.test(String(v).trim().replace(/\s+/g,''));}
+function parseTSVRecords(raw){
+  // RFC4180-like TSV parser: supports quoted abstracts containing line breaks / tabs.
+  const rows=[];let row=[],field='',quoted=false;
+  for(let i=0;i<raw.length;i++){
+    const ch=raw[i];
+    if(quoted){
+      if(ch==='"'&&raw[i+1]==='"'){field+='"';i++;}
+      else if(ch==='"')quoted=false;
+      else field+=ch;
+    }else{
+      if(ch==='"'&&field==='')quoted=true;
+      else if(ch==='\t'){row.push(field);field='';}
+      else if(ch==='\n'){row.push(field);rows.push(row);row=[];field='';}
+      else field+=ch;
+    }
+  }
+  row.push(field);if(row.some(x=>String(x).trim()))rows.push(row);
+  return rows;
+}
+function parsePQAI(raw){
+  if(!/Publication\s+Number\s*\t\s*Title\s*\(English\)\s*\t\s*Abstract\s*\(English\)/i.test(raw))return null;
+  const rows=parseTSVRecords(raw);if(rows.length<2)return null;
+  const header=rows[0].map(x=>x.trim().toLowerCase());
+  const idI=header.findIndex(x=>x==='publication number');
+  const titleI=header.findIndex(x=>x.startsWith('title'));
+  const absI=header.findIndex(x=>x.startsWith('abstract'));
+  if(idI<0||titleI<0||absI<0)return null;
+  const citations=[];
+  rows.slice(1).forEach((r,idx)=>{
+    const id=(r[idI]||'').trim().replace(/\s+/g,'');
+    if(!looksLikePatentId(id))return;
+    const title=(r[titleI]||'').trim(),abstract=(r[absI]||'').trim();
+    const scoring=[title,abstract].filter(Boolean).join('\n');
+    if(!scoring)return;
+    citations.push({citation_id:id,citation_text:scoring,raw_text:r.join('\t'),source_format:'PQAI TSV',metadata:{publication_no:id,title,abstract,row_index:idx+2}});
+  });
+  return citations.length?citations:null;
+}
+function parseGenericPatentTSV(raw){
+  if(!raw.includes('\t'))return null;
+  const rows=parseTSVRecords(raw),citations=[];
+  for(const r of rows){
+    const id=(r[0]||'').trim().replace(/\s+/g,'');
+    if(!looksLikePatentId(id)||r.length<2)continue;
+    const title=(r[1]||'').trim(),abstract=r.slice(2).join('\t').trim();
+    const scoring=[title,abstract].filter(Boolean).join('\n');
+    if(scoring)citations.push({citation_id:id,citation_text:scoring,raw_text:r.join('\t'),source_format:'Patent TSV',metadata:{publication_no:id,title,abstract}});
+  }
+  return citations.length>=2?citations:null;
+}
+function splitTIPOBlocks(raw){
+  const lines=raw.split('\n');const starts=[];
+  for(let i=0;i<lines.length;i++){
+    const cur=lines[i].trim();if(!/^\d{1,4}$/.test(cur))continue;
+    let j=i+1;while(j<lines.length&&!lines[j].trim())j++;
+    if(j<lines.length&&new RegExp(`^(?:${TIPO_LABELS.join('|')})\\s*[:：\\t ]`).test(lines[j].trim()))starts.push(i);
+  }
+  if(!starts.length)return null;
+  // If first record has no explicit "1" (common TIPO copy), keep the preamble as record #1.
+  if(starts[0]>0)starts.unshift(0);
+  const blocks=[];
+  for(let k=0;k<starts.length;k++){
+    let a=starts[k],b=k+1<starts.length?starts[k+1]:lines.length;
+    let block=lines.slice(a,b).join('\n').trim();
+    block=block.replace(/^\s*\d{1,4}\s*\n/,'').trim();
+    if(block)blocks.push(block);
+  }
+  return blocks.length>=2?blocks:null;
+}
+function parseTIPOBlock(block,idx){
+  const lines=block.split('\n').map(x=>x.trimEnd());
+  const meta={};let title=[],abstract=[];let inAbstract=false;
+  const fieldRe=/^(公告號|公告日|公開號|公開日|申請號|申請日|專利名稱|優先權|IPC|發明人|申請人|代理人|類別碼|摘要)\s*[:：\t ]\s*(.*)$/;
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i].trim();if(!line)continue;
+    const m=line.match(fieldRe);
+    if(m){
+      const key=m[1],val=m[2].trim();inAbstract=key==='摘要';
+      if(key==='公開號')meta.publication_no=val.split(/\s+/)[0];
+      else if(key==='公告號')meta.grant_no=val.split(/\s+/)[0];
+      else if(key==='申請號')meta.application_no=val.split(/\s+/)[0];
+      else if(key==='IPC')meta.ipc=val;
+      else if(key==='申請人')meta.applicant=val;
+      else if(key==='專利名稱'){if(val)title.push(val);inAbstract=false;}
+      else if(key==='摘要'){if(val)abstract.push(val);}
+      continue;
+    }
+    // English title usually follows the Chinese title; abstract may be bilingual/multiline.
+    if(inAbstract){abstract.push(line);continue;}
+    const prev=lines.slice(0,i).reverse().find(x=>x.trim());
+    if(prev&&/^專利名稱\s*[:：\t ]/.test(prev.trim()))title.push(line);
+  }
+  let firstUseful=lines.find(x=>looksLikePatentId(x.trim()));
+  const id=(meta.publication_no||firstUseful||meta.grant_no||meta.application_no||`TIPO_${idx+1}`).replace(/\s+/g,'');
+  let scoring=[...title,...abstract].filter(Boolean).join('\n').trim();
+  if(!scoring){
+    // Defensive fallback: remove pure bibliographic rows, retain technical prose.
+    scoring=lines.filter(line=>line&&!new RegExp(`^(?:${TIPO_LABELS.filter(x=>x!=='專利名稱'&&x!=='摘要').join('|')})\\s*[:：\\t ]`).test(line)&&!/^\d+$/.test(line)).join('\n');
+  }
+  return {citation_id:id,citation_text:scoring,raw_text:block,source_format:'TIPO list',metadata:meta};
+}
+function parseTIPO(raw){
+  const blocks=splitTIPOBlocks(raw);if(!blocks)return null;
+  const citations=blocks.map(parseTIPOBlock).filter(x=>x.citation_text&&x.citation_text.trim());
+  return citations.length>=2?citations:null;
+}
+function parseMarkedCitations(raw){
+  const pattern=/(?:引證\s*\d+|D\d+|Reference\s*\d+)\s*[\(（]([^）\)]+)[\)）]/gi,matches=[...raw.matchAll(pattern)];
+  if(!matches.length)return null;
+  return matches.map((m,i)=>({citation_id:m[1].trim(),citation_text:raw.substring(m.index+m[0].length,i+1<matches.length?matches[i+1].index:raw.length).trim(),raw_text:raw.substring(m.index,i+1<matches.length?matches[i+1].index:raw.length).trim(),source_format:'Marked citations',metadata:{}})).filter(x=>x.citation_text);
+}
+function parseLegacyBlocks(raw){
+  const blocks=raw.split(/\n\s*===\s*\n|\n\s*\n\s*\n/).map(x=>x.trim()).filter(Boolean);
+  return blocks.map((b,i)=>{
+    const lines=b.split(/\n/).map(x=>x.trim()).filter(Boolean),first=(lines[0]||'').replace(/\s+/g,'');
+    if(lines.length>1&&looksLikePatentId(first))return{citation_id:first,citation_text:lines.slice(1).join('\n'),raw_text:b,source_format:'Legacy blocks',metadata:{publication_no:first}};
+    return{citation_id:`Citation_${i+1}`,citation_text:b,raw_text:b,source_format:'Legacy blocks',metadata:{}};
+  });
+}
+function parseBatchCitationsDetailed(rawText){
+  const raw=normalizeBatchText(rawText);if(!raw)return{format:'empty',citations:[],warnings:[]};
+  const strategies=[
+    ['PQAI TSV',parsePQAI],
+    ['Marked citations',parseMarkedCitations],
+    ['TIPO list',parseTIPO],
+    ['Patent TSV',parseGenericPatentTSV]
+  ];
+  for(const [format,fn] of strategies){
+    try{const citations=fn(raw);if(citations&&citations.length)return{format,citations,warnings:[]};}catch(e){console.warn('batch parser',format,e);}
+  }
+  const citations=parseLegacyBlocks(raw);
+  const warnings=citations.some(c=>/^Citation_/.test(c.citation_id))?['無法辨識部分案號；已使用 Citation_N。建議確認原始欄位是否包含公開號。']:[];
+  return{format:'Legacy / generic',citations,warnings};
+}
+function parseBatchCitations(rawText){return parseBatchCitationsDetailed(rawText).citations;}
+function updateBatchParseInfo(){
+  const el=document.getElementById('batchParseInfo'),ta=document.getElementById('mCits');if(!el||!ta)return;
+  const raw=ta.value;if(!raw.trim()){el.textContent='尚未解析';el.style.color='var(--mt)';return;}
+  const p=parseBatchCitationsDetailed(raw),ids=p.citations.slice(0,4).map(x=>x.citation_id).join(' · ');
+  el.textContent=`✓ 自動辨識：${p.format} ｜ ${p.citations.length} 筆${ids?' ｜ '+ids+(p.citations.length>4?' …':''):''}${p.warnings.length?' ｜ ⚠ '+p.warnings.join('；'):''}`;
+  el.style.color=p.citations.length>1?'var(--a2)':'var(--a3)';
+}
+let _batchParseTimer=null;
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='mCits'){clearTimeout(_batchParseTimer);_batchParseTimer=setTimeout(updateBatchParseInfo,180);}});
+
 async function runMulti(){
   const claim=document.getElementById('mClaim').value.trim(),raw=document.getElementById('mCits').value.trim();if(!claim||!raw){toast('請填寫請求項與引證清單',true);return;}
-  const citations=parseBatchCitations(raw);if(!citations.length){toast('未能解析有效引證',true);return;}
+  const parsed=parseBatchCitationsDetailed(raw),citations=parsed.citations;if(!citations.length){toast('未能解析有效引證',true);return;}
+  updateBatchParseInfo();toast(`已辨識 ${parsed.format}：${citations.length} 筆`);
   const btn=document.getElementById('mBtn');btn.disabled=true;showLoad(true);const out=[];
-  for(let i=0;i<citations.length;i++){const c=citations[i];step(`[${i+1}/${citations.length}] ${c.citation_id}`,10+Math.round((i/citations.length)*80));await sleep(20);const r=evaluatePair(claim,c.citation_text);out.push({...r,citation_id:c.citation_id,citation_text:c.citation_text,rank:0});recordAudit(c.citation_id,claim,c.citation_text,r,'batch');}
-  out.sort((a,b)=>b.final_score-a.final_score);out.forEach((r,i)=>r.rank=i+1);showLoad(false);btn.disabled=false;renderMultiRows(out);document.getElementById('auditPanel').classList.add('vis');
+  try{
+    for(let i=0;i<citations.length;i++){
+      const c=citations[i];step(`[${i+1}/${citations.length}] ${c.citation_id}`,10+Math.round((i/citations.length)*80));await sleep(20);
+      // IMPORTANT: score citation_text only. Bibliographic metadata stays outside scoring.
+      const r=evaluatePair(claim,c.citation_text);
+      out.push({...r,citation_id:c.citation_id,citation_text:c.citation_text,metadata:c.metadata||{},source_format:c.source_format||parsed.format,rank:0});
+      recordAudit(c.citation_id,claim,c.citation_text,r,'batch:'+parsed.format);
+    }
+    out.sort((a,b)=>b.final_score-a.final_score);out.forEach((r,i)=>r.rank=i+1);renderMultiRows(out);document.getElementById('auditPanel').classList.add('vis');
+  }finally{showLoad(false);btn.disabled=false;}
 }
 function renderMultiRows(results){
-  const top=results[0],topEl=document.getElementById('batchTop');topEl.style.display='block';topEl.innerHTML=`<div class="card closest-card"><div class="card-hd" style="background:rgba(52,211,153,.07)"><span class="step-num g">★</span><span class="card-title">最接近引證：${esc(top.citation_id)}</span><span class="card-sub">Score ${top.final_score} · Min ${top.element_min}%</span></div><div class="card-body"><div style="font-family:var(--mono);font-size:10px;color:var(--mt)">Raw ${top.raw_score} ｜ Element Avg ${top.element_avg}% ｜ 8D ${top.structure_score}</div></div></div>`;
+  const top=results[0],topEl=document.getElementById('batchTop');topEl.style.display='block';topEl.innerHTML=`<div class="card closest-card"><div class="card-hd" style="background:rgba(52,211,153,.07)"><span class="step-num g">★</span><span class="card-title">最接近引證：${esc(top.citation_id)}</span><span class="card-sub">Score ${top.final_score} · Min ${top.element_min}%</span></div><div class="card-body"><div style="font-family:var(--mono);font-size:10px;color:var(--mt)">Raw ${top.raw_score} ｜ Element Avg ${top.element_avg}% ｜ 8D ${top.structure_score} ｜ ${esc(top.source_format||'')}</div></div></div>`;
   const colors={H:'var(--a4)',M:'var(--a3)',L:'var(--a2)'};document.getElementById('mRows').innerHTML=results.map(r=>`<div class="b-row"><span class="b-rank">#${r.rank}</span><span class="b-score" style="color:${colors[r.tier]}">${r.final_score}</span><span class="b-id" title="${esc(r.citation_id)}">${esc(r.citation_id)}</span><span class="b-prev" title="${esc(r.citation_text)}">${esc(r.citation_text)}</span><span class="b-elem" style="color:${r.element_min<40?'var(--a4)':r.element_min<60?'var(--a3)':'var(--a2)'}">Min ${Math.round(r.element_min)}%</span></div>`).join('');
 }
 
@@ -1006,7 +1162,7 @@ function genDraft(){
 }
 
 // ═══════════════════════════════════════
-// v3.5 VERIFICATION DB + AUDIT TRAIL
+// v3.6 VERIFICATION DB + AUDIT TRAIL · backward-compatible storage
 // ═══════════════════════════════════════
 function autoSave(pid,r){
   const db=dbLoad(),claim=document.getElementById('claimTxt').value.trim(),cit=document.getElementById('citTxt').value.trim();
@@ -1025,11 +1181,11 @@ function renderDB(){
   tb.innerHTML=[...cs].reverse().map((r,i)=>{const lbl=r.label===1?'<span style="color:var(--a2);font-weight:700">SEP</span>':r.label===0?'<span style="color:var(--a4);font-weight:700">非SEP</span>':'<span style="color:var(--dm)">待驗</span>',dt=(r.verified_at||r.detected_at||'').slice(0,10);return `<tr><td style="color:var(--a1)">${esc(r.id)}</td><td>${r.raw_score??'—'}</td><td>${r.calibrated_score??'—'}</td><td>${r.elem_min!=null?r.elem_min+'%':'—'}</td><td>${lbl}</td><td style="color:var(--dm)">${dt}</td><td><button onclick="delCase(${cs.length-1-i})" style="background:none;border:none;color:var(--dm);cursor:pointer">✕</button></td></tr>`;}).join('');
 }
 function delCase(i){const db=dbLoad();db.cases.splice(i,1);dbSave(db);refitCalib(false);renderDB();renderCalibInfo();}
-function exportDB(){const db=dbLoad(),b=new Blob([JSON.stringify({schema:'pat_sim_v35',scoring_version:SCORING_VERSION,...db},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='pat_sim_v35_'+new Date().toISOString().slice(0,10)+'.json';a.click();toast(`已匯出 ${db.cases.length} 筆`);}
+function exportDB(){const db=dbLoad(),b=new Blob([JSON.stringify({schema:'pat_sim_v36',scoring_version:SCORING_VERSION,...db},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='pat_sim_v36_'+new Date().toISOString().slice(0,10)+'.json';a.click();toast(`已匯出 ${db.cases.length} 筆`);}
 function importDB(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result),cs=d.cases||(Array.isArray(d)?d:[]),db=dbLoad();let a=0,u=0;for(const c of cs){const i=db.cases.findIndex(x=>x.id===c.id);if(i>=0){db.cases[i]=c;u++;}else{db.cases.push(c);a++;}}dbSave(db);refitCalib(false);renderDB();renderCalibInfo();toast(`新增${a}，更新${u}`);}catch{toast('JSON 格式錯誤',true);}};r.readAsText(f);e.target.value='';}
 function clearDB(){if(!confirm('確定清除所有驗證紀錄與校準模型？'))return;localStorage.removeItem(DB_KEY);localStorage.removeItem(CALIB_KEY);renderDB();renderCalibInfo();toast('已清除驗證庫');}
 function renderAudit(){const rows=auditLoad(),tb=document.getElementById('auditBody');if(!tb)return;if(!rows.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--dm);padding:12px;font-family:var(--mono);font-size:9px;">尚無稽核紀錄</td></tr>';return;}tb.innerHTML=[...rows].reverse().slice(0,120).map(r=>`<tr><td>${r.timestamp.slice(0,19).replace('T',' ')}</td><td style="color:var(--a1)">${esc(r.id)}</td><td>${esc(r.scoring_version)}</td><td>${r.raw_score}</td><td>${r.final_score}</td><td>${r.element_min}%</td><td>${r.mode}</td></tr>`).join('');}
-function exportAudit(){const a=auditLoad(),b=new Blob([JSON.stringify(a,null,2)],{type:'application/json'}),x=document.createElement('a');x.href=URL.createObjectURL(b);x.download='pat_sim_v35_audit_'+new Date().toISOString().slice(0,10)+'.json';x.click();}
+function exportAudit(){const a=auditLoad(),b=new Blob([JSON.stringify(a,null,2)],{type:'application/json'}),x=document.createElement('a');x.href=URL.createObjectURL(b);x.download='pat_sim_v36_audit_'+new Date().toISOString().slice(0,10)+'.json';x.click();}
 function clearAudit(){if(!confirm('確定清除 Audit Trail？'))return;localStorage.removeItem(AUDIT_KEY);renderAudit();toast('Audit Trail 已清除');}
 
 // ═══════════════════════════════════════
