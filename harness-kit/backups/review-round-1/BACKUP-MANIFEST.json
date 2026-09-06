@@ -1,0 +1,14 @@
+[
+  {
+    "path": "README.md",
+    "sha256": "14dc9cd57b7530dc7620079599e57bd0901a5711eec5a8a11d6585a6f91b8ff7"
+  },
+  {
+    "path": "governance/02-DISPATCH.md",
+    "sha256": "838ed9a661402bbabbcfe5a50bbf3727f5d59ecf59d7bdfcfbb807736cb9704d"
+  },
+  {
+    "path": "evidence/SECURITY-REVIEW.md",
+    "sha256": "c3b21ab81eddebaae2abd91dcea04eb9be00619fe77f9a269e1f81aab852d69a"
+  }
+]
