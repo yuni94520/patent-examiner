@@ -352,9 +352,48 @@ select option{background:var(--s2);}
   .score-hd{grid-template-columns:auto 1fr;}
   .score-meta{display:none;}
 }
+
+/* Minimal input mode: show only claim and citation text boxes on the main screen. */
+body.minimal-input-mode .hdr-r,
+body.minimal-input-mode aside,
+body.minimal-input-mode .tabs,
+body.minimal-input-mode #tab-compare > .content > .info-box,
+body.minimal-input-mode #tab-compare > .content > .card:nth-of-type(1),
+body.minimal-input-mode #tab-multi,
+body.minimal-input-mode #tab-keyword,
+body.minimal-input-mode #tab-draft,
+body.minimal-input-mode #dbPanel,
+body.minimal-input-mode #auditPanel,
+body.minimal-input-mode #impInput {
+  display: none !important;
+}
+body.minimal-input-mode .shell {
+  display: block;
+  min-height: calc(100vh - 54px);
+}
+body.minimal-input-mode .content {
+  max-width: 860px;
+  margin: 0 auto;
+  padding-top: 1.25rem;
+}
+body.minimal-input-mode #tab-compare > .content > .card:nth-of-type(2) .card-hd,
+body.minimal-input-mode #tab-compare > .content > .card:nth-of-type(3) .card-hd,
+body.minimal-input-mode #tab-compare > .content > .card:nth-of-type(2) .frow,
+body.minimal-input-mode #tab-compare > .content > .card:nth-of-type(3) .fg.xs {
+  display: none !important;
+}
+body.minimal-input-mode #tab-compare > .content > .card:nth-of-type(2),
+body.minimal-input-mode #tab-compare > .content > .card:nth-of-type(3) {
+  box-shadow: none;
+}
+body.minimal-input-mode textarea {
+  min-height: 220px;
+  font-size: 12px;
+}
+
 </style>
 </head>
-<body>
+<body class="minimal-input-mode">
 
 <header>
   <div class="logo-mark">PAT</div>
