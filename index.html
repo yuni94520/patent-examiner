@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>專利相似度比對 v3.8.2</title>
+<title>專利相似度比對 v3.10.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -362,7 +362,7 @@ select option{background:var(--s2);}
     <div class="logo-text">專利相似度比對</div>
     <div class="logo-sub">Patent Similarity Analyzer</div>
   </div>
-  <span class="logo-ver">v3.8.2</span>
+  <span class="logo-ver">v3.10.0</span>
   <div class="hdr-r">
     <div class="badge local">Stable Local Hybrid</div>
     <div class="badge sbert">Isotonic Calibration</div>
@@ -417,11 +417,59 @@ select option{background:var(--s2);}
 
         <!-- PatentSBERTa 說明 -->
         <div class="info-box">
-          🔬 <strong>v3.8.2 High-Relevance Preservation Engine + Search Strategy Generator</strong><br>
-          ① <strong>元件級比對</strong>：自動拆解 Claim elements，逐一對齊引證句並保留 evidence｜
-          ② <strong>Hybrid cosine</strong>：token cosine 60% + character trigram 40%，降低單純字面改寫造成的跳分<br>
-          ③ <strong>融合核心</strong>：Element Avg 55% + 8D Structure 45%，並以 Element Min 作最弱特徵 gate<br>
-          ④ <strong>Isotonic calibration</strong>：至少 8 筆且具正/負標記才擬合；不足時維持 raw score｜⑤ <strong>Audit Trail</strong>：每次評分皆記錄版本與完整構成
+          🔬 <strong>v3.10.0 Synonym-Aware Hybrid Retrieval + Semantic Evidence Alignment</strong><br>
+          ① <strong>Semantic Evidence Alignment</strong>：先用低成本 lexical/concept shortlist，再以 embedding 重排 evidence passages｜
+          ② <strong>三通道 element score</strong>：Semantic 60% + Lexical 20% + Passage-local Technical Concept 20%<br>
+          ③ <strong>Multi-feature Raw Model</strong>：Element Avg / Element Min / Structure / Coverage / Semantic Consistency；<strong>無 Min hard gate</strong><br>
+          ④ <strong>Isotonic calibration</strong>：只接收 raw relevance 單一 scalar；人工驗證同步保存完整 feature vector｜⑤ <strong>Audit Trail</strong>：保存 Top-3 evidence 與各分數構成
+        </div>
+
+
+        <div class="card" style="margin-top:10px;">
+          <div class="card-hd">
+            <div class="step-num">S</div>
+            <div class="card-title">Semantic Embedding Channel</div>
+            <div class="card-sub">PatentSBERTa / embedding API（選填，但建議啟用）</div>
+          </div>
+          <div class="card-body">
+            <div class="frow">
+              <div class="fg" style="flex:1;">
+                <label>Embedding endpoint</label>
+                <input type="text" id="semanticEndpoint" placeholder="例如 http://localhost:8000/embed" />
+              </div>
+              <div class="fg xs">
+                <label>&nbsp;</label>
+                <button class="btn-run" style="width:100%;" onclick="testSemanticEndpoint()">測試 API</button>
+              </div>
+            </div>
+            <div class="info-box" style="margin-top:4px;">
+              POST JSON：<code>{"texts":["text A","text B"]}</code>。支援回傳
+              <code>{"embeddings":[...]}</code>、<code>{"vectors":[...]}</code> 或 OpenAI-style <code>{"data":[{"embedding":[...]}]}</code>。
+              未設定或 API 失敗時會明確標示 <strong>semantic fallback</strong>，不會冒充 PatentSBERTa。
+            </div>
+            <div id="semanticStatus" style="font-family:var(--mono);font-size:9px;color:var(--dm);margin-top:5px;">尚未設定</div>
+            <div class="frow" style="margin-top:8px;">
+              <div class="fg xs">
+                <label>Query Expansion</label>
+                <select id="qeMode">
+                  <option value="auto">Auto</option>
+                  <option value="vocab">Vocab only</option>
+                  <option value="off">Off</option>
+                </select>
+              </div>
+              <div class="fg xs">
+                <label>每個 element 最多擴展</label>
+                <input type="number" id="qeLimit" min="0" max="8" value="4" />
+              </div>
+              <div class="fg xs">
+                <label>RRF k</label>
+                <input type="number" id="rrfK" min="10" max="120" value="60" />
+              </div>
+            </div>
+            <div class="info-box" style="margin-top:5px;">
+              v3.10：先以 vocab.js 雙向同義詞正規化與 Query Expansion 產生 2–5 個常見專利寫法，再以 Sparse + Dense Ranking 做 RRF。Concept 分數仍<strong>只在當前 evidence passage</strong>內計算。
+            </div>
+          </div>
         </div>
 
         <div class="card">
@@ -479,11 +527,13 @@ select option{background:var(--s2);}
             </div>
 
             <div class="slayer-pane active" id="layer-overview">
-              <div class="bk-grid" style="grid-template-columns:repeat(4,1fr);">
-                <div class="bk-item"><div class="bk-lbl">元件均值</div><div class="bk-val a1" id="ovElemAvg">—</div></div>
-                <div class="bk-item"><div class="bk-lbl">元件最小值 ⚠</div><div class="bk-val" id="ovElemMin">—</div></div>
-                <div class="bk-item"><div class="bk-lbl">Focused 8D</div><div class="bk-val a5" id="ovStruct">—</div></div>
-                <div class="bk-item"><div class="bk-lbl">校準後總分</div><div class="bk-val fuse" id="ovFinal">—</div></div>
+              <div class="bk-grid" style="grid-template-columns:repeat(6,1fr);">
+                <div class="bk-item"><div class="bk-lbl">Element Avg</div><div class="bk-val a1" id="ovElemAvg">—</div></div>
+                <div class="bk-item"><div class="bk-lbl">Weakest Element ⚠</div><div class="bk-val" id="ovElemMin">—</div></div>
+                <div class="bk-item"><div class="bk-lbl">Coverage</div><div class="bk-val a2" id="ovCoverage">—</div></div>
+                <div class="bk-item"><div class="bk-lbl">Semantic</div><div class="bk-val a3" id="ovSemantic">—</div></div>
+                <div class="bk-item"><div class="bk-lbl">Structure</div><div class="bk-val a5" id="ovStruct">—</div></div>
+                <div class="bk-item"><div class="bk-lbl">Technical Relevance</div><div class="bk-val fuse" id="ovFinal">—</div></div>
               </div>
               <div style="font-family:var(--mono);font-size:10px;color:var(--mt);line-height:1.75;padding:4px 0;white-space:pre-wrap;" id="ovExplain"></div>
               <div class="gate-box" id="gateBox"></div>
@@ -526,7 +576,7 @@ select option{background:var(--s2);}
             <div class="fg"><label>請求項內容</label><textarea id="mClaim" rows="5" placeholder="貼入欲比對之請求項..."></textarea></div>
             <div class="fg"><label>批次引證｜自動辨識 TIPO 清單 / PQAI TSV / 引證1(ID) / D1(ID) / Reference / ===</label>
               <textarea id="mCits" rows="12" placeholder="可直接貼上：&#10;① TIPO 檢索結果（1 / 2 / 3 + 公開號 / 摘要）&#10;② PQAI：Publication Number + Title + Abstract 的 TSV&#10;③ 引證1(US...) / D1(...) / Reference 1(...)&#10;④ === 分隔舊格式"></textarea>
-              <div class="info-box" style="margin-top:2px;">v3.8 批次模式不使用 Element Min 硬封頂；它先從每篇長文擷取最相關 passage，再依 Critical / Semantic / Process / Architecture / Numeric 五維排序。正式單篇 Claim Chart 仍保留 Min Gate。</div><div id="batchParseInfo" style="margin-top:6px;font-family:var(--mono);font-size:9px;color:var(--mt);line-height:1.6;">尚未解析</div>
+              <div class="info-box" style="margin-top:2px;">v3.10 批次與單篇共用 Synonym-Aware Hybrid Retrieval；先做詞典/同義詞擴展，再以 Sparse + Dense RRF 取得 evidence，最後進入同一 Multi-feature scoring pipeline。</div><div id="batchParseInfo" style="margin-top:6px;font-family:var(--mono);font-size:9px;color:var(--mt);line-height:1.6;">尚未解析</div>
             </div>
             <div class="btn-row">
               <button class="btn-run" id="mBtn" onclick="runMulti()">
@@ -696,10 +746,10 @@ let GOLDEN=[
 ];
 
 // ═══════════════════════════════════════
-// v3.8.0 EVIDENCE-FIRST PRIOR ART SCREENER · DUAL-MODE ENGINE
-// Frozen scoring contract: element 55% + 8D 45% + min gate + optional isotonic calibration
+// v3.9.0 SEMANTIC EVIDENCE ALIGNMENT · MULTI-FEATURE RAW MODEL
+// Initial raw-model weights are provisional and must later be replaced by validation-trained weights.
 // ═══════════════════════════════════════
-const SCORING_VERSION = 'v3.8.2-high-relevance-preservation';
+const SCORING_VERSION = 'v3.10.0-synonym-aware-hybrid-retrieval';
 // Keep v3.5 storage keys so existing verification/calibration data survives the v3.6 UI/parser upgrade.
 const DB_KEY='pat_sim_v35_db';
 const CALIB_KEY='pat_sim_v35_calibration';
@@ -707,7 +757,7 @@ const AUDIT_KEY='pat_sim_v35_audit';
 const MIN_CALIB_SAMPLES=8;
 
 const _V = (typeof window!=='undefined' && window.VOCAB) || null;
-if(!_V){ console.warn('vocab.js 未載入：v3.8 將使用內建 normalization fallback'); }
+if(!_V){ console.warn('vocab.js 未載入：v3.9 將使用內建 normalization fallback'); }
 const ZH_EN = _V ? (_V.ZH_EN||[]) : [];
 const SYN   = _V ? (_V.SYN||[]) : [];
 const PATS  = _V ? (_V.PATS||{}) : {};
@@ -741,10 +791,160 @@ function trigramCosine(a,b){
   for(const k of ks){const x=A[k]||0,y=B[k]||0;dot+=x*y;na+=x*x;nb+=y*y;}
   return na&&nb?dot/(Math.sqrt(na)*Math.sqrt(nb)):0;
 }
+// Legacy lexical helper retained only for 8D attribute extraction and non-evidence utilities.
 function hybridSimilarity(a,b){
   if(!a||!b||a==='無明確對應'||b==='無明確對應')return 0;
+  return lexicalSimilarity(a,b);
+}
+
+// ═══════════════════════════════════════
+// v3.9 SEMANTIC EMBEDDING CLIENT
+// Candidate retrieval remains local; only shortlisted passages are sent to the endpoint.
+// ═══════════════════════════════════════
+const SEMANTIC_ENDPOINT_KEY='pat_sim_v39_embedding_endpoint';
+const _embeddingCache=new Map();
+let _semanticLastSource='fallback';
+
+function semanticEndpoint(){
+  return (document.getElementById('semanticEndpoint')?.value||localStorage.getItem(SEMANTIC_ENDPOINT_KEY)||'').trim();
+}
+function saveSemanticEndpoint(){
+  const v=document.getElementById('semanticEndpoint')?.value?.trim()||'';
+  if(v)localStorage.setItem(SEMANTIC_ENDPOINT_KEY,v); else localStorage.removeItem(SEMANTIC_ENDPOINT_KEY);
+}
+function cosineVector(a,b){
+  if(!Array.isArray(a)||!Array.isArray(b)||!a.length||a.length!==b.length)return 0;
+  let dot=0,na=0,nb=0;
+  for(let i=0;i<a.length;i++){const x=Number(a[i])||0,y=Number(b[i])||0;dot+=x*y;na+=x*x;nb+=y*y;}
+  return na&&nb?clamp(dot/(Math.sqrt(na)*Math.sqrt(nb)),-1,1):0;
+}
+function parseEmbeddingResponse(j){
+  if(Array.isArray(j?.embeddings))return j.embeddings;
+  if(Array.isArray(j?.vectors))return j.vectors;
+  if(Array.isArray(j?.data)&&j.data.every(x=>Array.isArray(x?.embedding)))return j.data.map(x=>x.embedding);
+  if(Array.isArray(j)&&j.every(Array.isArray))return j;
+  return null;
+}
+async function fetchEmbeddings(texts){
+  const ep=semanticEndpoint();
+  if(!ep)return null;
+  saveSemanticEndpoint();
+  const out=new Array(texts.length),missing=[],missingIdx=[];
+  texts.forEach((t,i)=>{
+    const k=normTxt(t);
+    if(_embeddingCache.has(k))out[i]=_embeddingCache.get(k);
+    else{missing.push(String(t));missingIdx.push(i);}
+  });
+  if(missing.length){
+    const res=await fetch(ep,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({texts:missing})
+    });
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const data=parseEmbeddingResponse(await res.json());
+    if(!data||data.length!==missing.length)throw new Error('embedding response shape / length mismatch');
+    data.forEach((v,j)=>{
+      if(!Array.isArray(v)||!v.length)throw new Error('invalid embedding vector');
+      const idx=missingIdx[j],k=normTxt(texts[idx]);
+      _embeddingCache.set(k,v);out[idx]=v;
+    });
+  }
+  return out;
+}
+async function testSemanticEndpoint(){
+  const st=document.getElementById('semanticStatus');
+  try{
+    const ep=semanticEndpoint();
+    if(!ep){st.textContent='請先填入 endpoint';st.style.color='var(--a4)';return;}
+    const vs=await fetchEmbeddings(['regrown epitaxial layer','epitaxial regrowth']);
+    const sim=cosineVector(vs[0],vs[1]);
+    st.textContent=`✓ API 正常｜vector dim ${vs[0].length}｜test cosine ${sim.toFixed(3)}`;
+    st.style.color='var(--a2)';
+  }catch(e){
+    st.textContent=`✕ API 失敗：${e.message}`;
+    st.style.color='var(--a4)';
+  }
+}
+
+const CONCEPT_STOP_V39=new Set([
+  'comprising','wherein','including','include','forming','formed','form','said','the','and','with','from','into',
+  'device','system','method','apparatus','portion','part','first','second','third','plurality','using','use',
+  'semiconductor','layer','structure','unit','module','element','region','area','surface'
+]);
+
+function extractPassageConcepts(text){
+  const n=normTxt(text);
+  const set=new Set();
+  // Generic, domain-extensible concept extraction from vocab.js PATS only.
+  for(const arr of Object.values(PATS||{})){
+    for(const p of arr||[]){
+      try{
+        const flags=p.flags.includes('g')?p.flags:p.flags+'g';
+        const rx=new RegExp(p.source,flags);
+        for(const m of n.matchAll(rx)){
+          const v=String(m[0]||'').toLowerCase().trim();
+          if(v.length>=3&&!CONCEPT_STOP_V39.has(v))set.add(v);
+        }
+      }catch{}
+    }
+  }
+  // Add normalized informative tokens so synonyms translated by vocab.js can still align.
+  for(const t of tokens(n)){
+    const v=t.toLowerCase();
+    if(v.length>=4&&!CONCEPT_STOP_V39.has(v)&&!/^\d+$/.test(v))set.add(v);
+  }
+  return set;
+}
+function technicalConceptScore(element,passage){
+  // STRICTLY passage-local: synonym-aware, but never scan the whole citation.
+  const vocabRecall=synonymAwareConceptScore(element,passage);
+  const a=extractPassageConcepts(element),b=extractPassageConcepts(passage);
+  let hit=0;
+  if(a.size&&b.size)for(const x of a)if(b.has(x))hit++;
+  const pats=a.size?hit/a.size:0;
+  return clamp(0.55*vocabRecall+0.45*pats);
+}
+function lexicalSimilarity(a,b){
   return clamp(cosineTF(a,b)*0.60 + trigramCosine(a,b)*0.40);
 }
+function semanticFallbackScore(element,passage){
+  // Explicit fallback only. It is NOT advertised as an embedding score.
+  const lex=lexicalSimilarity(element,passage);
+  const con=technicalConceptScore(element,passage);
+  return clamp(0.65*lex+0.35*con);
+}
+async function semanticScoresForElement(element,candidates){
+  const ep=semanticEndpoint();
+  if(!ep){
+    _semanticLastSource='fallback';
+    return candidates.map(c=>semanticFallbackScore(element,c.text));
+  }
+  try{
+    const texts=[element,...candidates.map(c=>c.text)];
+    const vecs=await fetchEmbeddings(texts);
+    _semanticLastSource='embedding';
+    return candidates.map((c,i)=>(cosineVector(vecs[0],vecs[i+1])+1)/2);
+  }catch(e){
+    _semanticLastSource='fallback';
+    const st=document.getElementById('semanticStatus');
+    if(st){st.textContent=`Embedding 失敗，已使用 fallback：${e.message}`;st.style.color='var(--a4)';}
+    return candidates.map(c=>semanticFallbackScore(element,c.text));
+  }
+}
+async function elementEvidenceScore(element,passage,semanticScore=null){
+  const lexical=lexicalSimilarity(element,passage);
+  const concept=technicalConceptScore(element,passage);
+  const semantic=semanticScore==null?semanticFallbackScore(element,passage):semanticScore;
+  return {
+    score:clamp(0.60*semantic+0.20*lexical+0.20*concept),
+    semantic:clamp(semantic),
+    lexical,
+    concept,
+    semantic_source:_semanticLastSource
+  };
+}
+
 function splitSentences(text=''){
   return String(text).replace(/\r/g,'\n').split(/(?<=[。！？.!?;；])\s*|\n+/).map(s=>s.trim()).filter(s=>s.length>=8);
 }
@@ -758,45 +958,236 @@ function splitClaimElements(text=''){
   }
   const seen=new Set();return parts.filter(p=>{const k=normTxt(p);if(seen.has(k))return false;seen.add(k);return true;}).slice(0,24);
 }
-// v3.8.1: unified Evidence-First retrieval for detailed single-document comparison.
-// Every claim element searches the full specification passage-by-passage.
-// The strict Min Gate is applied only AFTER retrieval, so long documents no longer dilute evidence.
-function bestEvidence(element,citation){
-  const passages=splitCitationPassages(citation);
-  if(!passages.length){
-    return {score:passageConceptSimilarity(element,citation),evidence:String(citation).slice(0,500),top3:[]};
+
+// ═══════════════════════════════════════
+// v3.10 SYNONYM-AWARE QUERY EXPANSION + RRF
+// ═══════════════════════════════════════
+const QE_CACHE=new Map();
+
+function vocabSynonymMap(){
+  const map=new Map();
+  // Build a lightweight normalized equivalence map from vocab.js ZH_EN/SYN outputs.
+  // We do not try to reverse regex syntax; instead we use known replacement strings
+  // and normalized variants to expand both query and evidence consistently.
+  try{
+    for(const pair of (ZH_EN||[])){
+      const repl=String(pair?.[1]||'').trim();
+      if(!repl)continue;
+      const toks=tokens(repl).filter(x=>x.length>=3);
+      for(const t of toks){
+        const k=t.toLowerCase();
+        if(!map.has(k))map.set(k,new Set());
+        toks.forEach(x=>map.get(k).add(x.toLowerCase()));
+      }
+    }
+    for(const pair of (SYN||[])){
+      const repl=String(pair?.[1]||'').trim();
+      if(!repl)continue;
+      const toks=tokens(repl).filter(x=>x.length>=3);
+      for(const t of toks){
+        const k=t.toLowerCase();
+        if(!map.has(k))map.set(k,new Set());
+        toks.forEach(x=>map.get(k).add(x.toLowerCase()));
+      }
+    }
+  }catch{}
+  return map;
+}
+const _VOCAB_SYNONYM_MAP=vocabSynonymMap();
+
+function canonicalTokenSet(text){
+  const n=normTxt(text);
+  const set=new Set(tokens(n).map(x=>x.toLowerCase()).filter(x=>x.length>=3));
+  // Expand through vocab equivalence map.
+  for(const t of [...set]){
+    const ss=_VOCAB_SYNONYM_MAP.get(t);
+    if(ss)for(const s of ss)set.add(s);
   }
-  const ranked=[];
-  for(const p of passages){
-    const score=passageConceptSimilarity(element,p.text);
-    if(ranked.length<3){
-      ranked.push({score,text:p.text,kind:p.kind});
-      ranked.sort((a,b)=>b.score-a.score);
-    }else if(score>ranked[2].score){
-      ranked[2]={score,text:p.text,kind:p.kind};
-      ranked.sort((a,b)=>b.score-a.score);
+  return set;
+}
+
+function synonymAwareConceptScore(a,b){
+  const A=canonicalTokenSet(a),B=canonicalTokenSet(b);
+  if(!A.size||!B.size)return 0;
+  let hit=0;
+  for(const x of A)if(B.has(x))hit++;
+  return clamp(hit/A.size);
+}
+
+function buildQueryExpansions(element){
+  const mode=document.getElementById('qeMode')?.value||'auto';
+  const limit=Math.max(0,Math.min(8,Number(document.getElementById('qeLimit')?.value||4)));
+  if(mode==='off'||limit===0)return [element];
+
+  const key=mode+'|'+limit+'|'+normTxt(element);
+  if(QE_CACHE.has(key))return QE_CACHE.get(key);
+
+  const base=normTxt(element);
+  const toks=[...canonicalTokenSet(base)];
+  const expansions=[element];
+
+  // 1) Canonical normalized variant.
+  if(base&&base!==element)expansions.push(base);
+
+  // 2) Vocab-expanded bag phrase preserving only technical tokens.
+  const informative=toks.filter(t=>!CONCEPT_STOP_V39.has(t)).slice(0,12);
+  if(informative.length)expansions.push(informative.join(' '));
+
+  // 3) Build small synonym-substitution phrases from vocab equivalence sets.
+  for(const t of informative){
+    const ss=[...(_VOCAB_SYNONYM_MAP.get(t)||[])].filter(x=>x!==t).slice(0,2);
+    for(const s of ss){
+      const phrase=informative.map(x=>x===t?s:x).join(' ');
+      if(phrase)expansions.push(phrase);
     }
   }
-  const best=ranked[0]||{score:0,text:'',kind:''};
-  return {score:best.score,evidence:best.text,top3:ranked};
+
+  const uniq=[];
+  const seen=new Set();
+  for(const q of expansions){
+    const k=normTxt(q);
+    if(!k||seen.has(k))continue;
+    seen.add(k);uniq.push(q);
+    if(uniq.length>=1+limit)break;
+  }
+  QE_CACHE.set(key,uniq);
+  return uniq;
 }
-function evaluateElements(claim,citation){
+
+function reciprocalRankFusion(rankLists,k=60){
+  const scores=new Map();
+  for(const list of rankLists){
+    list.forEach((item,idx)=>{
+      const key=item.key;
+      scores.set(key,(scores.get(key)||0)+1/(k+idx+1));
+    });
+  }
+  return scores;
+}
+
+function sparseScoreQuerySet(queries,passage){
+  let best=0;
+  for(const q of queries){
+    const lex=lexicalSimilarity(q,passage);
+    const con=synonymAwareConceptScore(q,passage);
+    best=Math.max(best,0.72*lex+0.28*con);
+  }
+  return clamp(best);
+}
+
+async function denseScoreQuerySet(queries,passages){
+  const ep=semanticEndpoint();
+  if(!ep){
+    return passages.map(p=>{
+      let best=0;
+      for(const q of queries)best=Math.max(best,semanticFallbackScore(q,p.text));
+      return best;
+    });
+  }
+  try{
+    const all=[...queries,...passages.map(p=>p.text)];
+    const vecs=await fetchEmbeddings(all);
+    const qv=vecs.slice(0,queries.length),pv=vecs.slice(queries.length);
+    _semanticLastSource='embedding';
+    return pv.map(v=>{
+      let best=-1;
+      for(const q of qv)best=Math.max(best,(cosineVector(q,v)+1)/2);
+      return clamp(best);
+    });
+  }catch(e){
+    _semanticLastSource='fallback';
+    return passages.map(p=>{
+      let best=0;
+      for(const q of queries)best=Math.max(best,semanticFallbackScore(q,p.text));
+      return best;
+    });
+  }
+}
+
+// v3.9: two-stage Evidence Alignment.
+// Stage 1 = cheap local shortlist; Stage 2 = semantic embedding rerank + passage-local concept score.
+async function bestEvidence(element,citation){
+  const passages=splitCitationPassages(citation);
+  if(!passages.length){
+    const ev=await elementEvidenceScore(element,String(citation).slice(0,1200));
+    return {...ev,evidence:String(citation).slice(0,1200),top3:[],queries:[element]};
+  }
+
+  const queries=buildQueryExpansions(element);
+
+  // Stage 1: sparse ranking using original + synonym-expanded queries.
+  const sparseRank=passages.map((p,i)=>({
+    key:String(i),idx:i,text:p.text,kind:p.kind,
+    sparse:sparseScoreQuerySet(queries,p.text)
+  })).sort((a,b)=>b.sparse-a.sparse);
+
+  // Keep a broad sparse pool so dense retrieval can recover lexical misses.
+  const sparsePool=sparseRank.slice(0,48);
+
+  // Stage 2: dense score the sparse pool using all query expansions.
+  const denseScores=await denseScoreQuerySet(queries,sparsePool);
+  const denseRank=sparsePool.map((p,i)=>({...p,dense:denseScores[i]}))
+    .sort((a,b)=>b.dense-a.dense);
+
+  // Stage 3: RRF between sparse and dense ranks.
+  const k=Math.max(10,Math.min(120,Number(document.getElementById('rrfK')?.value||60)));
+  const rrf=reciprocalRankFusion([sparsePool,denseRank],k);
+  const fused=sparsePool.map(p=>({...p,rrf:rrf.get(p.key)||0}))
+    .sort((a,b)=>b.rrf-a.rrf)
+    .slice(0,24);
+
+  // Final passage-local scoring on fused evidence contexts.
+  const ranked=[];
+  for(const p of fused){
+    // Find dense score already computed for this passage.
+    const dense=(denseRank.find(x=>x.key===p.key)?.dense)||0;
+    const lexical=lexicalSimilarity(element,p.text);
+    const concept=technicalConceptScore(element,p.text);
+    // semantic channel is dense when available, fallback otherwise
+    const semantic=dense||semanticFallbackScore(element,p.text);
+    const score=clamp(0.60*semantic+0.20*lexical+0.20*concept);
+    ranked.push({
+      score,semantic,lexical,concept,
+      sparse:p.sparse,rrf:p.rrf,
+      semantic_source:_semanticLastSource,
+      text:p.text,kind:p.kind
+    });
+  }
+
+  ranked.sort((a,b)=>b.score-a.score);
+  const best=ranked[0]||{score:0,semantic:0,lexical:0,concept:0,semantic_source:_semanticLastSource,text:'',kind:''};
+  return {...best,evidence:best.text,top3:ranked.slice(0,3),queries};
+}
+async function evaluateElements(claim,citation){
   const els=splitClaimElements(claim);
-  const elements=(els.length?els:[claim]).map((text,i)=>{
-    const m=bestEvidence(text,citation);
-    return {
-      index:i+1,
-      text,
+  const src=(els.length?els:[claim]).slice(0,24);
+  const elements=[];
+  for(let i=0;i<src.length;i++){
+    const text=src[i];
+    const m=await bestEvidence(text,citation);
+    elements.push({
+      index:i+1,text,
       score:clamp(m.score),
+      semantic:clamp(m.semantic||0),
+      lexical:clamp(m.lexical||0),
+      concept:clamp(m.concept||0),
+      semantic_source:m.semantic_source||'fallback',
       evidence:m.evidence,
-      top3:m.top3||[]
-    };
-  });
+      top3:m.top3||[],
+      query_expansions:m.queries||[text]
+    });
+  }
   const vals=elements.map(e=>e.score*100);
+  const semanticVals=elements.map(e=>e.semantic*100);
+  const coverage=elements.length?elements.filter(e=>e.score>=0.45).length/elements.length*100:0;
+  const semanticConsistency=semanticVals.length?semanticVals.reduce((a,b)=>a+b,0)/semanticVals.length:0;
   return {
     elements,
     element_avg:vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length),
     element_min:vals.length?Math.min(...vals):0,
+    coverage,
+    semantic_consistency:semanticConsistency,
+    semantic_source:elements.some(e=>e.semantic_source==='embedding')?'embedding':'fallback'
   };
 }
 function buildFocusedCitation(elements,citation){
@@ -838,12 +1229,30 @@ function compute8D(citation,claim){
   const score=sims.reduce((s,v,i)=>s+v*ATTRS[i].weight,0)/totalW*100;
   return {score:+score.toFixed(1),sims,attrs_claim:B,attrs_citation:A};
 }
-function fuseRaw(elemAvg,structScore,elemMin){
-  let raw=elemAvg*0.55+structScore*0.45;
-  let gate='';
-  if(elemMin<40){raw=Math.min(raw,elemMin+12);gate=`Element Min ${elemMin.toFixed(1)}% < 40%，Raw Score 上限 = min + 12`;}
-  else if(elemMin<55){raw=Math.min(raw,elemMin+18);gate=`Element Min ${elemMin.toFixed(1)}% < 55%，Raw Score 上限 = min + 18`;}
-  return {raw:clamp(raw,0,100),gate};
+// v3.9 provisional multi-feature raw model.
+// IMPORTANT: these weights are initialization only; later replace with validation-trained model.
+const RAW_MODEL_V39 = Object.freeze({
+  element_avg: 0.42,
+  element_min: 0.18,
+  structure: 0.18,
+  coverage: 0.12,
+  semantic: 0.10
+});
+function computeRawRelevance(features){
+  const f={
+    element_avg: Number(features.element_avg)||0,
+    element_min: Number(features.element_min)||0,
+    structure: Number(features.structure)||0,
+    coverage: Number(features.coverage)||0,
+    semantic: Number(features.semantic)||0
+  };
+  const raw =
+      RAW_MODEL_V39.element_avg * f.element_avg +
+      RAW_MODEL_V39.element_min * f.element_min +
+      RAW_MODEL_V39.structure   * f.structure +
+      RAW_MODEL_V39.coverage    * f.coverage +
+      RAW_MODEL_V39.semantic    * f.semantic;
+  return +clamp(raw,0,100).toFixed(1);
 }
 function dbLoad(){try{const r=localStorage.getItem(DB_KEY);return r?JSON.parse(r):{cases:[]};}catch{return{cases:[]};}}
 function dbSave(db){localStorage.setItem(DB_KEY,JSON.stringify(db));}
@@ -888,205 +1297,91 @@ function renderCalibInfo(){
 }
 function tierOf(score){return score>=70?'H':score>=45?'M':'L';}
 
-// ═══════════════════════════════════════
-// v3.8.2 HIGH-RELEVANCE PRESERVATION
-// Prevent a technically strong citation from being discarded solely by a low Min Gate.
-// This is a technical-relevance preservation rule, not a novelty/obviousness conclusion.
-// ═══════════════════════════════════════
-const HIGH_VALUE_PAIRS = [
-  ['regrowth','etch'],
-  ['regrowth','pgan'],
-  ['regrowth','barrier'],
-  ['regrowth','lithography'],
-  ['regrowth','hemt']
-];
-
-function matchedConceptIds(claim,citation){
-  const qc=new Set(extractScreenConcepts(claim).map(x=>x.id));
-  const dc=new Set(extractScreenConcepts(citation).map(x=>x.id));
-  return [...qc].filter(id=>dc.has(id));
-}
-function matchedConceptPairs(claim,citation){
-  const ids=new Set(matchedConceptIds(claim,citation));
-  return HIGH_VALUE_PAIRS
-    .filter(([a,b])=>ids.has(a)&&ids.has(b))
-    .map(([a,b])=>`${a.toUpperCase()}+${b.toUpperCase()}`);
-}
-function computeHighRelevancePreservation(claim,citation,normalScore,elementMin){
-  const s=runScreeningEvaluation(claim,citation);
-  const matched=matchedConceptIds(claim,citation);
-  const pairs=matchedConceptPairs(claim,citation);
-
-  // Pair evidence raises confidence because these paired mechanisms are much more
-  // discriminative than generic substrate/gate/source/drain overlap.
-  let critical=Number(s.critical)||0;
-  let process=Number(s.process)||0;
-  if(pairs.length===1){critical=Math.min(100,critical+6);process=Math.min(100,process+6);}
-  if(pairs.length>=2){critical=Math.min(100,critical+10);process=Math.min(100,process+10);}
-
-  const semantic=Number(s.semantic)||0;
-  const architecture=Number(s.architecture)||0;
-  const coverage=Number(s.coverage)||0;
-
-  const coreScore =
-      0.40*critical +
-      0.25*semantic +
-      0.20*process +
-      0.15*architecture;
-
-  const strongDimensions=[
-    critical>=65,
-    semantic>=45,
-    process>=60,
-    architecture>=55,
-    coverage>=40
-  ].filter(Boolean).length;
-
-  const hasCritical = matched.some(id=>['regrowth','pgan','etch','lithography','spacing','hemt'].includes(id));
-  const preserveTrigger =
-      hasCritical &&
-      (pairs.length>=1 || matched.filter(id=>['regrowth','pgan','etch','lithography','spacing','hemt','barrier'].includes(id)).length>=2) &&
-      strongDimensions>=2 &&
-      (s.final_score>=55 || coreScore>=60);
-
-  // Stronger rule: once the citation already behaves like a 75+ screening reference,
-  // detailed mode may not demote it below the must-review band just because one narrow
-  // element has a very low score.
-  const mustReviewTrigger =
-      preserveTrigger &&
-      (
-        s.final_score>=72 ||
-        coreScore>=72 ||
-        (pairs.length>=2 && critical>=75 && process>=70)
-      );
-
-  let floor=0;
-  if(preserveTrigger){
-    floor=Math.max(coreScore*0.86, s.final_score*0.92, 58);
-  }
-  if(mustReviewTrigger){
-    floor=Math.max(floor,75);
-  }
-
-  const final=Math.max(Number(normalScore)||0, Math.min(92,floor));
-
-  return {
-    override_triggered: preserveTrigger,
-    must_review_triggered: mustReviewTrigger,
-    matched_critical_concepts: matched.map(x=>x.toUpperCase()),
-    matched_pairs:pairs,
-    original_detailed_score:+(Number(normalScore)||0).toFixed(1),
-    screening_score:+(Number(s.final_score)||0).toFixed(1),
-    critical:+critical.toFixed(1),
-    semantic:+semantic.toFixed(1),
-    process:+process.toFixed(1),
-    architecture:+architecture.toFixed(1),
-    coverage:+coverage.toFixed(1),
-    core_score:+coreScore.toFixed(1),
-    override_floor:+floor.toFixed(1),
-    final_preserved_score:+final.toFixed(1),
-    weakest_element:+(Number(elementMin)||0).toFixed(1),
-    reason: mustReviewTrigger
-      ? 'high-relevance evidence confirmed; score preserved in must-review band'
-      : preserveTrigger
-        ? 'central technical mechanism strongly matched; low Min cannot collapse relevance'
-        : 'no preservation override'
-  };
-}
-
-function evaluatePair(claim,citation){
-  const elem=evaluateElements(claim,citation);
+async function evaluatePair(claim,citation){
+  const elem=await evaluateElements(claim,citation);
   const focusedCitation=buildFocusedCitation(elem.elements,citation);
   const struct=compute8D(focusedCitation||citation,claim);
 
-  // Keep the historical Min-Gate result for audit/debugging.
-  const f=fuseRaw(elem.element_avg,struct.score,elem.element_min);
-  const calibratedNormal=calibrate(f.raw);
-
-  // v3.8.2 preservation layer: high-relevance evidence can override a destructive Min Gate.
-  const preservation=computeHighRelevancePreservation(
-    claim,citation,calibratedNormal,elem.element_min
-  );
-  const final=preservation.override_triggered
-    ? Math.max(calibratedNormal,preservation.final_preserved_score)
-    : calibratedNormal;
-
-  const gateText=preservation.override_triggered
-    ? `${f.gate?f.gate+' ｜ ':''}HIGH-RELEVANCE PRESERVATION ON：Min Gate 不得將高相關引證降出人工審閱區`
-    : f.gate;
+  const features={
+    element_avg:+elem.element_avg.toFixed(1),
+    element_min:+elem.element_min.toFixed(1),
+    structure:+struct.score.toFixed(1),
+    coverage:+elem.coverage.toFixed(1),
+    semantic:+elem.semantic_consistency.toFixed(1)
+  };
+  const raw=computeRawRelevance(features);
+  // Isotonic receives one scalar only: raw relevance.
+  const final=calibrate(raw);
 
   return {
     scoring_version:SCORING_VERSION,
-    mode:'detailed-evidence-first-preserved',
+    mode:'semantic-evidence-alignment',
     final_score:+final.toFixed(1),
-    normal_detailed_score:+calibratedNormal.toFixed(1),
-    raw_score:+f.raw.toFixed(1),
-    element_avg:+elem.element_avg.toFixed(1),
-    element_min:+elem.element_min.toFixed(1),
+    raw_score:+raw.toFixed(1),
+    element_avg:features.element_avg,
+    element_min:features.element_min,
+    coverage:features.coverage,
+    semantic_consistency:features.semantic,
+    semantic_source:elem.semantic_source,
     elements:elem.elements,
     structure_score:struct.score,
     sims:struct.sims,
     focused_citation:focusedCitation,
-    gate:gateText,
-    tier:tierOf(final),
-    override_triggered:preservation.override_triggered,
-    must_review_triggered:preservation.must_review_triggered,
-    matched_critical_concepts:preservation.matched_critical_concepts,
-    matched_pairs:preservation.matched_pairs,
-    screening_score:preservation.screening_score,
-    critical_score:preservation.critical,
-    semantic_score:preservation.semantic,
-    process_score:preservation.process,
-    architecture_score:preservation.architecture,
-    coverage_score:preservation.coverage,
-    core_score:preservation.core_score,
-    override_floor:preservation.override_floor,
-    override_reason:preservation.reason
+    feature_vector:features,
+    gate:'',
+    tier:tierOf(final)
   };
 }
 let _lastR=null,_hist=[];
 function auditLoad(){try{return JSON.parse(localStorage.getItem(AUDIT_KEY)||'[]');}catch{return[];}}
 function auditSave(a){localStorage.setItem(AUDIT_KEY,JSON.stringify(a.slice(-300)));}
 function recordAudit(pid,claim,citation,r,mode='single'){
-  const a=auditLoad();a.push({timestamp:new Date().toISOString(),id:pid,mode,scoring_version:SCORING_VERSION,calibration_version:calibLoad()?.version||'baseline',claim,citation,raw_score:r.raw_score,final_score:r.final_score,element_avg:r.element_avg,element_min:r.element_min,structure_score:r.structure_score,elements:r.elements,sims:r.sims,focused_citation:r.focused_citation||'',override_triggered:r.override_triggered||false,must_review_triggered:r.must_review_triggered||false,matched_critical_concepts:r.matched_critical_concepts||[],matched_pairs:r.matched_pairs||[],normal_detailed_score:r.normal_detailed_score,screening_score:r.screening_score,core_score:r.core_score,override_floor:r.override_floor,override_reason:r.override_reason||''});auditSave(a);renderAudit();
+  const a=auditLoad();a.push({
+    timestamp:new Date().toISOString(),id:pid,mode,
+    scoring_version:SCORING_VERSION,calibration_version:calibLoad()?.version||'baseline',
+    claim,citation,raw_score:r.raw_score,final_score:r.final_score,
+    element_avg:r.element_avg,element_min:r.element_min,coverage:r.coverage,
+    semantic_consistency:r.semantic_consistency,semantic_source:r.semantic_source,
+    structure_score:r.structure_score,feature_vector:r.feature_vector,
+    query_expansion_enabled:(document.getElementById('qeMode')?.value||'auto')!=='off',
+    elements:r.elements,sims:r.sims,focused_citation:r.focused_citation||''
+  });auditSave(a);renderAudit();
 }
 async function runCompare(){
   const claim=document.getElementById('claimTxt').value.trim(),cit=document.getElementById('citTxt').value.trim();
   if(!claim||!cit){toast('請填入請求項與引證內容',true);return;}
   const pid=document.getElementById('patId').value.trim()||'未指定',cl=document.getElementById('clNum').value.trim()||'Claim 1';
   const btn=document.getElementById('runBtn');btn.disabled=true;showLoad(true);step('拆解 Claim elements...',25);await sleep(40);
-  step('Evidence-First passage retrieval...',55);await sleep(40);const r=evaluatePair(claim,cit);
-  step('Focused 8D + Min Gate + calibration...',90);await sleep(40);showLoad(false);btn.disabled=false;_lastR=r;
+  step('Semantic evidence retrieval + rerank...',55);await sleep(40);const r=await evaluatePair(claim,cit);
+  step('Multi-feature raw model + scalar isotonic...',90);await sleep(40);showLoad(false);btn.disabled=false;_lastR=r;
   renderScoreV35(r,pid,cl);autoSave(pid,r);recordAudit(pid,claim,cit,r,'single');
   _hist.unshift({pid,score:r.final_score,tier:r.tier});if(_hist.length>20)_hist.pop();renderHist();
 }
 function renderScoreV35(r,pid,cl){
   document.getElementById('scoreCard').classList.add('vis');const big=document.getElementById('scoreBig');big.textContent=r.final_score;big.className='score-big '+r.tier;
   const chip=document.getElementById('tierChip'),labels={H:'高度相似 (HIGH)',M:'中度相似 (MID)',L:'低度相似 (LOW)'};chip.textContent=labels[r.tier];chip.className='tier-chip '+r.tier;
-  document.getElementById('tierLine').textContent=`v3.8.2 preserved detailed · normal ${r.normal_detailed_score} · final ${r.final_score}`;document.getElementById('rPid').textContent=pid+' · '+cl;document.getElementById('rCit').textContent=document.getElementById('citId').value.trim()||'引證段落';
-  document.getElementById('ovElemAvg').textContent=r.element_avg+'%';document.getElementById('ovElemMin').textContent=r.element_min+'%';document.getElementById('ovStruct').textContent=r.structure_score;document.getElementById('ovFinal').textContent=r.final_score;
+  document.getElementById('tierLine').textContent=`v3.10 hybrid ${r.semantic_source} · raw ${r.raw_score} · calibrated ${r.final_score}`;document.getElementById('rPid').textContent=pid+' · '+cl;document.getElementById('rCit').textContent=document.getElementById('citId').value.trim()||'引證段落';
+  document.getElementById('ovElemAvg').textContent=r.element_avg+'%';document.getElementById('ovElemMin').textContent=r.element_min+'%';document.getElementById('ovCoverage').textContent=r.coverage+'%';document.getElementById('ovSemantic').textContent=r.semantic_consistency+'%';document.getElementById('ovStruct').textContent=r.structure_score;document.getElementById('ovFinal').textContent=r.final_score;
   document.getElementById('ovElemMin').style.color=r.element_min<40?'var(--a4)':r.element_min<60?'var(--a3)':'var(--a2)';
-  document.getElementById('ovExplain').textContent=`Evidence-First Detailed + High-Relevance Preservation
-Normal detailed score = ${r.normal_detailed_score}
-Final technical relevance = ${r.final_score}
-Element Avg = ${r.element_avg}% ｜ Element Min = ${r.element_min}% ｜ Focused 8D = ${r.structure_score}
-${r.override_triggered?`OVERRIDE ON ｜ Screening ${r.screening_score} ｜ Core ${r.core_score} ｜ Floor ${r.override_floor}
-Critical ${r.critical_score} ｜ Semantic ${r.semantic_score} ｜ Process ${r.process_score} ｜ Architecture ${r.architecture_score} ｜ Coverage ${r.coverage_score}%
-Matched concepts: ${(r.matched_critical_concepts||[]).join(', ')||'—'}
-Matched pairs: ${(r.matched_pairs||[]).join(', ')||'—'}`:'Override not triggered'}
+  document.getElementById('ovExplain').textContent=`v3.10 Synonym-Aware Hybrid Retrieval
+Technical Relevance = ${r.final_score}
+Raw Relevance = ${r.raw_score}
+Element Average = ${r.element_avg}%
+Weakest Element = ${r.element_min}%
+Coverage = ${r.coverage}%
+Structure = ${r.structure_score}
+Semantic Consistency = ${r.semantic_consistency}% (${r.semantic_source})
+Retrieval = Query Expansion + Sparse/Dense RRF
+Raw model = 0.42*Avg + 0.18*Min + 0.18*Structure + 0.12*Coverage + 0.10*Semantic
+NOTE: v3.10 初始權重仍為 provisional，後續應由人工驗證 feature vectors 訓練取代。
+Isotonic input = raw relevance scalar only.
 Scoring version = ${SCORING_VERSION}`;
   const gb=document.getElementById('gateBox');if(r.gate){gb.textContent='⚠ '+r.gate;gb.classList.add('vis');}else gb.classList.remove('vis');
-  const desc=document.getElementById('tierDescBox'),descs={H:'技術特徵高度重疊，建議優先進行人工 claim chart 核對。',M:'部分技術特徵吻合，建議檢查最弱元件與證據脈絡。',L:'目前關聯度較低，但仍應以實際揭露內容人工確認。'};
-  desc.textContent=r.must_review_triggered
-    ? '★ 高相關保留：核心技術機制已高度命中；即使存在缺漏限定，本引證不得在初步比對階段被剔除，必須人工審閱。'
-    : r.override_triggered
-      ? '◇ 關聯保留：核心機制與多個技術維度命中，低 Element Min 僅作缺漏警示，不再單獨壓低整體技術相關度。'
-      : descs[r.tier];
-  desc.className='tier-desc-box '+r.tier;
+  const desc=document.getElementById('tierDescBox'),descs={H:'技術相關度高；仍請檢查 Weakest Element 與 Missing Limitation，再進行人工 claim chart。',M:'具實質相關性；建議依 element evidence 與 coverage 決定是否進一步閱讀全文。',L:'目前技術相關度較低，但仍應人工確認 evidence passage。'};desc.textContent=descs[r.tier];desc.className='tier-desc-box '+r.tier;
   const warn=document.getElementById('elemWarningChip');warn.innerHTML=r.element_min<40?'<span class="elem-warning">⚠ 最弱元件 &lt;40%</span>':r.element_min<60?'<span class="elem-warning">△ 最弱元件偏低</span>':'<span class="elem-ok">✓ 元件覆蓋穩定</span>';
   document.getElementById('elemRows').innerHTML=r.elements.map(e=>{
     const pct=Math.round(e.score*100),c=pct>=60?'#34d399':pct>=40?'#f5a623':'#f87171';
-    const more=(e.top3||[]).slice(1).map((x,i)=>`Top ${i+2} ${Math.round(x.score*100)}% · ${x.text}`).join('\n');
+    const more=(e.top3||[]).slice(1).map((x,i)=>`Top ${i+2} ${Math.round(x.score*100)}% | sem ${Math.round((x.semantic||0)*100)} | lex ${Math.round((x.lexical||0)*100)} | concept ${Math.round((x.concept||0)*100)} | sparse ${Math.round((x.sparse||0)*100)} · ${x.text}`).join('\n');
     return `<div class="elem-row-v35"><div class="elem-top-v35"><div class="elem-idx">${e.index}</div><div class="elem-text" title="${esc(e.text)}">${esc(e.text)}</div><div class="elem-bar-bg"><div class="elem-bar-fill" style="width:${pct}%;background:${c}"></div></div><div class="elem-pct" style="color:${c}">${pct}%</div></div><div class="ev-sent" title="${esc((e.evidence||'')+(more?'\n\n'+more:''))}">${esc(e.evidence)}</div></div>`;
   }).join('');
   document.getElementById('dimRows').innerHTML=ATTRS.map((a,i)=>{const p=Math.round(r.sims[i]*100),c=p>=60?'#34d399':p>=35?'#f5a623':'#f87171';return `<div class="dim-row"><div class="dim-name">${a.name}</div><div class="dim-w">${Math.round(a.weight*100)}%</div><div class="dim-bg"><div class="dim-fill" style="width:${p}%;background:${c}"></div></div><div class="dim-pct" style="color:${c}">${p}%</div><div class="dim-ctr">${(r.sims[i]*a.weight*100).toFixed(1)}</div></div>`;}).join('');
@@ -1377,10 +1672,8 @@ function numericFeatureScore(claimNums,citationText){
   return hit/claimNums.length*100;
 }
 function passageConceptSimilarity(a,b){
-  const lexical=hybridSimilarity(a,b);
-  const ac=extractScreenConcepts(a),bc=extractScreenConcepts(b);
-  const sem=conceptCoverageScore(ac,bc,()=>true)/100;
-  return clamp(lexical*0.62+sem*0.38);
+  // Synchronous fallback for legacy utilities only. Detailed/batch scoring uses async elementEvidenceScore().
+  return semanticFallbackScore(a,b);
 }
 function retrieveEvidenceForProfile(profile,citationText){
   const passages=splitCitationPassages(citationText);
@@ -1397,57 +1690,46 @@ function retrieveEvidenceForProfile(profile,citationText){
   });
   return {passages,matches};
 }
-function scoreOneClaimProfile(profile,citationText){
-  const ret=retrieveEvidenceForProfile(profile,citationText);
-  const bestScores=ret.matches.map(x=>x.score*100);
-  const semantic=bestScores.length?bestScores.reduce((a,b)=>a+b,0)/bestScores.length:0;
-  const coverage=bestScores.length?bestScores.filter(x=>x>=30).length/bestScores.length:0;
-  const weakest=bestScores.length?Math.min(...bestScores):0;
-  const citConcepts=extractScreenConcepts(citationText);
-  const critical=conceptCoverageScore(profile.concepts,citConcepts,c=>c.weight>=9);
-  const process=conceptCoverageScore(profile.concepts,citConcepts,c=>c.view==='action'||c.view==='both');
-  const architecture=conceptCoverageScore(profile.concepts,citConcepts,c=>c.view==='arch'||c.view==='both');
-  const numeric=numericFeatureScore(profile.numerics,citationText);
-  const raw=0.35*critical+0.25*semantic+0.20*process+0.15*architecture+0.05*numeric;
-  // Coverage is a soft correction only; a missing dependent/numeric detail can never hard-kill screening.
-  const final=clamp(raw*(0.85+0.15*coverage),0,100);
-  const evidence=[...ret.matches].sort((a,b)=>b.score-a.score)
-    .filter(x=>x.evidence).slice(0,3)
-    .map(x=>({element:x.element,score:+(x.score*100).toFixed(1),text:x.evidence}));
+async function scoreOneClaimProfile(profile,citationText){
+  const r=await evaluatePair(profile.claim_text,citationText);
   return {
     claim_number:profile.claim_number,
-    screening_score:+final.toFixed(1),
-    screening_raw:+raw.toFixed(1),
-    critical:+critical.toFixed(1),
-    semantic:+semantic.toFixed(1),
-    process:+process.toFixed(1),
-    architecture:+architecture.toFixed(1),
-    numeric:+numeric.toFixed(1),
-    coverage:+(coverage*100).toFixed(1),
-    weakest:+weakest.toFixed(1),
-    evidence,
-    element_matches:ret.matches
+    screening_score:r.final_score,
+    screening_raw:r.raw_score,
+    element_avg:r.element_avg,
+    weakest:r.element_min,
+    coverage:r.coverage,
+    semantic:r.semantic_consistency,
+    structure:r.structure_score,
+    semantic_source:r.semantic_source,
+    evidence:r.elements.slice().sort((a,b)=>b.score-a.score).slice(0,3).map(x=>({
+      element:x.text,score:+(x.score*100).toFixed(1),text:x.evidence
+    })),
+    element_matches:r.elements,
+    feature_vector:r.feature_vector
   };
 }
-function runScreeningEvaluation(claimText,citationText){
+async function runScreeningEvaluation(claimText,citationText){
   const profiles=buildClaimProfiles(claimText);
-  const claim_results=profiles.map(p=>scoreOneClaimProfile(p,citationText)).sort((a,b)=>b.screening_score-a.screening_score);
-  const best=claim_results[0]||{screening_score:0,critical:0,semantic:0,process:0,architecture:0,numeric:0,coverage:0,weakest:0,evidence:[],claim_number:'1'};
+  const claim_results=[];
+  for(const p of profiles)claim_results.push(await scoreOneClaimProfile(p,citationText));
+  claim_results.sort((a,b)=>b.screening_score-a.screening_score);
+  const best=claim_results[0]||{screening_score:0,screening_raw:0,element_avg:0,weakest:0,coverage:0,semantic:0,structure:0,evidence:[],claim_number:'1',semantic_source:'fallback'};
   return {
     scoring_version:SCORING_VERSION,
-    mode:'screening',
+    mode:'screening-semantic-evidence',
     final_score:best.screening_score,
     raw_score:best.screening_raw,
     tier:tierOf(best.screening_score),
     best_claim:best.claim_number,
-    critical:best.critical,
+    element_avg:best.element_avg,
     semantic:best.semantic,
-    process:best.process,
-    architecture:best.architecture,
-    numeric:best.numeric,
+    structure:best.structure,
     coverage:best.coverage,
-    element_min:best.weakest, // display-only warning in screening mode
+    element_min:best.weakest,
+    semantic_source:best.semantic_source,
     evidence_snippets:best.evidence,
+    feature_vector:best.feature_vector,
     claim_results
   };
 }
@@ -1457,9 +1739,9 @@ function recordScreeningAudit(pid,claim,citation,r,format){
     timestamp:new Date().toISOString(),id:pid,mode:'screening:'+format,
     scoring_version:SCORING_VERSION,claim,citation,
     screening_score:r.final_score,best_claim:r.best_claim,
-    critical:r.critical,semantic:r.semantic,process:r.process,
-    architecture:r.architecture,numeric:r.numeric,coverage:r.coverage,
-    weakest:r.element_min,evidence:r.evidence_snippets
+    element_avg:r.element_avg,semantic:r.semantic,structure:r.structure,
+    coverage:r.coverage,weakest:r.element_min,semantic_source:r.semantic_source,
+    feature_vector:r.feature_vector,evidence:r.evidence_snippets
   });
   auditSave(a);renderAudit();
 }
@@ -1470,14 +1752,14 @@ async function runMulti(){
   if(!citations.length){toast('未能解析有效引證',true);return;}
   const profiles=buildClaimProfiles(claim);
   updateBatchParseInfo();
-  toast(`v3.8：${parsed.format} ${citations.length} 筆｜獨立項 ${profiles.map(p=>p.claim_number).join(', ')}`);
+  toast(`v3.10：${parsed.format} ${citations.length} 筆｜獨立項 ${profiles.map(p=>p.claim_number).join(', ')}`);
   const btn=document.getElementById('mBtn');btn.disabled=true;showLoad(true);const out=[];
   try{
     for(let i=0;i<citations.length;i++){
       const c=citations[i];
       step(`[${i+1}/${citations.length}] Passage retrieval · ${c.citation_id}`,8+Math.round((i/citations.length)*86));
       await sleep(12);
-      const r=runScreeningEvaluation(claim,c.citation_text);
+      const r=await runScreeningEvaluation(claim,c.citation_text);
       out.push({...r,citation_id:c.citation_id,citation_text:c.citation_text,metadata:c.metadata||{},source_format:c.source_format||parsed.format,rank:0});
       recordScreeningAudit(c.citation_id,claim,c.citation_text,r,parsed.format);
     }
@@ -1501,13 +1783,13 @@ function renderMultiRows(results){
         <span class="card-sub">Screening ${top.final_score} · Weakest ${top.element_min}% ⚠</span>
       </div>
       <div class="card-body">
-        <div class="screen-note">Evidence-First Screening：Element Min 僅作「缺漏警示」，不會封頂。請選入單篇詳細比對後，再使用嚴格 Min Gate。</div>
+        <div class="screen-note">v3.9 Screening 與單篇比對共用同一套 Semantic Evidence Alignment；Element Min 是特徵，不是 hard gate。</div>
         <div class="screen-grid">
-          ${renderMetric('Critical',top.critical,top.critical>=70?'var(--a2)':'var(--a3)')}
+          ${renderMetric('Element Avg',top.element_avg)}
           ${renderMetric('Semantic',top.semantic)}
-          ${renderMetric('Process',top.process)}
-          ${renderMetric('Architecture',top.architecture)}
+          ${renderMetric('Structure',top.structure)}
           ${renderMetric('Coverage',top.coverage+'%')}
+          ${renderMetric('Weakest',top.element_min+'%',top.element_min<30?'var(--a4)':'var(--a3)')}
         </div>
         <div class="evidence-list">${ev||'<div class="screen-note">未擷取到高信心 evidence passage。</div>'}</div>
       </div>
@@ -1522,11 +1804,11 @@ function renderMultiRows(results){
         <span title="${esc(r.citation_text)}">${esc(r.citation_text)}</span>
         <span class="batch-detail">
           <span>Claim ${esc(r.best_claim)}</span>
-          <span>Critical ${r.critical}</span>
+          <span>Avg ${r.element_avg}</span>
           <span>Semantic ${r.semantic}</span>
-          <span>Process ${r.process}</span>
-          <span>Arch ${r.architecture}</span>
+          <span>Structure ${r.structure}</span>
           <span>Coverage ${r.coverage}%</span>
+          <span>${r.semantic_source}</span>
         </span>
       </span>
       <span class="b-elem" style="color:${r.element_min<30?'var(--a4)':r.element_min<50?'var(--a3)':'var(--a2)'}">Weak ${Math.round(r.element_min)}%</span>
@@ -1760,13 +2042,13 @@ function genDraft(){
 // ═══════════════════════════════════════
 function autoSave(pid,r){
   const db=dbLoad(),claim=document.getElementById('claimTxt').value.trim(),cit=document.getElementById('citTxt').value.trim();
-  const entry={id:pid,claim,citation:cit,label:null,raw_score:r.raw_score,calibrated_score:r.final_score,elem_min:r.element_min,element_avg:r.element_avg,structure_score:r.structure_score,sims:r.sims,scoring_version:SCORING_VERSION,detected_at:new Date().toISOString()};
+  const entry={id:pid,claim,citation:cit,label:null,reviewer_label:null,raw_score:r.raw_score,calibrated_score:r.final_score,elem_min:r.element_min,element_avg:r.element_avg,structure_score:r.structure_score,coverage:r.coverage,semantic:r.semantic_consistency,feature_vector:r.feature_vector,sims:r.sims,scoring_version:SCORING_VERSION,detected_at:new Date().toISOString()};
   const i=db.cases.findIndex(c=>c.id===pid);if(i>=0){const old=db.cases[i];db.cases[i]={...entry,label:old.label,verified_at:old.verified_at};}else db.cases.push(entry);dbSave(db);renderDB();renderCalibInfo();
 }
 function doVerify(label){
   if(!_lastR){toast('請先執行比對',true);return;}const pid=document.getElementById('patId').value.trim()||'未指定',db=dbLoad();let i=db.cases.findIndex(c=>c.id===pid);
-  const base={id:pid,claim:document.getElementById('claimTxt').value.trim(),citation:document.getElementById('citTxt').value.trim(),raw_score:_lastR.raw_score,calibrated_score:_lastR.final_score,elem_min:_lastR.element_min,element_avg:_lastR.element_avg,structure_score:_lastR.structure_score,sims:_lastR.sims,scoring_version:SCORING_VERSION};
-  const entry={...(i>=0?db.cases[i]:base),...base,label,verified_at:new Date().toISOString()};if(i>=0)db.cases[i]=entry;else db.cases.push(entry);dbSave(db);refitCalib(false);renderDB();renderCalibInfo();
+  const base={id:pid,claim:document.getElementById('claimTxt').value.trim(),citation:document.getElementById('citTxt').value.trim(),raw_score:_lastR.raw_score,calibrated_score:_lastR.final_score,elem_min:_lastR.element_min,element_avg:_lastR.element_avg,structure_score:_lastR.structure_score,coverage:_lastR.coverage,semantic:_lastR.semantic_consistency,feature_vector:_lastR.feature_vector,sims:_lastR.sims,scoring_version:SCORING_VERSION};
+  const entry={...(i>=0?db.cases[i]:base),...base,label,reviewer_label:label===1?'highly_relevant':'low_relevance',verified_at:new Date().toISOString()};if(i>=0)db.cases[i]=entry;else db.cases.push(entry);dbSave(db);refitCalib(false);renderDB();renderCalibInfo();
   const vb=document.getElementById('vfyBadge');vb.className='vfy-badge '+(label===1?'sep':'non');vb.textContent=label===1?'✅ SEP':'❌ 非 SEP';toast(`已記錄：${pid} → ${label===1?'SEP':'非 SEP'}`);
 }
 function renderDB(){
@@ -1813,6 +2095,24 @@ function init(){
   renderDB();renderAudit();renderCalibInfo();
 }
 init();
+
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const qe=document.getElementById('qeMode'),ql=document.getElementById('qeLimit'),rk=document.getElementById('rrfK');
+  if(qe){qe.value=localStorage.getItem('pat_sim_v310_qe_mode')||'auto';qe.addEventListener('change',()=>localStorage.setItem('pat_sim_v310_qe_mode',qe.value));}
+  if(ql){ql.value=localStorage.getItem('pat_sim_v310_qe_limit')||'4';ql.addEventListener('change',()=>localStorage.setItem('pat_sim_v310_qe_limit',ql.value));}
+  if(rk){rk.value=localStorage.getItem('pat_sim_v310_rrf_k')||'60';rk.addEventListener('change',()=>localStorage.setItem('pat_sim_v310_rrf_k',rk.value));}
+});
+document.addEventListener('DOMContentLoaded',()=>{
+  const ep=document.getElementById('semanticEndpoint');
+  if(ep){
+    ep.value=localStorage.getItem(SEMANTIC_ENDPOINT_KEY)||'';
+    ep.addEventListener('change',saveSemanticEndpoint);
+    const st=document.getElementById('semanticStatus');
+    if(st&&ep.value)st.textContent='已載入 endpoint；尚未測試';
+  }
+});
+
 </script>
 </body>
 </html>
