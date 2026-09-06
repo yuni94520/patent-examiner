@@ -1,0 +1,28 @@
+{
+  "xss": {
+    "unescapedPayloadReachesHtmlSink": true,
+    "persistsInStorage": true,
+    "browserExecution": "NOT TESTED: Chromium binary unavailable"
+  },
+  "endpointCache": {
+    "calls": 1,
+    "a": [
+      [
+        1,
+        0
+      ]
+    ],
+    "b": [
+      [
+        1,
+        0
+      ]
+    ],
+    "staleEndpointCache": true
+  },
+  "labelCarryover": {
+    "label": 1,
+    "claim": "different claim",
+    "citation": "different citation"
+  }
+}
