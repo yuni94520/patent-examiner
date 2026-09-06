@@ -613,7 +613,7 @@ select option{background:var(--s2);}
     <div class="tab-pane" id="tab-keyword">
       <div class="content">
         <div class="card">
-          <div class="card-hd"><div class="step-num y">KW</div><div class="card-title">v3.7 專利檢索策略產生器</div><div class="card-sub">技術特徵抽取｜A 動作視角 + B 架構視角</div></div>
+          <div class="card-hd"><div class="step-num y">KW</div><div class="card-title">AI 專利檢索式 Prompt 產生器</div><div class="card-sub">輸入請求項 → 複製至 API / Colab</div></div>
           <div class="card-body">
             <div class="fg"><label>請求項 / 技術段落</label><textarea id="kwTxt" rows="8" placeholder="貼入請求項或技術段落..."></textarea></div>
             <div class="frow">
@@ -626,10 +626,10 @@ select option{background:var(--s2);}
                 </select>
               </div>
             </div>
-            <div class="info-box" style="margin:2px 0 4px;">v3.7 會先排除 claim boilerplate（例如 comprising / wherein / forming / 該 / 其中 / 包含），再依技術動作與系統架構分組；每組最多 5 個中英文同義詞。</div>
-            <div class="btn-row"><button class="btn-local" onclick="runKeyword()">🔍 產生 A/B 專利檢索式</button></div>
+            <div class="info-box" style="margin:2px 0 4px;">依你的專利檢索 prompt 產生完整 AI 輸入；輸出仍要求 A/B 標準式與放寬式。</div>
+            <div class="btn-row"><button class="btn-local" onclick="runKeyword()">🔍 產生 AI 檢索 Prompt</button></div>
             <div class="out-card" id="kwCard">
-              <div class="out-hd"><div class="out-title">v3.7 專利檢索策略</div><button class="btn-copy" onclick="copyEl('kwBody')">複製</button></div>
+              <div class="out-hd"><div class="out-title">AI 檢索式 Prompt</div><button class="btn-copy" onclick="copyEl('kwBody')">複製</button></div>
               <div class="out-body" id="kwBody"></div>
             </div>
           </div>
@@ -641,7 +641,7 @@ select option{background:var(--s2);}
     <div class="tab-pane" id="tab-draft">
       <div class="content">
         <div class="card">
-          <div class="card-hd"><div class="step-num r">D</div><div class="card-title">制式審查意見稿</div><div class="card-sub">填入欄位 → 自動套入格式</div></div>
+          <div class="card-hd"><div class="step-num r">D</div><div class="card-title">AI 審查意見 Prompt</div><div class="card-sub">填入欄位 → 複製至 API / Colab</div></div>
           <div class="card-body">
             <div class="frow">
               <div class="fg"><label>發明名稱</label><input type="text" id="dInv" placeholder="具有自適應迴圈濾波器的視訊編碼方法" /></div>
@@ -684,11 +684,11 @@ select option{background:var(--s2);}
             <div class="btn-row">
               <button class="btn-run" onclick="genDraft()">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                產生制式意見稿
+                產生 AI 審查 Prompt
               </button>
             </div>
             <div class="out-card" id="draftCard">
-              <div class="out-hd"><div class="out-title">審查意見稿</div><button class="btn-copy" onclick="copyEl('draftBody')">複製</button></div>
+              <div class="out-hd"><div class="out-title">AI 審查意見 Prompt</div><button class="btn-copy" onclick="copyEl('draftBody')">複製</button></div>
               <div class="out-body" id="draftBody"></div>
             </div>
           </div>
@@ -740,6 +740,38 @@ select option{background:var(--s2);}
 // ═══════════════════════════════════════
 // 8D CORE (保留原有邏輯，完整呈現)
 // ═══════════════════════════════════════
+const SEARCH_FORMULA_PROMPT="你是一名資深專利審查官，精通專利檢索策略、IPC/CPC分類體系，以及3GPP、O-RAN、IEEE、半導體與人工智慧等領域之技術標準術語。我將提供專利請求項與實施例文本，你的任務是生成一份僅包含專利檢索式的結果。\n\n###\n核心規則與語法約束（最高優先級）：\n\n1. 語法與括號完整性：\n- 每個獨立關鍵字組必須用大括號完整包覆：(詞1 OR 詞2 OR ...)\n- 嚴禁出現跨組未閉合括號，組與組之間一律使用 AND 連接。\n- 若有附加檢索條件（如日期 UD / GD），必須以 AND (UD=:... OR GD=:...) 的正確布林邏輯併入尾端。\n\n2. 同義詞數量限制：\n- 每個關鍵字組內，中英文同義詞與縮寫合計最多不得超過 5 個，僅保留最精準、最常用的詞彙。\n\n3. 英文標準術語：\n- 採用該領域國際標準術語與常見縮寫（如 5G 用 gNB, vRAN, O-RAN；半導體用 nanosheet, GAA；AI 用 NLP, ViT 等）。\n- 注意英美拼寫（如 fiber/fibre）。\n\n4. IPC 分類號：\n- 必置於檢索式最前端，格式為 IC=(IPC1 OR IPC2 ...)，推薦 2-4 個相關 subclass/group。\n\n5. 純淨輸出：\n- 僅輸出最終檢索式，嚴禁包含任何開頭問候、解釋過程、摘要或結語。\n\n###\n操作步驟：\n\n1. 理解專利範圍與核心特徵：\n- 閱讀請求項，識別 3-6 組最具區辨性的核心技術特徵。\n- 排除概括性詞彙（如「處理」、「系統」、「裝置」）。\n- 進行概念具體化（如「資源」依脈絡轉為「預留資源 reserved resource」）。\n\n2. 生成同義詞與鄰近檢索：\n- 對修飾關係詞組使用鄰近運算子（如 (預留[0,3]資源 OR reserved[0,2]resource)）。\n- 擴展中英文同義詞（總數 ≤ 5 個）。\n\n3. 構建雙視角檢索式：\n- 視角 A（技術動作視角）：以核心技術動作（動詞名詞化，如「配準」、「判斷」、「調整」）搭配觸發條件，抓「這個發明在做什麼」。\n- 視角 B（系統架構視角）：以系統元件、模型與資料流（如「圖像辨識模組」、「NLP模型」）為主軸，抓「這個發明由什麼組成」。\n- 標準式：包含 3-4 組關鍵字。\n- 放寬式：挑選最核心的 2-3 組關鍵字。\n\n###\n輸出格式範本（請嚴格照抄格式，勿更改標籤）：\n\nA標準式：IC=(IPC1 OR IPC2) AND (組1_中文 OR 組1_英文) AND (組2_中文 OR 組2_英文) AND (組3_中文 OR 組3_英文) AND (組4_中文 OR 組4_英文)\n\nA放寬式：IC=(IPC1 OR IPC2) AND (組1_中文 OR 組1_英文) AND (組2_中文 OR 組2_英文) AND (組3_中文 OR 組3_英文)\n\nB標準式：IC=(IPC1 OR IPC2) AND (組1_中文 OR 組1_英文) AND (組2_中文 OR 組2_英文) AND (組3_中文 OR 組3_英文) AND (組4_中文 OR 組4_英文)\n\nB放寬式：IC=(IPC1 OR IPC2) AND (組1_中文 OR 組1_英文) AND (組2_中文 OR 組2_英文)";
+const EXAM_OPINION_PROMPT="你是一位資深的台灣專利審查官，精通專利法第22條關於新穎性與進步性之審查基準，具備20年以上專利審查經驗。你的任務是依據提供的「請求項內容」與「引證文件」，生成完全符合台灣智慧財產局格式標準的專業審查意見書。\n\n【核心審查原則】\n- 所有引證段落必須真實存在，嚴禁編造或推測。\n- 技術特徵比對必須客觀、準確，逐句對應，不得整段堆放。\n- 引證1所使用的語言保留原始語種，每個引證原文後方緊接附上中文翻譯。\n- 法律結論必須基於充分的事實與邏輯推論。\n- 格式必須嚴格遵守台灣智慧財產局規範，全篇統一。\n\n【第一鐵律：逐句嵌入比對格式】\n絕對禁止：\n- 整段請求項堆放後，末尾才集中標註引證。\n- 先寫完整請求項，段落結束後才補充引證。\n- 使用「可推論」「應可得知」「隱含揭露」「應該揭露」「可能揭露」。\n\n唯一允許格式：\n「一種○○裝置，包括：\nA特徵【[000X] 引證原文 — 中文翻譯】；\nB特徵【[000Y] 引證原文 — 中文翻譯】；\nC特徵【[000Z] 引證原文 — 中文翻譯】；\nD特徵【[000W] 引證原文 — 中文翻譯】」\n\n【第二鐵律：五條強制執行規則】\n1. 最小語意單位拆解：請求項原文必須拆解至最小語意單位，每一個獨立技術特徵為一個比對單位。複數技術特徵不得合併為一個段落。\n2. 緊接嵌入，不得延後：每個技術特徵的【】引證標註必須緊跟在該技術特徵原文之後，無例外。\n3. 一特徵對一引證群組：每個【】對應一個技術特徵。若需引用複數段落，在同一【】內列出，各段落以「；」分隔，每段落均附翻譯。\n4. 未揭露特徵之標記：若某技術特徵引證1確實未揭露，在該技術特徵後標記【引證1未揭露此特徵】，並於後續「依上述比對」段落集中論述差異及進步性判斷。\n5. 格式全篇一致：全部請求項（獨立項、附屬項、方法項）統一採用上述格式，禁止同一份審查意見書中出現不同格式。\n\n【輸出格式標準】\n(一)本案「[發明名稱]」，依申請時所提說明書、申請專利範圍及圖式進行審查，請求項共[總數]項，其中第[獨立項編號]為獨立項，其餘為附屬項。\n\n(二)依據引證1已揭露內容，本案請求項[範圍]不符專利法第22條第1項第1款或第22條第2項之規定。\n\n完全揭露型：\nX、本案請求項X，經查引證1（[引證案號]）【[XXXX]、[YYYY]、[ZZZZ]】已揭露：\n「技術特徵甲【[XXXX] 引證原文 — 中文翻譯】；\n技術特徵乙【[YYYY] 引證原文 — 中文翻譯】；\n技術特徵丙【[ZZZZ] 引證原文 — 中文翻譯】」\n本項所請係申請前已見於刊物，因此，本項發明不具新穎性，亦不具進步性。\n\n部分揭露型：\nX、本案請求項X，經查引證1（[引證案號]）【[XXXX]、[YYYY]】已揭露：\n「技術特徵甲【[XXXX] 引證原文 — 中文翻譯】；\n技術特徵乙【[YYYY] 引證原文 — 中文翻譯】；\n技術特徵丙【引證1未揭露此特徵】」\n依上述比對，本項與引證1之差異在於，引證1未明確揭示本項之「[未揭露的具體技術特徵]」。\n惟此差異，係該發明所屬技術領域中具有通常知識者，利用申請時之通常知識，可簡單變更引證1之[具體元件或段落]的[具體變更項目]即可得本項之發明。\n[具體說明：為何屬於通常知識或簡單變更，須有實質論述，不得僅說「係通常知識」]\n再查本項所請發明對照先前技術，並未產生無法預期之功效。\n因此，該發明所屬技術領域中具有通常知識者，自可依引證1所揭示技術內容簡單變更而輕易完成本項之發明，故不具進步性。\n\n附屬項：\n- 進步性核駁之附屬項開頭必須加「除請求項X之論述外，」。\n- 新穎性核駁之附屬項不需此句。\n- 方法項對應裝置項使用：「X、本案請求項X，為對應請求項Y之步驟方法，其不具進步性理由如請求項Y所述。」\n\n(三)未核駁項次：\n若有未核駁項，寫「(三)本案請求項[X、Y、Z]於現在時點並未發現不予專利理由，如有發現新的不予專利事由，會再通知。」\n若全部核駁，寫「(三)本案請求項1-N均已於上述(二)中論述其不具新穎性或不具進步性，故本部分無未發現不予專利理由之請求項。」\n\n(四)引用文獻：\n1、[引證案號]\n2、[引證案號]（如有）\n\n【法律論證強化要點】\n- 新穎性：技術特徵完全相同，僅用詞不同，使用「兩者差異僅在於文字的記載形式，技術內容實質相同。」\n- 進步性：明確指出差異、具體論證簡單變更、確認無法預期功效並作結論。\n- BRI：引證用語不同但技術實質相同時，說明引證用語與本案用語的功能及技術本質相同。\n\n【絕對禁止】\n- 整段請求項堆放後才接引證。\n- 使用「可推論」「隱含揭露」。\n- 編造或臆測引證內容。\n- 進步性附屬項漏寫「除請求項X之論述外」。\n- 簡單變更論述空泛僅說「係通常知識」。\n- 功能完全不同的特徵強行對應。\n- 同一份審查意見書格式不統一。";
+
+function buildSearchFormulaPromptInput(){
+  const claim=(document.getElementById('kwTxt')?.value?.trim() || document.getElementById('claimTxt')?.value?.trim() || '');
+  const ipc=(document.getElementById('kwIpc')?.value?.trim() || '');
+  const n=(document.getElementById('kwCount')?.value || '8');
+  return SEARCH_FORMULA_PROMPT + "\n\n【輸入資料】\nIPC/CPC 或技術領域提示：" + (ipc || "未提供，請依請求項與實施例自行判斷 2-4 個相關 IPC") + "\n關鍵字數量偏好：" + n + "\n請求項與實施例文本：\n" + claim;
+}
+function buildExamOpinionPromptInput(){
+  const rows=[...document.querySelectorAll('#claimRows > div')].map(d=>({
+    num:d.querySelector('.cr-num')?.value.trim()||'',
+    diff:d.querySelector('.cr-diff')?.value.trim()||'',
+    cit:d.querySelector('.cr-cit')?.value.trim()||'',
+    type:d.querySelector('.cr-type')?.value||''
+  })).filter(r=>r.num||r.diff||r.cit);
+  const payload={
+    invention_title:document.getElementById('dInv')?.value.trim()||'',
+    claim_total:document.getElementById('dTotal')?.value.trim()||'',
+    independent_claims:document.getElementById('dIndep')?.value.trim()||'',
+    notice_number:document.getElementById('dNoticeNum')?.value.trim()||'',
+    rejection_type:document.getElementById('dType')?.value||'',
+    core_difference:document.getElementById('dDiff')?.value.trim()||'',
+    citation_1:{id:document.getElementById('dCit1Id')?.value.trim()||'',text_or_summary:document.getElementById('dCit1Abs')?.value.trim()||''},
+    citation_2:{id:document.getElementById('dCit2Id')?.value.trim()||'',text_or_summary:document.getElementById('dCit2Abs')?.value.trim()||''},
+    claim_mapping_rows:rows,
+    compare_tab_claim:document.getElementById('claimTxt')?.value.trim()||'',
+    compare_tab_citation:document.getElementById('citTxt')?.value.trim()||''
+  };
+  return EXAM_OPINION_PROMPT + "\n\n【輸入資料】\n" + JSON.stringify(payload,null,2);
+}
+
 const ATTRS=[
   {name:"元件",    key:"components",        weight:0.28,color:"#818cf8"},
   {name:"步驟",    key:"steps",             weight:0.18,color:"#818cf8"},
@@ -1937,43 +1969,12 @@ function selectConceptGroups(concepts,view,max){
   return out;
 }
 function runKeyword(){
-  const txt=document.getElementById('kwTxt').value.trim();if(!txt){toast('請先貼入請求項或技術段落',true);return;}
-  const requested=parseInt(document.getElementById('kwCount').value)||8;
-  let ipcPrefix=normalizeIPCInput(document.getElementById('kwIpc').value.trim());
-  let ipcMode='使用者指定 IPC';
-  if(!ipcPrefix){const inferred=inferIPC(txt);if(inferred.length){ipcPrefix=`IC=(${inferred.join(' OR ')})`;ipcMode='本地規則推定 IPC';}else ipcMode='未指定 IPC';}
-
-  const concepts=detectConcepts(txt);
-  const fallback=extractFallbackPhrases(txt,Math.max(8,requested));
-  let action=selectConceptGroups(concepts,'action',4);
-  let arch=selectConceptGroups(concepts,'arch',4);
-  // 技術動作不足時，以「both」及高辨識 fallback 補齊；架構不足時同理
-  const both=concepts.filter(c=>c.view==='both');
-  for(const c of both){if(action.length<4&&!action.some(x=>x.id===c.id))action.push(c);if(arch.length<4&&!arch.some(x=>x.id===c.id))arch.push(c);}
-  const fallbackIter=fallback[Symbol.iterator]();
-  while(action.length<3){const n=fallbackIter.next();if(n.done)break;action.push({id:'fb-a-'+action.length,terms:[n.value]});}
-  const fallbackIter2=fallback[Symbol.iterator]();
-  while(arch.length<3){const n=fallbackIter2.next();if(n.done)break;arch.push({id:'fb-b-'+arch.length,terms:[n.value]});}
-
-  const aStd=action.slice(0,4).map(c=>c.terms.length>1?conceptGroup(c):fallbackGroup(c.terms[0]));
-  const aBroad=action.slice(0,3).map(c=>c.terms.length>1?conceptGroup(c):fallbackGroup(c.terms[0]));
-  const bStd=arch.slice(0,4).map(c=>c.terms.length>1?conceptGroup(c):fallbackGroup(c.terms[0]));
-  const bBroad=arch.slice(0,3).map(c=>c.terms.length>1?conceptGroup(c):fallbackGroup(c.terms[0]));
-
-  const diagnostic=concepts.slice(0,Math.min(requested,12)).map(c=>c.terms[0]);
-  const out=[
-    `A標準式：${buildQuery(ipcPrefix,aStd)}`,
-    `A放寬式：${buildQuery(ipcPrefix,aBroad)}`,
-    `B標準式：${buildQuery(ipcPrefix,bStd)}`,
-    `B放寬式：${buildQuery(ipcPrefix,bBroad)}`,
-    '',
-    `【v3.7 本地抽取診斷】${ipcMode}`,
-    diagnostic.length?`核心技術特徵：${diagnostic.join('｜')}`:'核心技術特徵：未命中領域詞典，已使用 n-gram fallback',
-    '已排除：comprising / wherein / forming / said / 該 / 其中 / 包含 / 形成於 等 claim boilerplate'
-  ].join('\n');
-  const card=document.getElementById('kwCard');card.classList.add('vis');document.getElementById('kwBody').textContent=out;
+  const prompt=buildSearchFormulaPromptInput();
+  const card=document.getElementById('kwCard');
+  card.classList.add('vis');
+  document.getElementById('kwBody').textContent=prompt;
+  toast('已產生 AI 檢索式 prompt，請複製至你的 API / Colab。');
 }
-
 // ═══════════════════════════════════════
 // TAB 4: 制式意見稿
 // ═══════════════════════════════════════
@@ -1997,63 +1998,12 @@ function addClaimRow(num='',diff='',citRef='',type='indep'){
 }
 
 function genDraft(){
-  const inv   =document.getElementById('dInv').value.trim()||'【發明名稱】';
-  const total =document.getElementById('dTotal').value.trim()||'X';
-  const indep =document.getElementById('dIndep').value.trim()||'1';
-  const noticeNum=document.getElementById('dNoticeNum').value.trim()||'XXXXXXXXXX';
-  const cit1Id =document.getElementById('dCit1Id').value.trim()||'引證1';
-  const cit1Abs=document.getElementById('dCit1Abs').value.trim()||'揭露相關技術特徵';
-  const cit2Id =document.getElementById('dCit2Id').value.trim();
-  const cit2Abs=document.getElementById('dCit2Abs').value.trim();
-  const diff   =document.getElementById('dDiff').value.trim()||'【技術差異】';
-  const type   =document.getElementById('dType').value;
-  const rows=[...document.querySelectorAll('#claimRows > div')].map(d=>({
-    num: d.querySelector('.cr-num')?.value.trim()||'?',
-    diff:d.querySelector('.cr-diff')?.value.trim()||'',
-    cit: d.querySelector('.cr-cit')?.value.trim()||'[說明書段落XXXX]',
-    type:d.querySelector('.cr-type')?.value||'indep',
-  }));
-  const today=new Date();
-  const yr=today.getFullYear()-1911,mo=today.getMonth()+1,da=today.getDate();
-  const dateStr=`${yr}年${mo}月${da}日`;
-  let out='';
-  const nonClaims=rows.map(r=>r.num).join('、');
-  if(type==='rej'){
-    out+=`(一)本案「${inv}」，依申請時所提說明書、申請專利範圍及圖式進行審查，請求項共${total}項，其中第${indep}項為獨立項，其餘為附屬項。\n\n`;
-    out+=`(二)依據引證1（${cit1Id}）已揭露內容，本案請求項${nonClaims}不符專利法第22條第2項之規定。\n`;
-    for(const r of rows){
-      if(r.type==='indep'){
-        out+=`\n${r.num}、本案請求項${r.num}，經查引證1（${cit1Id}）【${r.cit}】已揭露：「${cit1Abs}」。`;
-        out+=`本請求項相較前述引證1差異僅在於本案揭露「★${r.diff||diff}」，惟本項發明為所屬技術領域具有通常知識者可參酌引證1`;
-        if(cit2Id)out+=`及引證2（${cit2Id}）`;
-        out+=`依使用者需求簡單變更，故本項發明不具進步性。\n`;
-      }else if(r.type==='dep'){
-        out+=`\n${r.num}、本案請求項${r.num}，除請求項${parseInt(r.num)-1||1}之論述外，經查引證1【${r.cit}】已揭露：「${r.diff||cit1Abs}」，故本項發明不具進步性。\n`;
-      }else if(r.type==='method'){
-        out+=`\n${r.num}、本案請求項${r.num}，為對應請求項${r.diff||'1'}之步驟方法，其不具進步性理由如請求項${r.diff||'1'}所述。\n`;
-      }
-    }
-    out+=`\n(三)引用文獻：\n1、${cit1Id}`;
-    if(cit2Id)out+=`\n2、${cit2Id}`;
-  }else if(type==='approve'){
-    out+=`(一)本案「${inv}」，依申請時所提說明書、申請專利範圍及圖式進行審查，請求項共${total}項，其中第${indep}項為獨立項，其餘為附屬項。\n\n`;
-    out+=`(二)依據引證1（${cit1Id}）揭示內容，本案請求項1至${total}具新穎性及進步性。\n\n`;
-    out+=`1、本案請求項1，引證1（${cit1Id}）【${rows[0]?.cit||'說明書段落'}】雖已揭露：「${cit1Abs}」，惟本案請求項1額外揭露「★${diff}」，此非為所屬技術領域中具有通常知識者依申請前先前技術所能輕易完成者，故具進步性；另請求項2至${total}所附加之技術特徵均限縮在本項，故一併具有進步性。\n\n`;
-    out+=`(三)本案請求項1至${total}，已確認符合專利法第21條、第22條之規定，應准予專利。\n\n`;
-    out+=`(四)引用文獻：\n1、${cit1Id}`;
-    if(cit2Id)out+=`\n2、${cit2Id}`;
-  }else if(type==='appeal'){
-    out+=`(一)本案「${inv}」，本局前審查意見通知函（通知函號：${noticeNum}）通知申請人申復，申請人於${dateStr}提出申復理由書，經審酌後認定申復不成立，理由如下：\n\n`;
-    out+=`(二)依申復理由所記載之內容主要包括：\n1. 申請人主張引證1（${cit1Id}）未揭露本案「${diff}」之技術特徵，故本案具進步性。\n\n`;
-    out+=`(三)惟經審酌，有下列申復不成立之理由：\n`;
-    out+=`(1)就申請人認為引證1（${cit1Id}）未揭露「${diff}」一節：\n　　查引證1【${rows[0]?.cit||'說明書段落'}】已揭露：「${cit1Abs}」，對本發明所屬技術領域通常知識者而言，上述技術已充分揭示相關技術特徵，且「${diff}」屬所屬技術領域通常知識者依通常知識可輕易完成之設計選擇，故此點申復不成立。\n`;
-    for(let i=0;i<rows.length;i++){const r=rows[i];out+=`\n(${i+2})關於請求項${r.num}，其不具進步性之理由同前開審查意見通知函所載，申復理由不成立。\n`;}
-    out+=`\n(四)引用文獻：\n1、${cit1Id}`;
-    if(cit2Id)out+=`\n2、${cit2Id}`;
-  }
-  const card=document.getElementById('draftCard');card.classList.add('vis');
-  document.getElementById('draftBody').textContent=out;
+  const prompt=buildExamOpinionPromptInput();
+  const card=document.getElementById('draftCard');
+  card.classList.add('vis');
+  document.getElementById('draftBody').textContent=prompt;
   card.scrollIntoView({behavior:'smooth',block:'start'});
+  toast('已產生 AI 審查意見 prompt，請複製至你的 API / Colab。');
 }
 
 // ═══════════════════════════════════════
