@@ -1,0 +1,153 @@
+{
+  "status": "PASS",
+  "scope": "Full byte read-back, required files, source hash, UTF-8/JSON, local Markdown links; not a security test",
+  "errors": [],
+  "files": [
+    {
+      "path": "00-DIAGNOSIS.md",
+      "bytes": 2180,
+      "sha256": "6191d05e7af73a4cf9f77a56053e5281740568cbeb9c9272d87c2a681b7ff16a"
+    },
+    {
+      "path": "CLAUDE.md",
+      "bytes": 1774,
+      "sha256": "14da27e40c01819001081c919aba46836360ad10578dd70acc45997531108307"
+    },
+    {
+      "path": "README.md",
+      "bytes": 3473,
+      "sha256": "2e39ea0257012aabb45dc18175d3b3a519b0aa0dfb0401b7279d8ff75c11a6be"
+    },
+    {
+      "path": "backups/review-round-1/BACKUP-MANIFEST.json",
+      "bytes": 381,
+      "sha256": "d43535e9d6fb028c83e00ab3a63ea55b6f02be5d96f2518b96d1a417a18313b4"
+    },
+    {
+      "path": "backups/review-round-1/README.md",
+      "bytes": 3342,
+      "sha256": "14dc9cd57b7530dc7620079599e57bd0901a5711eec5a8a11d6585a6f91b8ff7"
+    },
+    {
+      "path": "backups/review-round-1/evidence/SECURITY-REVIEW.md",
+      "bytes": 7347,
+      "sha256": "c3b21ab81eddebaae2abd91dcea04eb9be00619fe77f9a269e1f81aab852d69a"
+    },
+    {
+      "path": "backups/review-round-1/governance/02-DISPATCH.md",
+      "bytes": 4212,
+      "sha256": "838ed9a661402bbabbcfe5a50bbf3727f5d59ecf59d7bdfcfbb807736cb9704d"
+    },
+    {
+      "path": "backups/review-round-2/READBACK-preclosure.json",
+      "bytes": 4682,
+      "sha256": "68324a0293e754959458f43d3ca2596e0490e041faaf22a46c51971ab7a1321a"
+    },
+    {
+      "path": "backups/review-round-2/README.md",
+      "bytes": 3423,
+      "sha256": "bf70bb74f861ff71fde8e463d74d6bff7265a09fb875d628a82340c48d5bb82a"
+    },
+    {
+      "path": "backups/review-round-2/evidence/SECURITY-REVIEW.md",
+      "bytes": 7518,
+      "sha256": "ca35d93623c80dd1a34a895d89a067d95c3e9cc995eca94409caca77029a9699"
+    },
+    {
+      "path": "evidence/BASELINE-RESULTS.json",
+      "bytes": 455,
+      "sha256": "f363538f84c3f37d86aa4ef7d833391b288c92eee488f51dbfdf1fd44e4bcd3d"
+    },
+    {
+      "path": "evidence/FINAL-CLOSURE.md",
+      "bytes": 4094,
+      "sha256": "5d758c45db49a7a8739c9fd0e6ef0f8c6d04a46ed6f4c7a97e6fe1c9239fddd4"
+    },
+    {
+      "path": "evidence/FINAL-REVIEW.md",
+      "bytes": 2107,
+      "sha256": "0bda6575a7800d90f6a52c57cdcf88b91b18f596b38e05f5cc2f412e0f906b9a"
+    },
+    {
+      "path": "evidence/PUBLIC-API.md",
+      "bytes": 6877,
+      "sha256": "f4d115ef495a847c00f6fc2e5c49630ded06ff5fd4f8b486d23c60a0ccc36487"
+    },
+    {
+      "path": "evidence/REPOSITORY-IDENTITY.md",
+      "bytes": 1836,
+      "sha256": "d9ba95242d090db054b2debfde1570cfcd3f2b07aef3d663c87549aeb0188162"
+    },
+    {
+      "path": "evidence/SECURITY-REVIEW.md",
+      "bytes": 9003,
+      "sha256": "e3131f23ecc33d31a8249cd4791ea0c7f0eb8b3fc1fd456e5365c148bc263ff7"
+    },
+    {
+      "path": "evidence/SECURITY-SECOND-OPINION.md",
+      "bytes": 11948,
+      "sha256": "b3f23159a3a49e08acc3e9cdc20be6343f68813f9f32038a240e3c472b81d87f"
+    },
+    {
+      "path": "evidence/SOURCE-MANIFEST.md",
+      "bytes": 972,
+      "sha256": "a969acc91ff5c4995aa55dad64a3145fe15a67e3fbbcb56debbbfe5074807577"
+    },
+    {
+      "path": "evidence/adversarial-review.md",
+      "bytes": 2955,
+      "sha256": "d951f0f2ca0f75337898992e92c590d4511544a81d493c29454a533fbdab26af"
+    },
+    {
+      "path": "evidence/diagnose-v310.cjs",
+      "bytes": 2855,
+      "sha256": "627d9c19f91f4b03393b040e0dbe9ccc1caa3e461c7ea5b763d7bf4636ff741c"
+    },
+    {
+      "path": "evidence/verify-kit.py",
+      "bytes": 2469,
+      "sha256": "22fae8c4e4eb95b1a9564d6850ea2d15a0677d0ad26a1d8718154347ea78d06a"
+    },
+    {
+      "path": "governance/01-ENVIRONMENT.md",
+      "bytes": 3724,
+      "sha256": "aa1626f541acc47fa148303ce7c3429f3a0245116e0781b9054e9b0b77e1c769"
+    },
+    {
+      "path": "governance/02-DISPATCH.md",
+      "bytes": 4444,
+      "sha256": "6409cab4f68bdf6ec90b93b6140c9e00e7ee9a3a1c55df81afcaca2ea9948ca2"
+    },
+    {
+      "path": "governance/03-RUBRIC.md",
+      "bytes": 3208,
+      "sha256": "709856b8edbab7ea83dbdeb40d03b242ba1cc53b89c442b28c38944ff20af01b"
+    },
+    {
+      "path": "governance/05-MAINTENANCE.md",
+      "bytes": 3472,
+      "sha256": "5157b8997a3856531710b5efd04bb1b04346ddd04dcf4b1ec37a3d28754335c1"
+    },
+    {
+      "path": "governance/06-LESSONS.md",
+      "bytes": 1194,
+      "sha256": "dcdb6d51301f224a5f1f6555491a396af364440d735d339be56db55d431dbd48"
+    },
+    {
+      "path": "governance/07-NEXT-SESSION.md",
+      "bytes": 2834,
+      "sha256": "dbac0d2eb560c9405098de4884f7e9517bef1db436551ab8233d23bcef74548a"
+    },
+    {
+      "path": "sources/v3.10.html",
+      "bytes": 130150,
+      "sha256": "fb7f9f6217e3d680be803feaf2baef76f08cb0c11db69cffadb26cb1fc934361"
+    },
+    {
+      "path": "templates/04-DELEGATION.md",
+      "bytes": 3800,
+      "sha256": "795ab4f048543834bdc177cf57cc586494acad3950acea6a5340b45446944ffc"
+    }
+  ],
+  "snapshot_note": "Final 2026-09-06 snapshot. READBACK.json excluded from its own hash inventory to avoid recursive self-hashing; separately read and JSON-parsed after write."
+}
