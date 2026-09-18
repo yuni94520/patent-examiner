@@ -7,6 +7,5 @@
 | L003 / 2026-09-05 | 匯入字串持久化後進innerHTML | schema + textContent +舊資料驗證；測匯入及重新載入 | 資料流已重現，browser執行未驗；evidence/SECURITY-REVIEW.md |
 | L004 / 2026-09-05 | 同專利id換claim/citation仍沿用label | pair hash與不可變結果snapshot；換文負例不得繼承已驗狀態 | 已離線重現、產品未修；evidence/SECURITY-REVIEW.md |
 | L005 / 2026-09-05 | endpoint改變而文字相同，回用舊向量 | cache包含provider/model/revision/preprocessing；A→B需重新請求 | 已離線重現、產品未修；evidence/SECURITY-REVIEW.md |
-| L006 / 2026-09-18 | 檢索式頁僅產生 prompt，模型輸出若直接貼入可能含多餘文字、錯誤括號或超量同義詞 | OpenAI key 留服務端；固定 prompt；服務端與前端雙重驗證四式、IPC、括號、組數、每組最多5詞；失敗僅修正一次並保留 prompt 回退 | 已以 3 個前端與 2 個服務端行為測試驗證；docs/OPTIMIZATION-v3.11.md |
 
-下一條從 L007 開始。新增時使用 05-MAINTENANCE 的完整格式，勿只抄本表摘要。
+下一條從 L006 開始。新增時使用 05-MAINTENANCE 的完整格式，勿只抄本表摘要。
