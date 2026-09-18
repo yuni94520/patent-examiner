@@ -1,0 +1,11 @@
+[
+  "prediction block", "predictor estimation", "intra prediction", "motion compensation",
+  "reference samples", "transform coefficients", "quantization", "deblocking filter",
+  "channel state information", "reference signal measurement", "transmission configuration indication",
+  "UE initiated reporting", "MAC activated pool", "RRC configured pool", "beam selection",
+  "network slice management", "packet forwarding", "routing table", "traffic scheduling",
+  "network topology", "Ethernet physical layer", "interference cancellation", "adaptive equalization",
+  "semiconductor substrate", "epitaxial regrowth", "doped capping layer", "gate electrode",
+  "trench sidewall", "work function metal", "memory refresh", "row hammer mitigation",
+  "access transistor", "source drain region", "wireless resource allocation", "edge computing"
+]
