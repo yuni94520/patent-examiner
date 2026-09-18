@@ -74,30 +74,6 @@ node --test tests/pipeline.test.cjs
 python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-本機結果：20 個 JavaScript 行為測試、7 個 Python 服務測試通過；另有 38 個既有核心引擎測試通過。測試直接載入 index.html 的實際函式，不複製舊版評分引擎；Python 包含本地 HTTP/CORS 與精確抽取驗證，encoder/LLM 使用測試替身。
+本機結果：17 個 JavaScript 行為測試、5 個 Python 服務測試通過。測試直接載入 index.html 的實際函式，不複製舊版評分引擎；Python 包含本地 HTTP/CORS 與精確抽取驗證，encoder/LLM 使用測試替身。
 
 未驗證：真實模型準確度、真實 LLM、外部服務連線、公開部署、瀏覽器視覺/DOM 執行測試。環境有 Playwright 套件但沒有 Chromium binary；JS 行為測試使用 DOM stub，不能宣稱完成瀏覽器或安全全面驗收。沒有可用的獨立標記 holdout；目前權重仍是 provisional，校準不是準確率保證。未另行委派獨立驗收。
-
-## OpenAI 檢索式直接生成
-
-檢索式頁面已由「只產生 prompt」改為可直接呼叫既有服務端 OpenAI 相容設定：
-
-1. 在 `server/app.py` 使用既有 `LLM_URL`、`LLM_MODEL`、`LLM_API_KEY`；瀏覽器不接觸 API key。
-2. 新增 `POST /search-formula`，輸入 `claim`、選填 `ipc`、`keyword_count`。
-3. 系統 prompt 固定於 `server/search_prompt.txt`，請求項以 JSON 當作不可信資料傳入，避免請求項文字改寫系統規則。
-4. 服務端強制檢查四個固定標籤、IPC 置前、平衡括號、AND 組合、標準式 3–4 組、放寬式 2–3 組及每組最多 5 詞。
-5. 第一次輸出不合規時，模型僅獲一次格式修正機會；第二次仍不合規即拒絕。前端也再次驗證，失敗時自動顯示原本的完整 prompt 供手動使用。
-6. 前端可另填 `http://localhost:8000/search-formula`；留白時會沿用 embedding endpoint 的服務根網址。
-
-OpenAI 相容 chat completions 設定例：
-
-```bash
-export LLM_URL='https://api.openai.com/v1/chat/completions'
-export LLM_MODEL='YOUR_ALLOWED_MODEL'
-export LLM_API_KEY='YOUR_API_KEY'
-python server/app.py
-```
-
-`LLM_API_KEY` 只存在服務端環境變數，不會寫入 HTML、localStorage、匯出資料或 Audit Trail。部署至遠端時仍需為 adapter 加上使用者登入、配額與 HTTPS；本地服務維持只綁定 `127.0.0.1`。
-
-新增驗證後，本機總計為 20 個 JavaScript 行為測試與 7 個 Python 服務測試，另保留 38 個既有核心引擎測試。

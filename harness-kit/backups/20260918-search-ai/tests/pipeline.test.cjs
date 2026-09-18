@@ -103,24 +103,3 @@ test('batch uses same scoring pipeline and records full claim results',async()=>
  assert.equal(batch.final_score,single.final_score);a.ctx.recordScreeningAudit('P',claim,claim,batch,'test');
  const log=a.ctx.auditLoad()[0];assert.ok(log.claim_results[0].calibration===null);assert.ok(log.claim_results[0].element_matches.length);assert.equal(log.raw_score,batch.raw_score);
 });
-test('search formula validator accepts four valid formulas and rejects structural errors',()=>{
- const {ctx}=app();
- const valid=['A標準式：IC=(H04L OR H04W) AND (資源分配 OR resource allocation) AND (觸發回報 OR triggered reporting) AND (參考信號 OR reference signal)','A放寬式：IC=(H04L OR H04W) AND (資源分配 OR resource allocation) AND (參考信號 OR reference signal)','B標準式：IC=(H04L OR H04W) AND (使用者設備 OR user equipment OR UE) AND (基地台 OR base station OR gNB) AND (控制訊息 OR control message)','B放寬式：IC=(H04L OR H04W) AND (使用者設備 OR user equipment OR UE) AND (控制訊息 OR control message)'].join('\n');
- const result=ctx.PatentPipeline.validateSearchFormula(valid);assert.equal(result.text,valid);assert.equal(result.formulas['A標準式'].keywords.length,3);
- assert.throws(()=>ctx.PatentPipeline.validateSearchFormula(valid.replace('IC=(H04L OR H04W) AND ','',1)),/IPC/);
- assert.throws(()=>ctx.PatentPipeline.validateSearchFormula(valid.replace('IC=(H04L OR H04W)','IC=(IPC1 OR nonsense)',1)),/IPC/);
- assert.throws(()=>ctx.PatentPipeline.validateSearchFormula(valid.replace('(資源分配 OR resource allocation)','(a OR b OR c OR d OR e OR f)',1)),/1–5/);
- assert.throws(()=>ctx.PatentPipeline.validateSearchFormula(valid+'\n說明：完成'),/四條/);
-});
-test('search generator calls configured AI adapter and renders validated output',async()=>{
- const a=app();a.node('kwTxt').value=claim;a.node('kwIpc').value='H04L';a.node('kwCount').value='8';a.node('searchAiEndpoint').value='http://adapter/search-formula';
- const valid=['A標準式：IC=(H04L) AND (訊號 OR signal) AND (波束 OR beam) AND (選擇 OR selection)','A放寬式：IC=(H04L) AND (波束 OR beam) AND (選擇 OR selection)','B標準式：IC=(H04L) AND (控制器 OR controller) AND (參考信號 OR reference signal) AND (量測 OR measurement)','B放寬式：IC=(H04L) AND (控制器 OR controller) AND (量測 OR measurement)'].join('\n');
- let request;
- a.ctx.fetch=async(u,o)=>{request={u,body:JSON.parse(o.body)};return {ok:true,json:async()=>({result:valid,model:'gpt-test',prompt_version:'search-formula-v1'})}};
- await a.ctx.runKeywordAI();assert.equal(request.u,'http://adapter/search-formula');assert.equal(request.body.claim,claim);assert.equal(a.node('kwBody').textContent,valid);assert.match(a.node('searchAiStatus').textContent,/gpt-test/);assert.equal(a.node('kwAiBtn').disabled,false);
-});
-test('invalid AI search output falls back to the existing copyable prompt',async()=>{
- const a=app();a.node('kwTxt').value=claim;a.node('searchAiEndpoint').value='http://adapter/search-formula';
- a.ctx.fetch=async()=>({ok:true,json:async()=>({result:'not four formulas'})});await a.ctx.runKeywordAI();
- assert.match(a.node('kwBody').textContent,/核心規則與語法約束/);assert.match(a.node('searchAiStatus').textContent,/失敗/);
-});

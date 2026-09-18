@@ -54,31 +54,4 @@ class Tests(unittest.TestCase):
                 self.assertEqual(err.exception.code,403)
         finally:server.shutdown();server.server_close();thread.join()
 
-    def test_search_formula_validation_and_generation(self):
-        valid = '\n'.join([
-            'A標準式：IC=(H04L OR H04W) AND (資源分配 OR resource allocation) AND (觸發回報 OR triggered reporting) AND (參考信號 OR reference signal)',
-            'A放寬式：IC=(H04L OR H04W) AND (資源分配 OR resource allocation) AND (參考信號 OR reference signal)',
-            'B標準式：IC=(H04L OR H04W) AND (使用者設備 OR user equipment OR UE) AND (基地台 OR base station OR gNB) AND (控制訊息 OR control message)',
-            'B放寬式：IC=(H04L OR H04W) AND (使用者設備 OR user equipment OR UE) AND (控制訊息 OR control message)'])
-        self.assertEqual(app.validate_search_formula(valid), valid)
-        with self.assertRaises(ValueError): app.validate_search_formula(valid + '\n說明：完成')
-        with self.assertRaises(ValueError): app.validate_search_formula(valid.replace('IC=(H04L OR H04W)', 'IC=(IPC1 OR nonsense)', 1))
-        with patch.object(app, 'call_llm', return_value=(valid, 'gpt-test')) as mocked:
-            result = app.generate_search_formula({'claim': 'a claim', 'ipc': 'H04L', 'keyword_count': 8})
-            self.assertEqual(result['result'], valid);self.assertEqual(result['model'], 'gpt-test')
-            messages = mocked.call_args.args[0]
-            self.assertIn('待分析資料', messages[1]['content'])
-
-    def test_search_formula_repairs_once_then_validates(self):
-        valid = '\n'.join([
-            'A標準式：IC=(G06F) AND (資料 OR data) AND (模型 OR model) AND (分類 OR classification)',
-            'A放寬式：IC=(G06F) AND (模型 OR model) AND (分類 OR classification)',
-            'B標準式：IC=(G06F) AND (處理器 OR processor) AND (記憶體 OR memory) AND (分類器 OR classifier)',
-            'B放寬式：IC=(G06F) AND (處理器 OR processor) AND (分類器 OR classifier)'])
-        with patch.object(app, 'call_llm', side_effect=[('bad output', 'gpt-test'), (valid, 'gpt-test')]) as mocked:
-            self.assertEqual(app.generate_search_formula({'claim':'claim','keyword_count':8})['result'], valid)
-            self.assertEqual(mocked.call_count, 2)
-        with patch.object(app, 'call_llm', side_effect=[('bad','gpt-test'), ('still bad','gpt-test')]):
-            with self.assertRaises(ValueError): app.generate_search_formula({'claim':'claim','keyword_count':8})
-
 if __name__=='__main__':unittest.main()

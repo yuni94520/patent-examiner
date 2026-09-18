@@ -65,47 +65,7 @@ function validateCases(data){
     return out;
   })};
 }
-const SEARCH_LABELS=['A標準式','A放寬式','B標準式','B放寬式'];
-function splitTopLevel(text,separator){
-  const out=[];let depth=0,quote='',start=0;
-  for(let i=0;i<text.length;i++){
-    const c=text[i];
-    if(quote){if(c===quote&&text[i-1]!=='\\')quote='';continue;}
-    if(c==='"'||c==="'"){quote=c;continue;}
-    if(c==='(')depth++;else if(c===')'){depth--;if(depth<0)throw Error('括號不完整');}
-    if(depth===0&&text.startsWith(separator,i)){out.push(text.slice(start,i).trim());start=i+separator.length;i+=separator.length-1;}
-  }
-  if(depth!==0||quote)throw Error('括號或引號不完整');out.push(text.slice(start).trim());return out;
-}
-function validateSearchFormula(output){
-  if(typeof output!=='string'||output.length>20000)throw Error('AI 輸出不是有效文字');
-  const clean=output.trim().replace(/^```[^\n]*\n?|```$/g,'').trim();
-  const lines=clean.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  if(lines.length!==4)throw Error('必須恰好輸出四條檢索式');
-  const formulas={};
-  lines.forEach((line,index)=>{
-    const mark=line.indexOf('：');if(mark<0)throw Error('缺少全形冒號');
-    const label=line.slice(0,mark),query=line.slice(mark+1).trim();
-    if(label!==SEARCH_LABELS[index])throw Error('標籤或順序錯誤：'+label);
-    const groups=splitTopLevel(query,' AND ');
-    if(!/^IC=\([^()]+\)$/.test(groups[0]||''))throw Error(label+' 的 IPC 必須置於最前端');
-    const ipcs=groups[0].slice(4,-1).split(/\s+OR\s+/).map(x=>x.trim()).filter(Boolean);
-    if(ipcs.length<1||ipcs.length>4||ipcs.some(x=>!/^([A-HY]\d{2}[A-Z])(?:\s*\d{1,4}\/\d{1,6})?$/i.test(x)))throw Error(label+' 的 IPC 必須為 1–4 個有效分類號');
-    let keywords=groups.slice(1),date='';
-    if(keywords.length&&/^\(UD=:[^()]+\s+OR\s+GD=:[^()]+\)$/.test(keywords.at(-1))){date=keywords.pop();}
-    const standard=label.includes('標準');
-    if(keywords.length<(standard?3:2)||keywords.length>(standard?4:3))throw Error(label+' 的關鍵字組數不符');
-    for(const group of keywords){
-      if(!/^\([^()]+\)$/.test(group))throw Error(label+' 有未完整包覆的關鍵字組');
-      const terms=group.slice(1,-1).split(/\s+OR\s+/).map(x=>x.trim()).filter(Boolean);
-      if(!terms.length||terms.length>5)throw Error(label+' 每組同義詞必須為 1–5 個');
-      if(terms.some(t=>/\s+AND\s+/.test(t)))throw Error(label+' 的關鍵字組內不可使用 AND');
-    }
-    formulas[label]={query,ipc:groups[0],keywords,date};
-  });
-  return {text:SEARCH_LABELS.map(x=>x+'：'+formulas[x].query).join('\n'),formulas};
-}
 function eligible(c,profile){return c.scoring_version===VERSION&&c.profile_key===profile&&/^[a-f0-9]{64}$/.test(c.pair_key||'')&&!!c.verified_at&&(c.label===0||c.label===1)&&c.reviewer_label===(c.label===1?'highly_relevant':'low_relevance')&&finite(c.raw_score);}
-const api={VERSION,MAX_CASES,MAX_TEXT,finite,validateVectors,cosine,isotonic,predict,normalizeInput,digest,pairKey,validateCases,eligible,splitTopLevel,validateSearchFormula};
+const api={VERSION,MAX_CASES,MAX_TEXT,finite,validateVectors,cosine,isotonic,predict,normalizeInput,digest,pairKey,validateCases,eligible};
 root.PatentPipeline=api;if(typeof module!=='undefined')module.exports=api;
 })(globalThis);
