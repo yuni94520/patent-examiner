@@ -11,11 +11,3 @@
 - `harness-kit/evidence/PUBLIC-API.md`：可用 public API 與整合限制。
 
 原 README 已備份於 `harness-kit/backups/github-main-20260906/README.md`。
-
-
-## v3.11 語意比對與 AI 檢索式
-
-- 瀏覽器離線模式：直接開啟 `index.html`，可使用本地詞彙比對與備用 prompt。
-- 語意與 OpenAI 相容服務：依 [`docs/OPTIMIZATION-v3.11.md`](docs/OPTIMIZATION-v3.11.md) 啟動 `server/app.py`。
-- 檢索式頁面的「AI 直接產生四式」會呼叫 `/search-formula`；API key 僅存於服務端環境變數。
-- 測試：`node --test tests/pipeline.test.cjs` 與 `python -m unittest discover -s tests -p 'test_*.py' -v`。

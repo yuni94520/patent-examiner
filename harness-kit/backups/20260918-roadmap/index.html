@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>專利相似度比對 v3.11.0</title>
+<title>專利相似度比對 v3.10.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -381,7 +381,7 @@ select option{background:var(--s2);}
     <div class="logo-text">專利相似度比對</div>
     <div class="logo-sub">Patent Similarity Analyzer</div>
   </div>
-  <span class="logo-ver">v3.11.0</span>
+  <span class="logo-ver">v3.10.0</span>
   <div class="hdr-r">
     <div class="badge local">Stable Local Hybrid</div>
     <div class="badge sbert">Isotonic Calibration</div>
@@ -436,8 +436,8 @@ select option{background:var(--s2);}
 
         <!-- PatentSBERTa 說明 -->
         <div class="info-box">
-          🔬 <strong>v3.11.0 Semantic-Primary Evidence Alignment</strong><br>
-          ① <strong>Semantic Evidence Alignment</strong>：連線時對所有段落作語意檢索，再融合詞彙排序；離線時使用詞彙比對｜
+          🔬 <strong>v3.10.0 Synonym-Aware Hybrid Retrieval + Semantic Evidence Alignment</strong><br>
+          ① <strong>Semantic Evidence Alignment</strong>：先用低成本 lexical/concept shortlist，再以 embedding 重排 evidence passages｜
           ② <strong>三通道 element score</strong>：Semantic 60% + Lexical 20% + Passage-local Technical Concept 20%<br>
           ③ <strong>Multi-feature Raw Model</strong>：Element Avg / Element Min / Structure / Coverage / Semantic Consistency；<strong>無 Min hard gate</strong><br>
           ④ <strong>Isotonic calibration</strong>：只接收 raw relevance 單一 scalar；人工驗證同步保存完整 feature vector｜⑤ <strong>Audit Trail</strong>：保存 Top-3 evidence 與各分數構成
@@ -448,7 +448,7 @@ select option{background:var(--s2);}
           <div class="card-hd">
             <div class="step-num">S</div>
             <div class="card-title">Semantic Embedding Channel</div>
-            <div class="card-sub">語意向量優先 · 未連線時明示離線模式</div>
+            <div class="card-sub">PatentSBERTa / embedding API（選填，但建議啟用）</div>
           </div>
           <div class="card-body">
             <div class="frow">
@@ -466,7 +466,6 @@ select option{background:var(--s2);}
               <code>{"embeddings":[...]}</code>、<code>{"vectors":[...]}</code> 或 OpenAI-style <code>{"data":[{"embedding":[...]}]}</code>。
               未設定或 API 失敗時會明確標示 <strong>semantic fallback</strong>，不會冒充 PatentSBERTa。
             </div>
-            <label>元件拆解</label><select id="extractionMode"><option value="rules">本地完整拆解</option><option value="llm">服務端 LLM 結構化拆解（須設定服務）</option></select>
             <div id="semanticStatus" style="font-family:var(--mono);font-size:9px;color:var(--dm);margin-top:5px;">尚未設定</div>
             <div class="frow" style="margin-top:8px;">
               <div class="fg xs">
@@ -487,7 +486,7 @@ select option{background:var(--s2);}
               </div>
             </div>
             <div class="info-box" style="margin-top:5px;">
-              v3.11：先以 vocab.js 雙向同義詞正規化與 Query Expansion 產生 2–5 個常見專利寫法，再以 Sparse + Dense Ranking 做 RRF。Concept 分數仍<strong>只在當前 evidence passage</strong>內計算。
+              v3.10：先以 vocab.js 雙向同義詞正規化與 Query Expansion 產生 2–5 個常見專利寫法，再以 Sparse + Dense Ranking 做 RRF。Concept 分數仍<strong>只在當前 evidence passage</strong>內計算。
             </div>
           </div>
         </div>
@@ -578,8 +577,8 @@ select option{background:var(--s2);}
             <div class="vfy-row" id="vfyRow">
               <span class="vfy-lbl">人工驗證標記（回饋 Isotonic 校準）：</span>
               <span class="vfy-badge" id="vfyBadge"></span>
-              <button class="btn-vfy sep" onclick="doVerify(1)">✅ 確認高度相關</button>
-              <button class="btn-vfy non" onclick="doVerify(0)">❌ 確認低度相關</button>
+              <button class="btn-vfy sep" onclick="doVerify(1)">✅ 確認為 SEP</button>
+              <button class="btn-vfy non" onclick="doVerify(0)">❌ 確認非 SEP</button>
             </div>
           </div>
         </div>
@@ -596,7 +595,7 @@ select option{background:var(--s2);}
             <div class="fg"><label>請求項內容</label><textarea id="mClaim" rows="5" placeholder="貼入欲比對之請求項..."></textarea></div>
             <div class="fg"><label>批次引證｜自動辨識 TIPO 清單 / PQAI TSV / 引證1(ID) / D1(ID) / Reference / ===</label>
               <textarea id="mCits" rows="12" placeholder="可直接貼上：&#10;① TIPO 檢索結果（1 / 2 / 3 + 公開號 / 摘要）&#10;② PQAI：Publication Number + Title + Abstract 的 TSV&#10;③ 引證1(US...) / D1(...) / Reference 1(...)&#10;④ === 分隔舊格式"></textarea>
-              <div class="info-box" style="margin-top:2px;">v3.11 批次與單篇共用 Synonym-Aware Hybrid Retrieval；先做詞典/同義詞擴展，再以 Sparse + Dense RRF 取得 evidence，最後進入同一 Multi-feature scoring pipeline。</div><div id="batchParseInfo" style="margin-top:6px;font-family:var(--mono);font-size:9px;color:var(--mt);line-height:1.6;">尚未解析</div>
+              <div class="info-box" style="margin-top:2px;">v3.10 批次與單篇共用 Synonym-Aware Hybrid Retrieval；先做詞典/同義詞擴展，再以 Sparse + Dense RRF 取得 evidence，最後進入同一 Multi-feature scoring pipeline。</div><div id="batchParseInfo" style="margin-top:6px;font-family:var(--mono);font-size:9px;color:var(--mt);line-height:1.6;">尚未解析</div>
             </div>
             <div class="btn-row">
               <button class="btn-run" id="mBtn" onclick="runMulti()">
@@ -614,7 +613,7 @@ select option{background:var(--s2);}
     <div class="tab-pane" id="tab-keyword">
       <div class="content">
         <div class="card">
-          <div class="card-hd"><div class="step-num y">KW</div><div class="card-title">AI 專利檢索式產生器</div><div class="card-sub">沿用服務端 OpenAI 相容設定</div></div>
+          <div class="card-hd"><div class="step-num y">KW</div><div class="card-title">AI 專利檢索式 Prompt 產生器</div><div class="card-sub">輸入請求項 → 複製至 API / Colab</div></div>
           <div class="card-body">
             <div class="fg"><label>請求項 / 技術段落</label><textarea id="kwTxt" rows="8" placeholder="貼入請求項或技術段落..."></textarea></div>
             <div class="frow">
@@ -627,14 +626,10 @@ select option{background:var(--s2);}
                 </select>
               </div>
             </div>
-            <div class="frow">
-              <div class="fg"><label>AI 服務 endpoint</label><input type="text" id="searchAiEndpoint" placeholder="例如 http://localhost:8000/search-formula；空白時沿用上方 embedding 服務" /></div>
-            </div>
-            <div class="info-box" style="margin:2px 0 4px;">直接呼叫服務端既有 OpenAI 相容設定。API key 只留在服務端；輸出必須通過 IPC、括號、AND/OR、四式結構及每組最多五詞驗證。</div>
-            <div id="searchAiStatus" style="font-family:var(--mono);font-size:9px;color:var(--dm);min-height:14px;"></div>
-            <div class="btn-row"><button class="btn-run" id="kwAiBtn" onclick="runKeywordAI()">✨ AI 直接產生四式</button><button class="btn-local" onclick="runKeyword()">產生備用 Prompt</button><button class="btn-local" onclick="buildSearchFunnel()">逐步檢索漏斗</button></div><div id="searchFunnel"></div>
+            <div class="info-box" style="margin:2px 0 4px;">依你的專利檢索 prompt 產生完整 AI 輸入；輸出仍要求 A/B 標準式與放寬式。</div>
+            <div class="btn-row"><button class="btn-local" onclick="runKeyword()">🔍 產生 AI 檢索 Prompt</button></div>
             <div class="out-card" id="kwCard">
-              <div class="out-hd"><div class="out-title" id="kwOutTitle">AI 檢索式</div><button class="btn-copy" onclick="copyEl('kwBody')">複製</button></div>
+              <div class="out-hd"><div class="out-title">AI 檢索式 Prompt</div><button class="btn-copy" onclick="copyEl('kwBody')">複製</button></div>
               <div class="out-body" id="kwBody"></div>
             </div>
           </div>
@@ -713,8 +708,8 @@ select option{background:var(--s2);}
       </div>
       <div class="db-sr">
         <div class="db-st t"><span class="n" id="dbTot">0</span><span class="l">總筆數</span></div>
-        <div class="db-st s"><span class="n" id="dbSep">0</span><span class="l">高度相關</span></div>
-        <div class="db-st x"><span class="n" id="dbNon">0</span><span class="l">低度相關</span></div>
+        <div class="db-st s"><span class="n" id="dbSep">0</span><span class="l">SEP</span></div>
+        <div class="db-st x"><span class="n" id="dbNon">0</span><span class="l">非SEP</span></div>
         <div class="db-st p"><span class="n" id="dbPnd">0</span><span class="l">待驗</span></div>
       </div>
       <div class="db-tw"><table class="db-tbl">
@@ -741,7 +736,6 @@ select option{background:var(--s2);}
 </div>
 
 <script src="vocab.js"></script>
-<script src="pipeline.js"></script>
 <script>
 // ═══════════════════════════════════════
 // 8D CORE (保留原有邏輯，完整呈現)
@@ -789,17 +783,29 @@ const ATTRS=[
   {name:"關聯性",  key:"relevance",         weight:0.05,color:"#34d399"},
 ];
 
+let GOLDEN=[
+  {s:[0.36,0.31,0.26,0.15,0.10,0.40,0.25,0.35],l:1},
+  {s:[0.85,0.80,0.75,0.70,0.65,0.72,0.60,0.55],l:1},
+  {s:[0.78,0.72,0.68,0.55,0.50,0.65,0.45,0.40],l:1},
+  {s:[0.70,0.65,0.70,0.60,0.55,0.58,0.50,0.45],l:1},
+  {s:[0.65,0.60,0.55,0.50,0.45,0.50,0.40,0.35],l:1},
+  {s:[0.40,0.35,0.30,0.20,0.15,0.38,0.30,0.25],l:1},
+  {s:[0.15,0.10,0.12,0.05,0.08,0.10,0.05,0.03],l:0},
+  {s:[0.10,0.08,0.05,0.03,0.02,0.06,0.02,0.01],l:0},
+  {s:[0.20,0.15,0.10,0.08,0.05,0.12,0.05,0.03],l:0},
+  {s:[0.30,0.20,0.15,0.10,0.08,0.18,0.08,0.05],l:0},
+];
 
 // ═══════════════════════════════════════
 // v3.9.0 SEMANTIC EVIDENCE ALIGNMENT · MULTI-FEATURE RAW MODEL
 // Initial raw-model weights are provisional and must later be replaced by validation-trained weights.
 // ═══════════════════════════════════════
-const SCORING_VERSION = PatentPipeline.VERSION;
+const SCORING_VERSION = 'v3.10.0-synonym-aware-hybrid-retrieval';
 // Keep v3.5 storage keys so existing verification/calibration data survives the v3.6 UI/parser upgrade.
 const DB_KEY='pat_sim_v35_db';
 const CALIB_KEY='pat_sim_v35_calibration';
 const AUDIT_KEY='pat_sim_v35_audit';
-const MIN_CALIB_SAMPLES=20;
+const MIN_CALIB_SAMPLES=8;
 
 const _V = (typeof window!=='undefined' && window.VOCAB) || null;
 if(!_V){ console.warn('vocab.js 未載入：v3.9 將使用內建 normalization fallback'); }
@@ -851,63 +857,55 @@ const _embeddingCache=new Map();
 let _semanticLastSource='fallback';
 
 function semanticEndpoint(){
-  return _activeRun ? _activeRun.endpoint : (document.getElementById('semanticEndpoint')?.value||'').trim();
+  return (document.getElementById('semanticEndpoint')?.value||localStorage.getItem(SEMANTIC_ENDPOINT_KEY)||'').trim();
 }
 function saveSemanticEndpoint(){
   const v=document.getElementById('semanticEndpoint')?.value?.trim()||'';
-  if(!_activeRun){_embeddingCache.clear();_embeddingIdentity=null;}
   if(v)localStorage.setItem(SEMANTIC_ENDPOINT_KEY,v); else localStorage.removeItem(SEMANTIC_ENDPOINT_KEY);
 }
-function cosineVector(a,b){return PatentPipeline.cosine(a,b);}
+function cosineVector(a,b){
+  if(!Array.isArray(a)||!Array.isArray(b)||!a.length||a.length!==b.length)return 0;
+  let dot=0,na=0,nb=0;
+  for(let i=0;i<a.length;i++){const x=Number(a[i])||0,y=Number(b[i])||0;dot+=x*y;na+=x*x;nb+=y*y;}
+  return na&&nb?clamp(dot/(Math.sqrt(na)*Math.sqrt(nb)),-1,1):0;
+}
 function parseEmbeddingResponse(j){
   if(Array.isArray(j?.embeddings))return j.embeddings;
   if(Array.isArray(j?.vectors))return j.vectors;
-  if(Array.isArray(j?.data)){
-    const rows=[...j.data];
-    if(rows.every(x=>Number.isInteger(x.index))){rows.sort((a,b)=>a.index-b.index);if(rows.some((x,i)=>x.index!==i))throw Error('invalid embedding indices');}
-    return rows.map(x=>x.embedding);
-  }
-  return Array.isArray(j)?j:null;
-}
-let _embeddingIdentity=null, _activeRun=null;
-function runSetting(id,fallback=''){return _activeRun?.settings?.[id]??document.getElementById(id)?.value??fallback;}
-async function postJSON(url,body){
-  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),30000);
-  try{
-    const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller.signal});
-    if(!response.ok)throw Error(`HTTP ${response.status}`);
-    return await response.json();
-  }finally{clearTimeout(timer);}
-}
-function serviceURL(action){
-  const ep=semanticEndpoint();if(!ep)return '';
-  const u=new URL(ep,location.href);u.pathname=u.pathname.replace(/\/(embed|similarity)\/?$/,'')+'/'+action;u.search='';u.hash='';return u.href;
+  if(Array.isArray(j?.data)&&j.data.every(x=>Array.isArray(x?.embedding)))return j.data.map(x=>x.embedding);
+  if(Array.isArray(j)&&j.every(Array.isArray))return j;
+  return null;
 }
 async function fetchEmbeddings(texts){
-  const ep=semanticEndpoint();if(!ep)return null;
-  // Every comparison gets a fresh cache: a server model replacement at the same URL
-  // cannot reuse vectors from a previous run. Raw text is the exact request identity.
-  const out=[];
-  for(let start=0;start<texts.length;start+=32){
-    const chunk=texts.slice(start,start+32).map(String);
-    const missing=[...new Set(chunk.filter(t=>!_embeddingCache.has(JSON.stringify([ep,t]))))];
-    if(missing.length){
-      const j=await postJSON(ep,{texts:missing});
-      const vectors=PatentPipeline.validateVectors(parseEmbeddingResponse(j),missing.length);
-      const identity={endpoint:ep,model:typeof j.model==='string'?j.model:'unreported',revision:typeof j.revision==='string'?j.revision:'unreported',dimension:vectors[0].length};
-      if(_embeddingIdentity&&JSON.stringify(_embeddingIdentity)!==JSON.stringify(identity))throw Error('model/dimension changed during comparison');
-      _embeddingIdentity=identity;
-      missing.forEach((t,i)=>_embeddingCache.set(JSON.stringify([ep,t]),vectors[i]));
-    }
-    out.push(...chunk.map(t=>_embeddingCache.get(JSON.stringify([ep,t]))));
+  const ep=semanticEndpoint();
+  if(!ep)return null;
+  saveSemanticEndpoint();
+  const out=new Array(texts.length),missing=[],missingIdx=[];
+  texts.forEach((t,i)=>{
+    const k=normTxt(t);
+    if(_embeddingCache.has(k))out[i]=_embeddingCache.get(k);
+    else{missing.push(String(t));missingIdx.push(i);}
+  });
+  if(missing.length){
+    const res=await fetch(ep,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({texts:missing})
+    });
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const data=parseEmbeddingResponse(await res.json());
+    if(!data||data.length!==missing.length)throw new Error('embedding response shape / length mismatch');
+    data.forEach((v,j)=>{
+      if(!Array.isArray(v)||!v.length)throw new Error('invalid embedding vector');
+      const idx=missingIdx[j],k=normTxt(texts[idx]);
+      _embeddingCache.set(k,v);out[idx]=v;
+    });
   }
   return out;
 }
 async function testSemanticEndpoint(){
-  if(_activeRun){toast('請等待比對完成',true);return;}
   const st=document.getElementById('semanticStatus');
   try{
-    _embeddingCache.clear();_embeddingIdentity=null;
     const ep=semanticEndpoint();
     if(!ep){st.textContent='請先填入 endpoint';st.style.color='var(--a4)';return;}
     const vs=await fetchEmbeddings(['regrown epitaxial layer','epitaxial regrowth']);
@@ -977,7 +975,7 @@ async function semanticScoresForElement(element,candidates){
     const texts=[element,...candidates.map(c=>c.text)];
     const vecs=await fetchEmbeddings(texts);
     _semanticLastSource='embedding';
-    return candidates.map((c,i)=>Math.max(0,cosineVector(vecs[0],vecs[i+1])));
+    return candidates.map((c,i)=>(cosineVector(vecs[0],vecs[i+1])+1)/2);
   }catch(e){
     _semanticLastSource='fallback';
     const st=document.getElementById('semanticStatus');
@@ -1009,7 +1007,7 @@ function splitClaimElements(text=''){
   if(parts.length<2){
     parts=t.split(/,(?=\s*(?:wherein|whereby|and\s+(?:a|the|selecting|receiving|generating|determining|applying)|其中|以及|並且|且))/i).map(s=>s.trim()).filter(s=>s.length>=10);
   }
-  const seen=new Set();return parts.filter(p=>{const k=normTxt(p);if(seen.has(k))return false;seen.add(k);return true;});
+  const seen=new Set();return parts.filter(p=>{const k=normTxt(p);if(seen.has(k))return false;seen.add(k);return true;}).slice(0,24);
 }
 
 // ═══════════════════════════════════════
@@ -1068,8 +1066,8 @@ function synonymAwareConceptScore(a,b){
 }
 
 function buildQueryExpansions(element){
-  const mode=runSetting('qeMode','auto');
-  const limit=Math.max(0,Math.min(8,Number(runSetting('qeLimit','4'))));
+  const mode=document.getElementById('qeMode')?.value||'auto';
+  const limit=Math.max(0,Math.min(8,Number(document.getElementById('qeLimit')?.value||4)));
   if(mode==='off'||limit===0)return [element];
 
   const key=mode+'|'+limit+'|'+normTxt(element);
@@ -1131,7 +1129,6 @@ function sparseScoreQuerySet(queries,passage){
 async function denseScoreQuerySet(queries,passages){
   const ep=semanticEndpoint();
   if(!ep){
-    _semanticLastSource='fallback';
     return passages.map(p=>{
       let best=0;
       for(const q of queries)best=Math.max(best,semanticFallbackScore(q,p.text));
@@ -1145,11 +1142,10 @@ async function denseScoreQuerySet(queries,passages){
     _semanticLastSource='embedding';
     return pv.map(v=>{
       let best=-1;
-      for(const q of qv)best=Math.max(best,Math.max(0,cosineVector(q,v)));
+      for(const q of qv)best=Math.max(best,(cosineVector(q,v)+1)/2);
       return clamp(best);
     });
   }catch(e){
-    if(_activeRun)throw e;
     _semanticLastSource='fallback';
     return passages.map(p=>{
       let best=0;
@@ -1168,7 +1164,7 @@ async function bestEvidence(element,citation){
     return {...ev,evidence:String(citation).slice(0,1200),top3:[],queries:[element]};
   }
 
-  const queries=await expandedQueries(element);
+  const queries=buildQueryExpansions(element);
 
   // Stage 1: sparse ranking using original + synonym-expanded queries.
   const sparseRank=passages.map((p,i)=>({
@@ -1177,7 +1173,7 @@ async function bestEvidence(element,citation){
   })).sort((a,b)=>b.sparse-a.sparse);
 
   // Keep a broad sparse pool so dense retrieval can recover lexical misses.
-  const sparsePool=semanticEndpoint()?sparseRank:sparseRank.slice(0,48);
+  const sparsePool=sparseRank.slice(0,48);
 
   // Stage 2: dense score the sparse pool using all query expansions.
   const denseScores=await denseScoreQuerySet(queries,sparsePool);
@@ -1185,11 +1181,11 @@ async function bestEvidence(element,citation){
     .sort((a,b)=>b.dense-a.dense);
 
   // Stage 3: RRF between sparse and dense ranks.
-  const k=Math.max(10,Math.min(120,Number(runSetting('rrfK','60'))));
+  const k=Math.max(10,Math.min(120,Number(document.getElementById('rrfK')?.value||60)));
   const rrf=reciprocalRankFusion([sparsePool,denseRank],k);
-  const fusedRank=sparsePool.map(p=>({...p,rrf:rrf.get(p.key)||0})).sort((a,b)=>b.rrf-a.rrf);
-  // Preserve dense leaders even when they have no lexical overlap.
-  const fused=[...new Map([...denseRank.slice(0,12),...fusedRank.slice(0,24)].map(p=>[p.key,{...p,rrf:rrf.get(p.key)||0}])).values()];
+  const fused=sparsePool.map(p=>({...p,rrf:rrf.get(p.key)||0}))
+    .sort((a,b)=>b.rrf-a.rrf)
+    .slice(0,24);
 
   // Final passage-local scoring on fused evidence contexts.
   const ranked=[];
@@ -1199,7 +1195,7 @@ async function bestEvidence(element,citation){
     const lexical=lexicalSimilarity(element,p.text);
     const concept=technicalConceptScore(element,p.text);
     // semantic channel is dense when available, fallback otherwise
-    const semantic=dense;
+    const semantic=dense||semanticFallbackScore(element,p.text);
     const score=clamp(0.60*semantic+0.20*lexical+0.20*concept);
     ranked.push({
       score,semantic,lexical,concept,
@@ -1214,8 +1210,8 @@ async function bestEvidence(element,citation){
   return {...best,evidence:best.text,top3:ranked.slice(0,3),queries};
 }
 async function evaluateElements(claim,citation){
-  const els=await extractClaimElements(claim);
-  const src=els.length?els:[claim];
+  const els=splitClaimElements(claim);
+  const src=(els.length?els:[claim]).slice(0,24);
   const elements=[];
   for(let i=0;i<src.length;i++){
     const text=src[i];
@@ -1234,7 +1230,7 @@ async function evaluateElements(claim,citation){
   }
   const vals=elements.map(e=>e.score*100);
   const semanticVals=elements.map(e=>e.semantic*100);
-  const coverage=elements.length?elements.reduce((sum,e)=>sum+clamp(e.score/0.60),0)/elements.length*100:0;
+  const coverage=elements.length?elements.filter(e=>e.score>=0.45).length/elements.length*100:0;
   const semanticConsistency=semanticVals.length?semanticVals.reduce((a,b)=>a+b,0)/semanticVals.length:0;
   return {
     elements,
@@ -1280,9 +1276,8 @@ function extractAttrs(text){
 function compute8D(citation,claim){
   const A=extractAttrs(citation),B=extractAttrs(claim);
   const sims=ATTRS.map(a=>hybridSimilarity(A[a.key],B[a.key]));
-  const available=ATTRS.map(a=>A[a.key]!=='無明確對應'&&B[a.key]!=='無明確對應');
-  const totalW=ATTRS.reduce((sum,a,i)=>sum+(available[i]?a.weight:0),0);
-  const score=totalW?sims.reduce((sum,v,i)=>sum+(available[i]?v*ATTRS[i].weight:0),0)/totalW*100:lexicalSimilarity(citation,claim)*100;
+  const totalW=ATTRS.reduce((s,a)=>s+a.weight,0)||1;
+  const score=sims.reduce((s,v,i)=>s+v*ATTRS[i].weight,0)/totalW*100;
   return {score:+score.toFixed(1),sims,attrs_claim:B,attrs_citation:A};
 }
 // v3.9 provisional multi-feature raw model.
@@ -1310,100 +1305,50 @@ function computeRawRelevance(features){
       RAW_MODEL_V39.semantic    * f.semantic;
   return +clamp(raw,0,100).toFixed(1);
 }
-function dbLoad(){
-  const r=localStorage.getItem(DB_KEY);if(!r)return {cases:[]};
-  try{return PatentPipeline.validateCases(JSON.parse(r));}catch(e){throw Error('驗證庫格式不合法；原始資料已保留，請先匯出備份：'+e.message);}
-}
-function dbSave(db){localStorage.setItem(DB_KEY,JSON.stringify(PatentPipeline.validateCases(db)));}
+function dbLoad(){try{const r=localStorage.getItem(DB_KEY);return r?JSON.parse(r):{cases:[]};}catch{return{cases:[]};}}
+function dbSave(db){localStorage.setItem(DB_KEY,JSON.stringify(db));}
 function calibLoad(){try{return JSON.parse(localStorage.getItem(CALIB_KEY)||'null');}catch{return null;}}
-function pava(points){return PatentPipeline.isotonic(points);}
-function calibrationModel(profile,exclude=null){
-  const rows=dbLoad().cases.filter(c=>PatentPipeline.eligible(c,profile)&&(!exclude||c.claim!==exclude.claim||c.citation!==exclude.citation));
-  const unique=[...new Map(rows.map(c=>[c.pair_key,c])).values()];
-  const pos=unique.filter(c=>c.label===1).length,neg=unique.length-pos;
-  if(unique.length<MIN_CALIB_SAMPLES||pos<5||neg<5)return null;
-  return {version:SCORING_VERSION,profile,n:unique.length,pos,neg,blocks:pava(unique.map(c=>({x:c.raw_score,y:c.label}))),sample_keys:unique.map(c=>c.pair_key)};
+function pava(points){
+  const blocks=[];
+  for(const p of points){blocks.push({x0:p.x,x1:p.x,sum:p.y,w:1,y:p.y});
+    while(blocks.length>=2&&blocks[blocks.length-2].y>blocks[blocks.length-1].y){
+      const b=blocks.pop(),a=blocks.pop(),w=a.w+b.w,sum=a.sum+b.sum;
+      blocks.push({x0:a.x0,x1:b.x1,sum,w,y:sum/w});
+    }
+  }
+  return blocks.map(b=>({x:(b.x0+b.x1)/2,y:b.y,x0:b.x0,x1:b.x1}));
 }
 function refitCalib(showToast=false){
-  const profile=_lastR?.profile_key;
-  const model=profile?calibrationModel(profile):null;
-  if(model)localStorage.setItem(CALIB_KEY,JSON.stringify(model));else localStorage.removeItem(CALIB_KEY);
-  renderCalibInfo();if(showToast)toast(model?`已更新校準：${model.n} 筆`:'同版本、同模型需至少 20 筆，正負各 5 筆',!model);
-  return model;
+  const labeled=(dbLoad().cases||[]).filter(c=>c.label===0||c.label===1).filter(c=>Number.isFinite(c.raw_score));
+  const pos=labeled.filter(c=>c.label===1).length,neg=labeled.filter(c=>c.label===0).length;
+  let model=null;
+  if(labeled.length>=MIN_CALIB_SAMPLES&&pos>0&&neg>0){
+    const pts=labeled.map(c=>({x:c.raw_score,y:c.label})).sort((a,b)=>a.x-b.x);
+    model={version:`iso-${new Date().toISOString()}`,n:labeled.length,pos,neg,blocks:pava(pts)};
+    localStorage.setItem(CALIB_KEY,JSON.stringify(model));
+    if(showToast)toast(`Isotonic 已擬合：${labeled.length} 筆`);
+  }else{
+    localStorage.removeItem(CALIB_KEY);
+    if(showToast)toast(`樣本不足：需 ≥${MIN_CALIB_SAMPLES} 且同時有正/負標記`,true);
+  }
+  renderCalibInfo();return model;
 }
-function calibrate(raw,model=null){return +PatentPipeline.predict(raw,model).toFixed(1);}
+function calibrate(raw){
+  const m=calibLoad();if(!m||!m.blocks?.length)return +raw.toFixed(1);
+  const bs=m.blocks;if(raw<=bs[0].x)return +(bs[0].y*100).toFixed(1);if(raw>=bs.at(-1).x)return +(bs.at(-1).y*100).toFixed(1);
+  for(let i=0;i<bs.length-1;i++)if(raw>=bs[i].x&&raw<=bs[i+1].x){
+    const a=bs[i],b=bs[i+1],t=(raw-a.x)/Math.max(1e-9,b.x-a.x),y=a.y+(b.y-a.y)*t;return +(y*100).toFixed(1);
+  }
+  return +raw.toFixed(1);
+}
 function renderCalibInfo(){
   const el=document.getElementById('calibInfo');if(!el)return;
-  const cs=dbLoad().cases,l=cs.filter(c=>c.label===0||c.label===1),m=calibLoad();
-  el.textContent=`已標記 ${l.length} 筆；${m?'最近擬合 '+m.n+' 筆':'未校準（原始相關度）'}。每次計分依模型隔離；至少 20 筆且正負各 5 筆。`;
+  const cs=dbLoad().cases||[],l=cs.filter(c=>c.label===0||c.label===1),m=calibLoad();
+  el.innerHTML=`已標記樣本 <b>${l.length}</b> 筆<br>${m?`模式：Isotonic · ${m.n} samples`:'模式：Baseline raw score'}`;
 }
 function tierOf(score){return score>=70?'H':score>=45?'M':'L';}
 
-async function expandedQueries(element){
-  const local=buildQueryExpansions(element);
-  if(runSetting('qeMode','auto')!=='auto'||!semanticEndpoint()||Number(runSetting('qeLimit','4'))===0)return local;
-  if(_activeRun?.expansionUnavailable)return local;
-  try{
-    const j=await postJSON(serviceURL('expand'),{term:element,top_k:Math.min(5,Number(runSetting('qeLimit','4')))});
-    if(!Array.isArray(j.neighbors)||!j.neighbors.every(x=>typeof x==='string'&&x.length<=300))throw Error('invalid expansion response');
-    if(_activeRun)_activeRun.expansion={model:j.model||'unreported',revision:j.revision||'unreported',vocabulary_revision:j.vocabulary_revision||'unreported'};
-    // Related terms are retrieval hints, never evidence text or substituted claim limitations.
-    return [...new Set([...local.slice(0,2),...j.neighbors.map(t=>element+' '+t)])].slice(0,1+Number(runSetting('qeLimit','4')));
-  }catch(e){
-    if(_activeRun){_activeRun.expansionUnavailable=true;_activeRun.warnings.push('動態詞彙擴充不可用，使用本地詞彙：'+e.message);}
-    return local;
-  }
-}
-async function extractClaimElements(claim){
-  if(runSetting('extractionMode','rules')==='llm'&&semanticEndpoint()){
-    try{
-      const j=await postJSON(serviceURL('extract'),{text:claim});
-      if(!Array.isArray(j.elements)||!j.elements.length||j.elements.length>128)throw Error('invalid element list');
-      let end=0;const parts=[];
-      for(const e of j.elements){
-        if(!Number.isInteger(e.start)||!Number.isInteger(e.end)||e.start<end||e.end<=e.start||e.end>claim.length||claim.slice(end,e.start).trim())throw Error('extraction omitted or invented text');
-        parts.push(claim.slice(e.start,e.end));end=e.end;
-      }
-      if(claim.slice(end).trim())throw Error('extraction omitted claim tail');
-      if(_activeRun)_activeRun.extraction={source:'llm',model:j.model||'unreported'};
-      return parts;
-    }catch(e){if(_activeRun)_activeRun.warnings.push('LLM 拆解失敗，改用規則完整拆解：'+e.message);}
-  }
-  if(_activeRun)_activeRun.extraction='rules';
-  // Keep all nonempty segments, including short limitations; no silent 24-element cap.
-  const parts=String(claim).split(/\n+|;|；/).map(x=>x.trim()).filter(Boolean);
-  if(parts.length>128)throw Error('請求項元件超過 128，請分項比對；未截斷內容');
-  return parts.length?parts:[claim];
-}
 async function evaluatePair(claim,citation){
-  if(_activeRun)throw Error('已有比對正在執行');
-  if(!claim.trim()||!citation.trim())throw Error('請輸入完整請求項與引證');
-  if(claim.length>PatentPipeline.MAX_TEXT||citation.length>PatentPipeline.MAX_TEXT)throw Error('單一文字上限 500,000 字元');
-  const endpoint=semanticEndpoint();
-  const settings=Object.fromEntries(['qeMode','qeLimit','rrfK','extractionMode'].map(id=>[id,document.getElementById(id)?.value||({qeMode:'auto',qeLimit:'4',rrfK:'60',extractionMode:'rules'})[id]]));
-  _activeRun={endpoint,settings,warnings:[]};_embeddingCache.clear();_embeddingIdentity=null;_semanticLastSource='fallback';
-  try{
-    let result;
-    try{result=await evaluatePairCore(claim,citation);}
-    catch(e){
-      if(!endpoint)throw e;
-      _activeRun={endpoint:'',settings,warnings:['語意服務失敗，整筆重新以離線模式計算：'+e.message]};
-      _embeddingCache.clear();_embeddingIdentity=null;_semanticLastSource='fallback';
-      result=await evaluatePairCore(claim,citation);
-    }
-    result.expansion=_activeRun.expansion||null;
-    result.input={claim,citation};
-    return result;
-  }finally{_activeRun=null;}
-}
-function currentInput(){return {
-  id:document.getElementById('patId').value.trim()||'未指定',
-  claim_number:document.getElementById('clNum').value.trim()||'Claim 1',
-  citation_id:document.getElementById('citId').value.trim()||'引證段落',
-  claim:document.getElementById('claimTxt').value.trim(),citation:document.getElementById('citTxt').value.trim()
-};}
-
-async function evaluatePairCore(claim,citation){
   const elem=await evaluateElements(claim,citation);
   const focusedCitation=buildFocusedCitation(elem.elements,citation);
   const struct=compute8D(focusedCitation||citation,claim);
@@ -1417,17 +1362,11 @@ async function evaluatePairCore(claim,citation){
   };
   const raw=computeRawRelevance(features);
   // Isotonic receives one scalar only: raw relevance.
-  const profile={version:SCORING_VERSION,source:elem.semantic_source,embedding:elem.semantic_source==='embedding'?_embeddingIdentity:null,extraction:_activeRun?.extraction||'rules',settings:_activeRun?.settings||{},expansion:_activeRun?.expansion||null};
-  const profile_key=await PatentPipeline.digest(profile);
-  const identified=elem.semantic_source!=='embedding'||(_embeddingIdentity?.model!=='unreported'&&_embeddingIdentity?.revision!=='unreported');
-  const calibration=identified?calibrationModel(profile_key,{claim,citation}):null;
-  const final=calibrate(raw,calibration);
+  const final=calibrate(raw);
 
   return {
     scoring_version:SCORING_VERSION,
     mode:'semantic-evidence-alignment',
-    profile,profile_key,calibration,raw_weights:RAW_MODEL_V39,
-    warnings:_activeRun?.warnings||[],
     final_score:+final.toFixed(1),
     raw_score:+raw.toFixed(1),
     element_avg:features.element_avg,
@@ -1440,40 +1379,42 @@ async function evaluatePairCore(claim,citation){
     sims:struct.sims,
     focused_citation:focusedCitation,
     feature_vector:features,
-    gate:features.element_min<40?'最弱元件證據不足，請人工核對；相似度不等於新穎性、進步性或 SEP 結論。':'',
+    gate:'',
     tier:tierOf(final)
   };
 }
 let _lastR=null,_hist=[];
-function auditLoad(){const rows=JSON.parse(localStorage.getItem(AUDIT_KEY)||'[]');if(!Array.isArray(rows))throw Error('Audit 格式錯誤，原資料保留');return rows;}
+function auditLoad(){try{return JSON.parse(localStorage.getItem(AUDIT_KEY)||'[]');}catch{return[];}}
 function auditSave(a){localStorage.setItem(AUDIT_KEY,JSON.stringify(a.slice(-300)));}
 function recordAudit(pid,claim,citation,r,mode='single'){
-  const a=auditLoad();a.push({timestamp:new Date().toISOString(),id:pid,mode,claim,citation,...r});
-  auditSave(a);renderAudit();
+  const a=auditLoad();a.push({
+    timestamp:new Date().toISOString(),id:pid,mode,
+    scoring_version:SCORING_VERSION,calibration_version:calibLoad()?.version||'baseline',
+    claim,citation,raw_score:r.raw_score,final_score:r.final_score,
+    element_avg:r.element_avg,element_min:r.element_min,coverage:r.coverage,
+    semantic_consistency:r.semantic_consistency,semantic_source:r.semantic_source,
+    structure_score:r.structure_score,feature_vector:r.feature_vector,
+    query_expansion_enabled:(document.getElementById('qeMode')?.value||'auto')!=='off',
+    elements:r.elements,sims:r.sims,focused_citation:r.focused_citation||''
+  });auditSave(a);renderAudit();
 }
 async function runCompare(){
-  const input=currentInput();
-  if(!input.claim||!input.citation){toast('請填入請求項與引證內容',true);return;}
-  const btn=document.getElementById('runBtn');btn.disabled=true;document.getElementById('mBtn').disabled=true;_lastR=null;
-  document.getElementById('vfyRow').classList.remove('vis');showLoad(true);
-  try{
-    step('語意檢索與元件證據比對…',30);
-    const r=await evaluatePair(input.claim,input.citation);
-    r.input=input;r.pair_key=await PatentPipeline.pairKey(input,r.profile_key);r.run_id=crypto.randomUUID();
-    _lastR=r;renderScoreV35(r,input.id,input.claim_number);
-    autoSave(input.id,r);recordAudit(input.id,input.claim,input.citation,r,'single');
-    _hist.unshift({pid:input.id,score:r.final_score,tier:r.tier});if(_hist.length>20)_hist.pop();renderHist();
-    if(r.warnings.length)toast(r.warnings.join('；'),true);
-  }catch(e){toast('比對或儲存失敗：'+e.message,true);}
-  finally{showLoad(false);btn.disabled=false;document.getElementById('mBtn').disabled=false;}
+  const claim=document.getElementById('claimTxt').value.trim(),cit=document.getElementById('citTxt').value.trim();
+  if(!claim||!cit){toast('請填入請求項與引證內容',true);return;}
+  const pid=document.getElementById('patId').value.trim()||'未指定',cl=document.getElementById('clNum').value.trim()||'Claim 1';
+  const btn=document.getElementById('runBtn');btn.disabled=true;showLoad(true);step('拆解 Claim elements...',25);await sleep(40);
+  step('Semantic evidence retrieval + rerank...',55);await sleep(40);const r=await evaluatePair(claim,cit);
+  step('Multi-feature raw model + scalar isotonic...',90);await sleep(40);showLoad(false);btn.disabled=false;_lastR=r;
+  renderScoreV35(r,pid,cl);autoSave(pid,r);recordAudit(pid,claim,cit,r,'single');
+  _hist.unshift({pid,score:r.final_score,tier:r.tier});if(_hist.length>20)_hist.pop();renderHist();
 }
 function renderScoreV35(r,pid,cl){
   document.getElementById('scoreCard').classList.add('vis');const big=document.getElementById('scoreBig');big.textContent=r.final_score;big.className='score-big '+r.tier;
   const chip=document.getElementById('tierChip'),labels={H:'高度相似 (HIGH)',M:'中度相似 (MID)',L:'低度相似 (LOW)'};chip.textContent=labels[r.tier];chip.className='tier-chip '+r.tier;
-  document.getElementById('tierLine').textContent=`v3.11 semantic-first ${r.semantic_source} · raw ${r.raw_score} · ${r.calibration?'人工標記校準':'未校準'} ${r.final_score}`;document.getElementById('rPid').textContent=pid+' · '+cl;document.getElementById('rCit').textContent=r.input?.citation_id||'引證段落';
+  document.getElementById('tierLine').textContent=`v3.10 hybrid ${r.semantic_source} · raw ${r.raw_score} · calibrated ${r.final_score}`;document.getElementById('rPid').textContent=pid+' · '+cl;document.getElementById('rCit').textContent=document.getElementById('citId').value.trim()||'引證段落';
   document.getElementById('ovElemAvg').textContent=r.element_avg+'%';document.getElementById('ovElemMin').textContent=r.element_min+'%';document.getElementById('ovCoverage').textContent=r.coverage+'%';document.getElementById('ovSemantic').textContent=r.semantic_consistency+'%';document.getElementById('ovStruct').textContent=r.structure_score;document.getElementById('ovFinal').textContent=r.final_score;
   document.getElementById('ovElemMin').style.color=r.element_min<40?'var(--a4)':r.element_min<60?'var(--a3)':'var(--a2)';
-  document.getElementById('ovExplain').textContent=`v3.11 Semantic-Primary Retrieval
+  document.getElementById('ovExplain').textContent=`v3.10 Synonym-Aware Hybrid Retrieval
 Technical Relevance = ${r.final_score}
 Raw Relevance = ${r.raw_score}
 Element Average = ${r.element_avg}%
@@ -1483,9 +1424,7 @@ Structure = ${r.structure_score}
 Semantic Consistency = ${r.semantic_consistency}% (${r.semantic_source})
 Retrieval = Query Expansion + Sparse/Dense RRF
 Raw model = 0.42*Avg + 0.18*Min + 0.18*Structure + 0.12*Coverage + 0.10*Semantic
-NOTE: v3.11 初始權重仍為 provisional，後續應由人工驗證 feature vectors 訓練取代。
-Calibration = ${r.calibration?r.calibration.n+' compatible labels':'baseline (not calibrated)'}
-Warnings = ${(r.warnings||[]).join('; ')||'none'}
+NOTE: v3.10 初始權重仍為 provisional，後續應由人工驗證 feature vectors 訓練取代。
 Isotonic input = raw relevance scalar only.
 Scoring version = ${SCORING_VERSION}`;
   const gb=document.getElementById('gateBox');if(r.gate){gb.textContent='⚠ '+r.gate;gb.classList.add('vis');}else gb.classList.remove('vis');
@@ -1494,10 +1433,10 @@ Scoring version = ${SCORING_VERSION}`;
   document.getElementById('elemRows').innerHTML=r.elements.map(e=>{
     const pct=Math.round(e.score*100),c=pct>=60?'#34d399':pct>=40?'#f5a623':'#f87171';
     const more=(e.top3||[]).slice(1).map((x,i)=>`Top ${i+2} ${Math.round(x.score*100)}% | sem ${Math.round((x.semantic||0)*100)} | lex ${Math.round((x.lexical||0)*100)} | concept ${Math.round((x.concept||0)*100)} | sparse ${Math.round((x.sparse||0)*100)} · ${x.text}`).join('\n');
-    return `<div class="elem-row-v35"><div class="elem-top-v35"><div class="elem-idx">${e.index}</div><div class="elem-text" title="${esc(e.text)}">${esc(e.text)}</div><div class="elem-bar-bg"><div class="elem-bar-fill" style="width:${pct}%;background:${c}"></div></div><div class="elem-pct" style="color:${c}">${pct}%</div></div><details class="ev-sent" style="white-space:normal"><summary>引證原文與 Top-3 證據</summary><div style="white-space:pre-wrap">${esc(e.evidence)}${more?'<br><br>'+esc(more):''}</div></details></div>`;
+    return `<div class="elem-row-v35"><div class="elem-top-v35"><div class="elem-idx">${e.index}</div><div class="elem-text" title="${esc(e.text)}">${esc(e.text)}</div><div class="elem-bar-bg"><div class="elem-bar-fill" style="width:${pct}%;background:${c}"></div></div><div class="elem-pct" style="color:${c}">${pct}%</div></div><div class="ev-sent" title="${esc((e.evidence||'')+(more?'\n\n'+more:''))}">${esc(e.evidence)}</div></div>`;
   }).join('');
   document.getElementById('dimRows').innerHTML=ATTRS.map((a,i)=>{const p=Math.round(r.sims[i]*100),c=p>=60?'#34d399':p>=35?'#f5a623':'#f87171';return `<div class="dim-row"><div class="dim-name">${a.name}</div><div class="dim-w">${Math.round(a.weight*100)}%</div><div class="dim-bg"><div class="dim-fill" style="width:${p}%;background:${c}"></div></div><div class="dim-pct" style="color:${c}">${p}%</div><div class="dim-ctr">${(r.sims[i]*a.weight*100).toFixed(1)}</div></div>`;}).join('');
-  document.getElementById('vfyRow').classList.add('vis');const vb=document.getElementById('vfyBadge');vb.className='vfy-badge';vb.textContent='';
+  document.getElementById('vfyRow').classList.add('vis');const vb=document.getElementById('vfyBadge');vb.className='vfy-badge';vb.textContent='';const ex=(dbLoad().cases||[]).find(c=>c.id===pid);if(ex&&(ex.label===0||ex.label===1)){vb.className='vfy-badge '+(ex.label===1?'sep':'non');vb.textContent=ex.label===1?'✅ SEP':'❌ 非 SEP';}
   document.getElementById('dbPanel').classList.add('vis');document.getElementById('auditPanel').classList.add('vis');
 }
 function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
@@ -1703,9 +1642,8 @@ function splitCitationPassages(text=''){
   const passages=[],seen=new Set();
   const add=(s,kind='paragraph')=>{
     s=String(s||'').replace(/\s+/g,' ').trim();
-    if(s.length>1200){for(let i=0;i<s.length;i+=1000)add(s.slice(i,i+1200),'chunk');return;}
-    if(!s)return;
-    const key=s;
+    if(s.length<24)return;
+    const key=normTxt(s).slice(0,500);
     if(seen.has(key))return;seen.add(key);
     passages.push({text:s,kind});
   };
@@ -1721,8 +1659,7 @@ function splitCitationPassages(text=''){
     if(i+1<sents.length)add(sents.slice(i,Math.min(i+2,sents.length)).join(' '),'window2');
   }
   if(!passages.length)add(raw,'whole');
-  if(passages.length>2000)throw Error('引證段落超過 2000，請分批比對；未截斷內容');
-  return passages;
+  return passages.slice(0,900);
 }
 function extractScreenConcepts(text=''){
   const t=String(text);
@@ -1808,7 +1745,6 @@ async function scoreOneClaimProfile(profile,citationText){
   const r=await evaluatePair(profile.claim_text,citationText);
   return {
     claim_number:profile.claim_number,
-    profile:r.profile,profile_key:r.profile_key,calibration:r.calibration,warnings:r.warnings,raw_weights:r.raw_weights,
     screening_score:r.final_score,
     screening_raw:r.raw_score,
     element_avg:r.element_avg,
@@ -1856,7 +1792,7 @@ function recordScreeningAudit(pid,claim,citation,r,format){
     screening_score:r.final_score,best_claim:r.best_claim,
     element_avg:r.element_avg,semantic:r.semantic,structure:r.structure,
     coverage:r.coverage,weakest:r.element_min,semantic_source:r.semantic_source,
-    feature_vector:r.feature_vector,evidence:r.evidence_snippets,claim_results:r.claim_results,raw_score:r.raw_score,final_score:r.final_score,element_min:r.element_min
+    feature_vector:r.feature_vector,evidence:r.evidence_snippets
   });
   auditSave(a);renderAudit();
 }
@@ -1867,8 +1803,8 @@ async function runMulti(){
   if(!citations.length){toast('未能解析有效引證',true);return;}
   const profiles=buildClaimProfiles(claim);
   updateBatchParseInfo();
-  toast(`v3.11：${parsed.format} ${citations.length} 筆｜獨立項 ${profiles.map(p=>p.claim_number).join(', ')}`);
-  const btn=document.getElementById('mBtn');btn.disabled=true;document.getElementById('runBtn').disabled=true;showLoad(true);const out=[];
+  toast(`v3.10：${parsed.format} ${citations.length} 筆｜獨立項 ${profiles.map(p=>p.claim_number).join(', ')}`);
+  const btn=document.getElementById('mBtn');btn.disabled=true;showLoad(true);const out=[];
   try{
     for(let i=0;i<citations.length;i++){
       const c=citations[i];
@@ -1880,8 +1816,7 @@ async function runMulti(){
     }
     out.sort((a,b)=>b.final_score-a.final_score);out.forEach((r,i)=>r.rank=i+1);
     renderMultiRows(out);document.getElementById('auditPanel').classList.add('vis');
-  }catch(e){toast('批次比對失敗：'+e.message,true);}
-  finally{showLoad(false);btn.disabled=false;document.getElementById('runBtn').disabled=false;}
+  }finally{showLoad(false);btn.disabled=false;}
 }
 function renderMetric(k,v,color='var(--tx)'){
   return `<div class="screen-metric"><div class="k">${k}</div><div class="v" style="color:${color}">${v}</div></div>`;
@@ -2033,52 +1968,12 @@ function selectConceptGroups(concepts,view,max){
   for(const c of preferred){if(used.has(c.id))continue;used.add(c.id);out.push(c);if(out.length>=max)break;}
   return out;
 }
-function buildSearchFunnel(){
-  const txt=document.getElementById('kwTxt').value.trim(),ipc=normalizeIPCInput(document.getElementById('kwIpc').value);
-  if(!txt){toast('請先填入請求項',true);return;}
-  const concepts=detectConcepts(txt).slice(0,4);
-  const groups=concepts.length?concepts.map(conceptGroup):extractFallbackPhrases(txt,4).map(fallbackGroup);
-  const root=document.getElementById('searchFunnel');root.replaceChildren();
-  const note=document.createElement('p');note.textContent='累積 AND 條件；命中筆數請從檢索平台填入，未填即未查詢。';root.appendChild(note);
-  if(!groups.length){note.textContent='未能可靠擷取關鍵詞；請使用 AI 檢索 Prompt 產生檢索式。';return;}
-  groups.forEach((g,i)=>{
-    const row=document.createElement('div'),q=document.createElement('pre'),count=document.createElement('input');
-    q.textContent='S'+(i+1)+'. '+buildQuery(ipc,groups.slice(0,i+1));q.style.whiteSpace='pre-wrap';
-    count.type='number';count.min='0';count.step='1';count.placeholder='未查詢：填入實際命中數';count.setAttribute('aria-label','S'+(i+1)+' 命中筆數');
-    row.append(q,count);root.appendChild(row);
-  });
-}
-const SEARCH_AI_ENDPOINT_KEY='pat_sim_v311_search_ai_endpoint';
-function searchAiEndpoint(){
-  const explicit=document.getElementById('searchAiEndpoint')?.value?.trim()||'';
-  if(explicit)return explicit;
-  return semanticEndpoint()?serviceURL('search-formula'):'';
-}
 function runKeyword(){
-  const claim=(document.getElementById('kwTxt')?.value?.trim()||document.getElementById('claimTxt')?.value?.trim()||'');
-  if(!claim){toast('請先貼入請求項或技術段落',true);return;}
-  document.getElementById('kwCard').classList.add('vis');
-  document.getElementById('kwOutTitle').textContent='備用 AI Prompt';
-  document.getElementById('kwBody').textContent=buildSearchFormulaPromptInput();
-  toast('已產生備用 prompt');
-}
-async function runKeywordAI(){
-  const claim=(document.getElementById('kwTxt')?.value?.trim()||document.getElementById('claimTxt')?.value?.trim()||'');
-  const endpoint=searchAiEndpoint(),status=document.getElementById('searchAiStatus'),btn=document.getElementById('kwAiBtn');
-  if(!claim){toast('請先貼入請求項或技術段落',true);return;}
-  if(!endpoint){status.textContent='請設定 AI 服務 endpoint，或先設定 embedding endpoint。';status.style.color='var(--a4)';return;}
-  btn.disabled=true;status.textContent='OpenAI 相容模型產生中…';status.style.color='var(--a3)';
-  try{
-    const data=await postJSON(endpoint,{claim,ipc:document.getElementById('kwIpc')?.value?.trim()||'',keyword_count:Number(document.getElementById('kwCount')?.value||8)});
-    const checked=PatentPipeline.validateSearchFormula(data?.result);
-    document.getElementById('kwCard').classList.add('vis');document.getElementById('kwOutTitle').textContent='AI 專利檢索四式';
-    document.getElementById('kwBody').textContent=checked.text;
-    status.textContent=`完成｜模型 ${data.model||'未回報'}｜Prompt ${data.prompt_version||'未回報'}`;status.style.color='var(--a2)';
-    localStorage.setItem(SEARCH_AI_ENDPOINT_KEY,document.getElementById('searchAiEndpoint')?.value?.trim()||'');
-    toast('已產生並驗證四條檢索式');
-  }catch(e){
-    status.textContent='AI 產生失敗：'+e.message+'；已提供備用 prompt。';status.style.color='var(--a4)';runKeyword();
-  }finally{btn.disabled=false;}
+  const prompt=buildSearchFormulaPromptInput();
+  const card=document.getElementById('kwCard');
+  card.classList.add('vis');
+  document.getElementById('kwBody').textContent=prompt;
+  toast('已產生 AI 檢索式 prompt，請複製至你的 API / Colab。');
 }
 // ═══════════════════════════════════════
 // TAB 4: 制式意見稿
@@ -2115,53 +2010,27 @@ function genDraft(){
 // v3.6 VERIFICATION DB + AUDIT TRAIL · backward-compatible storage
 // ═══════════════════════════════════════
 function autoSave(pid,r){
-  if(!r.input||!r.pair_key)throw Error('missing immutable result snapshot');
-  const db=dbLoad(),input=r.input;
-  const entry={...input,pair_key:r.pair_key,profile_key:r.profile_key,run_id:r.run_id,label:null,reviewer_label:null,raw_score:r.raw_score,calibrated_score:r.final_score,elem_min:r.element_min,element_avg:r.element_avg,structure_score:r.structure_score,coverage:r.coverage,semantic:r.semantic_consistency,feature_vector:r.feature_vector,sims:r.sims,scoring_version:SCORING_VERSION,detected_at:new Date().toISOString()};
-  const i=db.cases.findIndex(c=>c.pair_key===r.pair_key);
-  if(i>=0)db.cases[i]=entry;else db.cases.push(entry);
-  dbSave(db);renderDB();renderCalibInfo();
+  const db=dbLoad(),claim=document.getElementById('claimTxt').value.trim(),cit=document.getElementById('citTxt').value.trim();
+  const entry={id:pid,claim,citation:cit,label:null,reviewer_label:null,raw_score:r.raw_score,calibrated_score:r.final_score,elem_min:r.element_min,element_avg:r.element_avg,structure_score:r.structure_score,coverage:r.coverage,semantic:r.semantic_consistency,feature_vector:r.feature_vector,sims:r.sims,scoring_version:SCORING_VERSION,detected_at:new Date().toISOString()};
+  const i=db.cases.findIndex(c=>c.id===pid);if(i>=0){const old=db.cases[i];db.cases[i]={...entry,label:old.label,verified_at:old.verified_at};}else db.cases.push(entry);dbSave(db);renderDB();renderCalibInfo();
 }
 function doVerify(label){
-  try{
-    if(!_lastR||JSON.stringify(currentInput())!==JSON.stringify(_lastR.input))throw Error('輸入已變更或尚未比對，請重新計算');
-    if(label!==0&&label!==1)throw Error('invalid label');
-    const db=dbLoad(),i=db.cases.findIndex(c=>c.pair_key===_lastR.pair_key&&c.run_id===_lastR.run_id);
-    if(i<0)throw Error('結果尚未儲存，請重新計算');
-    db.cases[i]={...db.cases[i],label,reviewer_label:label===1?'highly_relevant':'low_relevance',verified_at:new Date().toISOString()};
-    dbSave(db);refitCalib(false);renderDB();
-    const vb=document.getElementById('vfyBadge');vb.textContent=label===1?'已確認高度相關':'已確認低度相關';
-    toast('已記錄人工相關度標記');
-  }catch(e){toast(e.message,true);}
+  if(!_lastR){toast('請先執行比對',true);return;}const pid=document.getElementById('patId').value.trim()||'未指定',db=dbLoad();let i=db.cases.findIndex(c=>c.id===pid);
+  const base={id:pid,claim:document.getElementById('claimTxt').value.trim(),citation:document.getElementById('citTxt').value.trim(),raw_score:_lastR.raw_score,calibrated_score:_lastR.final_score,elem_min:_lastR.element_min,element_avg:_lastR.element_avg,structure_score:_lastR.structure_score,coverage:_lastR.coverage,semantic:_lastR.semantic_consistency,feature_vector:_lastR.feature_vector,sims:_lastR.sims,scoring_version:SCORING_VERSION};
+  const entry={...(i>=0?db.cases[i]:base),...base,label,reviewer_label:label===1?'highly_relevant':'low_relevance',verified_at:new Date().toISOString()};if(i>=0)db.cases[i]=entry;else db.cases.push(entry);dbSave(db);refitCalib(false);renderDB();renderCalibInfo();
+  const vb=document.getElementById('vfyBadge');vb.className='vfy-badge '+(label===1?'sep':'non');vb.textContent=label===1?'✅ SEP':'❌ 非 SEP';toast(`已記錄：${pid} → ${label===1?'SEP':'非 SEP'}`);
 }
 function renderDB(){
   const cs=dbLoad().cases||[];document.getElementById('dbTot').textContent=cs.length;document.getElementById('dbSep').textContent=cs.filter(c=>c.label===1).length;document.getElementById('dbNon').textContent=cs.filter(c=>c.label===0).length;document.getElementById('dbPnd').textContent=cs.filter(c=>c.label!==0&&c.label!==1).length;
   const tb=document.getElementById('dbBody');if(!cs.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--dm);padding:12px;font-family:var(--mono);font-size:9px;">尚無紀錄</td></tr>';return;}
-  tb.innerHTML=[...cs].reverse().map((r,i)=>{const lbl=r.label===1?'<span style="color:var(--a2);font-weight:700">高度相關</span>':r.label===0?'<span style="color:var(--a4);font-weight:700">低度相關</span>':'<span style="color:var(--dm)">待驗</span>',dt=String(r.verified_at||r.detected_at||'').slice(0,10);return `<tr><td style="color:var(--a1)">${esc(r.id)}</td><td>${esc(r.raw_score??'—')}</td><td>${esc(r.calibrated_score??'—')}</td><td>${esc(r.elem_min!=null?r.elem_min+'%':'—')}</td><td>${lbl}</td><td style="color:var(--dm)">${esc(dt)}</td><td><button onclick="delCase(${cs.length-1-i})" style="background:none;border:none;color:var(--dm);cursor:pointer">✕</button></td></tr>`;}).join('');
+  tb.innerHTML=[...cs].reverse().map((r,i)=>{const lbl=r.label===1?'<span style="color:var(--a2);font-weight:700">SEP</span>':r.label===0?'<span style="color:var(--a4);font-weight:700">非SEP</span>':'<span style="color:var(--dm)">待驗</span>',dt=(r.verified_at||r.detected_at||'').slice(0,10);return `<tr><td style="color:var(--a1)">${esc(r.id)}</td><td>${r.raw_score??'—'}</td><td>${r.calibrated_score??'—'}</td><td>${r.elem_min!=null?r.elem_min+'%':'—'}</td><td>${lbl}</td><td style="color:var(--dm)">${dt}</td><td><button onclick="delCase(${cs.length-1-i})" style="background:none;border:none;color:var(--dm);cursor:pointer">✕</button></td></tr>`;}).join('');
 }
 function delCase(i){const db=dbLoad();db.cases.splice(i,1);dbSave(db);refitCalib(false);renderDB();renderCalibInfo();}
-function exportDB(){const db=dbLoad(),b=new Blob([JSON.stringify({schema:'pat_sim_v311',scoring_version:SCORING_VERSION,...db},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='pat_sim_v311_'+new Date().toISOString().slice(0,10)+'.json';a.click();toast(`已匯出 ${db.cases.length} 筆`);}
-function importDB(e){
-  const f=e.target.files[0];if(!f)return;e.target.value='';
-  if(f.size>10000000){toast('匯入上限 10 MB',true);return;}
-  const reader=new FileReader();reader.onload=ev=>{
-    try{
-      const imported=PatentPipeline.validateCases(JSON.parse(ev.target.result)),db=dbLoad();
-      // Legacy entries remain reviewable but cannot train the new calibration profile.
-      for(const c of imported.cases){
-        const i=db.cases.findIndex(x=>c.pair_key?x.pair_key===c.pair_key:(!x.pair_key&&x.id===c.id&&x.claim===c.claim&&x.citation===c.citation));
-        if(i>=0)db.cases[i]=c;else db.cases.push(c);
-      }
-      dbSave(db);refitCalib(false);renderDB();toast(`已匯入 ${imported.cases.length} 筆`);
-    }catch(err){toast('匯入失敗，原資料保留：'+err.message,true);}
-  };reader.onerror=()=>toast('讀檔失敗',true);reader.readAsText(f);
-}
+function exportDB(){const db=dbLoad(),b=new Blob([JSON.stringify({schema:'pat_sim_v38',scoring_version:SCORING_VERSION,...db},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='pat_sim_v38_'+new Date().toISOString().slice(0,10)+'.json';a.click();toast(`已匯出 ${db.cases.length} 筆`);}
+function importDB(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result),cs=d.cases||(Array.isArray(d)?d:[]),db=dbLoad();let a=0,u=0;for(const c of cs){const i=db.cases.findIndex(x=>x.id===c.id);if(i>=0){db.cases[i]=c;u++;}else{db.cases.push(c);a++;}}dbSave(db);refitCalib(false);renderDB();renderCalibInfo();toast(`新增${a}，更新${u}`);}catch{toast('JSON 格式錯誤',true);}};r.readAsText(f);e.target.value='';}
 function clearDB(){if(!confirm('確定清除所有驗證紀錄與校準模型？'))return;localStorage.removeItem(DB_KEY);localStorage.removeItem(CALIB_KEY);renderDB();renderCalibInfo();toast('已清除驗證庫');}
-function renderAudit(){
-  const rows=auditLoad(),tb=document.getElementById('auditBody');if(!tb)return;
-  tb.innerHTML=[...rows].reverse().slice(0,120).map(r=>`<tr>${[String(r.timestamp||'').slice(0,19),r.id,r.scoring_version,r.raw_score??r.screening_score??'—',r.final_score??r.screening_score??'—',r.element_min??r.weakest??'—',r.mode].map(v=>'<td>'+esc(v??'—')+'</td>').join('')}</tr>`).join('');
-}
-function exportAudit(){const a=auditLoad(),b=new Blob([JSON.stringify(a,null,2)],{type:'application/json'}),x=document.createElement('a');x.href=URL.createObjectURL(b);x.download='pat_sim_v311_audit_'+new Date().toISOString().slice(0,10)+'.json';x.click();}
+function renderAudit(){const rows=auditLoad(),tb=document.getElementById('auditBody');if(!tb)return;if(!rows.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--dm);padding:12px;font-family:var(--mono);font-size:9px;">尚無稽核紀錄</td></tr>';return;}tb.innerHTML=[...rows].reverse().slice(0,120).map(r=>`<tr><td>${r.timestamp.slice(0,19).replace('T',' ')}</td><td style="color:var(--a1)">${esc(r.id)}</td><td>${esc(r.scoring_version)}</td><td>${r.raw_score}</td><td>${r.final_score}</td><td>${r.element_min}%</td><td>${r.mode}</td></tr>`).join('');}
+function exportAudit(){const a=auditLoad(),b=new Blob([JSON.stringify(a,null,2)],{type:'application/json'}),x=document.createElement('a');x.href=URL.createObjectURL(b);x.download='pat_sim_v36_audit_'+new Date().toISOString().slice(0,10)+'.json';x.click();}
 function clearAudit(){if(!confirm('確定清除 Audit Trail？'))return;localStorage.removeItem(AUDIT_KEY);renderAudit();toast('Audit Trail 已清除');}
 
 // ═══════════════════════════════════════
@@ -2192,7 +2061,7 @@ function init(){
     <div class="w-row"><div class="w-head"><div class="w-name">${a.name}</div><div class="w-pct">${Math.round(a.weight*100)}%</div></div>
     <div class="w-bg"><div class="w-fill" style="width:${a.weight*100}%;background:${a.color}"></div></div></div>`).join('');
   addClaimRow('1','','[說明書段落0001]','indep');
-  try{renderDB();renderAudit();renderCalibInfo();}catch(e){toast(e.message,true);}
+  renderDB();renderAudit();renderCalibInfo();
 }
 init();
 
@@ -2210,11 +2079,6 @@ document.addEventListener('DOMContentLoaded',()=>{
     ep.addEventListener('change',saveSemanticEndpoint);
     const st=document.getElementById('semanticStatus');
     if(st&&ep.value)st.textContent='已載入 endpoint；尚未測試';
-  }
-  const searchEp=document.getElementById('searchAiEndpoint');
-  if(searchEp){
-    searchEp.value=localStorage.getItem(SEARCH_AI_ENDPOINT_KEY)||'';
-    searchEp.addEventListener('change',()=>localStorage.setItem(SEARCH_AI_ENDPOINT_KEY,searchEp.value.trim()));
   }
 });
 

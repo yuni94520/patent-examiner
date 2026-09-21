@@ -1,0 +1,42 @@
+{
+  "source_commit": "3c2ff15d3a2a82aa266422fc32bb403af1e201d7",
+  "reason": "Connect search formula generator to existing OpenAI-compatible LLM adapter",
+  "files": [
+    {
+      "path": "index.html",
+      "sha256": "22ff883ec73a7f7d65c065d2f69cbc08e07e49e98fd5d1240ead6d4df3b2f486"
+    },
+    {
+      "path": "pipeline.js",
+      "sha256": "ea10477ba6847009dc7720da3fae9c4befab44f1e045312f87de26aa8063d318"
+    },
+    {
+      "path": "server/app.py",
+      "sha256": "394e3ba93275a1e3ed0525a14ce419f86b61c57f8e388d01fe8dc8813c95eb2a"
+    },
+    {
+      "path": "server/requirements.txt",
+      "sha256": "33eb602d2d4bca5556fa3ce31e03e26366febbbc38cf4535687713623c61f76b"
+    },
+    {
+      "path": "tests/pipeline.test.cjs",
+      "sha256": "63451d8975f04afb55bb97637dd336d36dc8fd76bdc2ae27d5681463f57f9d0e"
+    },
+    {
+      "path": "tests/test_server.py",
+      "sha256": "705657a8eda4fcaaea332b5862329413b596e9677191cbed7c6ab92c3791ad3f"
+    },
+    {
+      "path": "docs/OPTIMIZATION-v3.11.md",
+      "sha256": "2f3a91d574ecb7741dc9ff22b662338ffdb2e3c0b4c0306b50c6de7922e74b33"
+    },
+    {
+      "path": "README.md",
+      "git_blob": "682500625b8856efe9a020fc80085752e3b3220e"
+    },
+    {
+      "path": "harness-kit/governance/06-LESSONS.md",
+      "git_blob": "6368f1c52ee3b5fbcdf0140c00ede8c0d504f858"
+    }
+  ]
+}

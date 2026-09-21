@@ -614,7 +614,7 @@ select option{background:var(--s2);}
     <div class="tab-pane" id="tab-keyword">
       <div class="content">
         <div class="card">
-          <div class="card-hd"><div class="step-num y">KW</div><div class="card-title">AI 專利檢索式產生器</div><div class="card-sub">沿用服務端 OpenAI 相容設定</div></div>
+          <div class="card-hd"><div class="step-num y">KW</div><div class="card-title">AI 專利檢索式 Prompt 產生器</div><div class="card-sub">輸入請求項 → 複製至 API / Colab</div></div>
           <div class="card-body">
             <div class="fg"><label>請求項 / 技術段落</label><textarea id="kwTxt" rows="8" placeholder="貼入請求項或技術段落..."></textarea></div>
             <div class="frow">
@@ -627,14 +627,10 @@ select option{background:var(--s2);}
                 </select>
               </div>
             </div>
-            <div class="frow">
-              <div class="fg"><label>AI 服務 endpoint</label><input type="text" id="searchAiEndpoint" placeholder="例如 http://localhost:8000/search-formula；空白時沿用上方 embedding 服務" /></div>
-            </div>
-            <div class="info-box" style="margin:2px 0 4px;">直接呼叫服務端既有 OpenAI 相容設定。API key 只留在服務端；輸出必須通過 IPC、括號、AND/OR、四式結構及每組最多五詞驗證。</div>
-            <div id="searchAiStatus" style="font-family:var(--mono);font-size:9px;color:var(--dm);min-height:14px;"></div>
-            <div class="btn-row"><button class="btn-run" id="kwAiBtn" onclick="runKeywordAI()">✨ AI 直接產生四式</button><button class="btn-local" onclick="runKeyword()">產生備用 Prompt</button><button class="btn-local" onclick="buildSearchFunnel()">逐步檢索漏斗</button></div><div id="searchFunnel"></div>
+            <div class="info-box" style="margin:2px 0 4px;">依你的專利檢索 prompt 產生完整 AI 輸入；輸出仍要求 A/B 標準式與放寬式。</div>
+            <div class="btn-row"><button class="btn-local" onclick="runKeyword()">🔍 產生 AI 檢索 Prompt</button><button class="btn-local" onclick="buildSearchFunnel()">逐步檢索漏斗</button></div><div id="searchFunnel"></div>
             <div class="out-card" id="kwCard">
-              <div class="out-hd"><div class="out-title" id="kwOutTitle">AI 檢索式</div><button class="btn-copy" onclick="copyEl('kwBody')">複製</button></div>
+              <div class="out-hd"><div class="out-title">AI 檢索式 Prompt</div><button class="btn-copy" onclick="copyEl('kwBody')">複製</button></div>
               <div class="out-body" id="kwBody"></div>
             </div>
           </div>
@@ -2048,37 +2044,12 @@ function buildSearchFunnel(){
     row.append(q,count);root.appendChild(row);
   });
 }
-const SEARCH_AI_ENDPOINT_KEY='pat_sim_v311_search_ai_endpoint';
-function searchAiEndpoint(){
-  const explicit=document.getElementById('searchAiEndpoint')?.value?.trim()||'';
-  if(explicit)return explicit;
-  return semanticEndpoint()?serviceURL('search-formula'):'';
-}
 function runKeyword(){
-  const claim=(document.getElementById('kwTxt')?.value?.trim()||document.getElementById('claimTxt')?.value?.trim()||'');
-  if(!claim){toast('請先貼入請求項或技術段落',true);return;}
-  document.getElementById('kwCard').classList.add('vis');
-  document.getElementById('kwOutTitle').textContent='備用 AI Prompt';
-  document.getElementById('kwBody').textContent=buildSearchFormulaPromptInput();
-  toast('已產生備用 prompt');
-}
-async function runKeywordAI(){
-  const claim=(document.getElementById('kwTxt')?.value?.trim()||document.getElementById('claimTxt')?.value?.trim()||'');
-  const endpoint=searchAiEndpoint(),status=document.getElementById('searchAiStatus'),btn=document.getElementById('kwAiBtn');
-  if(!claim){toast('請先貼入請求項或技術段落',true);return;}
-  if(!endpoint){status.textContent='請設定 AI 服務 endpoint，或先設定 embedding endpoint。';status.style.color='var(--a4)';return;}
-  btn.disabled=true;status.textContent='OpenAI 相容模型產生中…';status.style.color='var(--a3)';
-  try{
-    const data=await postJSON(endpoint,{claim,ipc:document.getElementById('kwIpc')?.value?.trim()||'',keyword_count:Number(document.getElementById('kwCount')?.value||8)});
-    const checked=PatentPipeline.validateSearchFormula(data?.result);
-    document.getElementById('kwCard').classList.add('vis');document.getElementById('kwOutTitle').textContent='AI 專利檢索四式';
-    document.getElementById('kwBody').textContent=checked.text;
-    status.textContent=`完成｜模型 ${data.model||'未回報'}｜Prompt ${data.prompt_version||'未回報'}`;status.style.color='var(--a2)';
-    localStorage.setItem(SEARCH_AI_ENDPOINT_KEY,document.getElementById('searchAiEndpoint')?.value?.trim()||'');
-    toast('已產生並驗證四條檢索式');
-  }catch(e){
-    status.textContent='AI 產生失敗：'+e.message+'；已提供備用 prompt。';status.style.color='var(--a4)';runKeyword();
-  }finally{btn.disabled=false;}
+  const prompt=buildSearchFormulaPromptInput();
+  const card=document.getElementById('kwCard');
+  card.classList.add('vis');
+  document.getElementById('kwBody').textContent=prompt;
+  toast('已產生 AI 檢索式 prompt，請複製至你的 API / Colab。');
 }
 // ═══════════════════════════════════════
 // TAB 4: 制式意見稿
@@ -2210,11 +2181,6 @@ document.addEventListener('DOMContentLoaded',()=>{
     ep.addEventListener('change',saveSemanticEndpoint);
     const st=document.getElementById('semanticStatus');
     if(st&&ep.value)st.textContent='已載入 endpoint；尚未測試';
-  }
-  const searchEp=document.getElementById('searchAiEndpoint');
-  if(searchEp){
-    searchEp.value=localStorage.getItem(SEARCH_AI_ENDPOINT_KEY)||'';
-    searchEp.addEventListener('change',()=>localStorage.setItem(SEARCH_AI_ENDPOINT_KEY,searchEp.value.trim()));
   }
 });
 
