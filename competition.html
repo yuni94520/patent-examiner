@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>專利檢索競賽 Gemini 備援</title>
+<style>
+:root{color-scheme:dark;--bg:#080a14;--card:#11172a;--edge:#30395c;--ink:#edf0ff;--sub:#aab5d7;--accent:#818cf8}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.65 system-ui,"Noto Sans TC",sans-serif}header{padding:16px 28px;background:#101629;border-bottom:1px solid var(--edge)}h1{font-size:19px;margin:0}small,.muted{color:var(--sub)}nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}nav a{color:#c4c9ff}.wrap{max-width:1100px;margin:auto;padding:20px;display:grid;grid-template-columns:230px 1fr;gap:16px}.card{background:var(--card);border:1px solid var(--edge);border-radius:10px;padding:16px;margin-bottom:14px}h2{font-size:16px;margin:0 0 10px}.step{display:block;width:100%;margin:5px 0;text-align:left}.step.active{border-color:#a7afff;background:#353e78}.step:disabled{opacity:.45}button,input,textarea,select{background:#1b2540;border:1px solid #3d4a71;border-radius:6px;color:var(--ink);padding:9px;font:inherit}button{cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}button.primary{background:#575fc0}button:hover:not(:disabled){border-color:#adb6ff}input,textarea,select{width:100%}textarea{min-height:175px;resize:vertical}label{display:block;margin:10px 0 4px}.buttons{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.note{color:#bac8ea;background:#192441;padding:9px;border-radius:6px}.hidden{display:none}.status{white-space:pre-wrap;color:#9de7c4;margin:10px 0}.err{color:#ffa6a6}pre{white-space:pre-wrap;word-break:break-word;background:#0b1020;padding:14px;border-radius:6px;max-height:490px;overflow:auto}.record{border-bottom:1px solid var(--edge);padding:8px 0}summary{cursor:pointer}table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid #30395c;text-align:left;padding:6px} @media(max-width:750px){.wrap{display:block}}
+</style></head><body>
+<header><h1>專利檢索競賽 · Gemini 備援</h1><small>照片辨識 → PQAI 英文 → 100 筆整理 → 全語意反推 → 相似度分數 → 作答</small><nav><a href="./index.html">原版相似度比對</a><a href="#app">競賽流程</a></nav></header>
+<div class="wrap" id="app"><aside class="card"><h2>本機金鑰</h2><label for="apiKey">Gemini API Key（僅保留於目前分頁記憶體）</label><input id="apiKey" type="password" autocomplete="off" placeholder="在本機輸入新的 Key"><div class="buttons"><button id="clearKey">清除金鑰</button></div><label for="model">Gemini 模型</label><input id="model" value="gemini-2.5-flash"><p class="note">勿把金鑰寫入 HTML、GitHub、網址、localStorage 或匯出檔。已在對話公開的舊金鑰請撤銷重建。</p><h2>六階段</h2><div id="stepButtons"></div></aside><main>
+<section class="card"><h2 id="stageTitle">階段一 · 題目辨識</h2><p class="muted" id="stageHelp"></p><div id="stageFields"></div><div class="buttons"><button class="primary" id="run">執行本階段</button><button id="next" disabled>確認並進入下一階段 →</button><button id="export">匯出工作紀錄 JSON</button><button id="importBtn">匯入工作紀錄</button><input class="hidden" type="file" id="importFile" accept=".json"></div><div id="status" class="status"></div><pre id="output">尚無結果。</pre></section>
+<section class="card"><h2>目前引證（可持續新增）</h2><div id="citations"></div></section>
+</main></div>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const stages=[
+["照片辨識","上傳題目照片並檢查請求項、元件、數值及圖式；模糊內容必須標示，不得捏造。"],
+["英文翻譯","產生忠實英文翻譯和獨立的 PQAI 語意檢索描述。"],
+["100 件引證整理","貼入 PQAI TSV（Publication Number、Title、Abstract），或以 === 分隔各篇；只整理，不評分。"],
+["全語意反推","用請求項與全部引證重建多路檢索式；輸出只有檢索式，不做相似度分析。"],
+["100 件相似度分析","按每批最多十篇評分，可追加新引證後輸入「分數」繼續；未查全文只能標記初評。"],
+["競賽正式作答","整合已驗證結果填寫關鍵字、分類、檢索記錄及特徵比對；缺漏標記待核對。"]
+];
+let data={stage:0,completed:[],original:"",claim:"",english:"",hits:[],queries:"",scores:{},answer:"",logs:[]};
+let imagePart=null;
+function clean(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function notice(s,error=false){$("status").textContent=s;$("status").className="status"+(error?" err":"");}
+function saveResult(text){$("output").textContent=text;data.logs.push({stage:data.stage,date:new Date().toISOString(),result:text});data.completed[data.stage]=true;$("next").disabled=data.stage===5;notice("本階段完成。請檢查輸出，再按「確認並進入下一階段」。");}
+function fields(s){
+ if(s===0)return '<label>題目圖片（可選多張，請先選取需要分析的主圖）</label><input id="photo" type="file" accept="image/*"><label>補充文字或手動校正</label><textarea id="source" placeholder="可貼入已知請求項／說明書"></textarea>';
+ if(s===1)return '<label>第一階段題目內容（可校正）</label><textarea id="claimEdit"></textarea>';
+ if(s===2)return '<label>PQAI 檢索結果 TSV 或 === 分隔引證</label><textarea id="hitsInput" placeholder="Publication Number\tTitle\tAbstract"></textarea><label>也可以匯入 TSV / TXT</label><input type="file" id="hitsFile" accept=".tsv,.txt,.csv">';
+ if(s===3)return '<p class="note">依前階段整理的引證抽取各種實現鏈，產生 A1 至 G2 多路檢索式。每一組最多五個詞，包含 IPC 限定與 IPC-free 路徑。</p>';
+ if(s===4)return '<label>新增引證（可選；用 === 分隔）</label><textarea id="extraHits" placeholder="引證號、標題、摘要或全文..."></textarea><label>指令</label><input id="scoreCommand" value="分數"><p class="muted">每次最多處理十筆尚未評分或需重新評分的引證；再次按「執行本階段」繼續處理下一批。</p>';
+ return '<label>其他實際檢索資料／人工核對段落</label><textarea id="verified" placeholder="檢索平台、檢索式、實際命中筆數、引證號及原文段落"></textarea>';
+}
+function render(){
+ let s=data.stage;$("stageTitle").textContent="階段"+(s+1)+" · "+stages[s][0];$("stageHelp").textContent=stages[s][1];$("stageFields").innerHTML=fields(s);$("next").disabled=!data.completed[s]||s===5;
+ $("stepButtons").innerHTML=stages.map((x,i)=>'<button class="step '+(i===s?'active':'')+'" data-i="'+i+'" '+(i>s&&!data.completed[i-1]?'disabled':'')+'>'+(data.completed[i]?'✓ ':'')+(i+1)+". "+clean(x[0])+"</button>").join("");
+ document.querySelectorAll(".step").forEach(b=>b.onclick=()=>{data.stage=Number(b.dataset.i);render()});
+ if(s===0)$("source").value=data.original;if(s===1)$("claimEdit").value=data.claim||data.original;
+ $("output").textContent=data.logs.filter(x=>x.stage===s).at(-1)?.result||"尚無結果。";
+ $("citations").innerHTML="<p>總計 "+data.hits.length+" 件；已評分 "+Object.keys(data.scores).length+" 件。</p>"+data.hits.slice(-150).map((x,i)=>'<div class="record"><b>'+clean(x.id)+'</b> '+clean(x.title)+' '+(data.scores[x.id]?"｜"+clean(data.scores[x.id].score)+"/100":"｜待評分")+'</div>').join("");
+}
+async function gemini(parts,instruction){
+ const key=$("apiKey").value.trim();if(!key)throw Error("請在本機輸入 Gemini API Key");
+ const model=$("model").value.trim();if(!/^[\w.-]+$/.test(model))throw Error("模型名稱格式錯誤");
+ const endpoint="https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(model)+":generateContent";
+ const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),120000);
+ try{
+ const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":key},body:JSON.stringify({systemInstruction:{parts:[{text:instruction}]},contents:[{role:"user",parts}],generationConfig:{temperature:0.1,maxOutputTokens:8192}}),signal:controller.signal});
+ const json=await response.json();if(!response.ok)throw Error("Gemini HTTP "+response.status+": "+JSON.stringify(json.error||json).slice(0,600));
+ const text=(json.candidates||[]).flatMap(c=>c.content?.parts||[]).map(p=>p.text||"").join("\n");if(!text)throw Error("無文字回應；請檢查模型、配額或內容限制");return text;
+ }finally{clearTimeout(timeout);}
+}
+function parseHits(s){
+ const rows=s.replace(/\r/g,"").split("\n").filter(Boolean);let hits=[];
+ if(rows.length>1&&rows[0].includes("\t")){
+ let start=/publication|公開號|patent/i.test(rows[0])?1:0;
+ for(let i=start;i<rows.length;i++){const parts=rows[i].split("\t");if(parts.length<2)continue;const id=parts[0].trim();if(!id)continue;hits.push({id,title:(parts[1]||"").trim(),abstract:parts.slice(2).join(" ").trim()});}
+ }else{
+ let blocks=s.split(/(?:^|\n)\s*={3,}\s*(?:\n|$)/).map(x=>x.trim()).filter(Boolean);
+ for(const [i,b]of blocks.entries()){let lines=b.split("\n");let id=(b.match(/\b(?:US|WO|EP|JP|CN|TW|KR)\s*\d[\d/\s.-]*[A-C]\d?\b/i)||[])[0]||"REF-"+(data.hits.length+i+1);hits.push({id:id.replace(/\s+/g,""),title:lines[0].slice(0,160),abstract:b});}
+ }
+ return hits;
+}
+function addHits(hits){
+ let seen=new Set(data.hits.map(h=>h.id.toUpperCase()));let n=0;
+ for(let h of hits){if(seen.has(h.id.toUpperCase()))continue;data.hits.push(h);seen.add(h.id.toUpperCase());n++;}
+ return n;
+}
+const system="你是資深專利審查官。零捏造：只依使用者提供之請求項、說明書及引證內容；不可把摘要未提及誤判成全文未揭露；不得假造引證原文、段落、分類、檢索筆數。保留原始技術關係、限制與數值。輸出繁體中文，英文欄位依指示使用英文。";
+const reverse="任務：全語意檢索反推。先解析 CLAIMS 中 Entity/Action/Object/Condition/Relationship/Result/Constraint，分類 Tier1 稀有關係、Tier2 稀有概念、Tier3 輔助、Tier4 一般；對全部 Semantic Hits 擷取 COMPONENT/PROCESS/MATERIAL/STRUCTURAL/FUNCTIONAL/SIGNAL-DATA/PARAMETER CHAIN，映射 lexical、functional、structural、process、material、relationship equivalents、implementation instance、latent technology；排除 noise、query drift。使用 Claim-neutral abstraction，結構↔製程雙向反推、材料泛化↔實例，針對 Tier1/2 建立至少十個不同候選詞，再挑每組不超過五詞；保留 2–4 組稀有技術關係組合。建立多路 Query Lattice：A1原文精準 A2原文放寬 B1製程反推 B2結構反推 C1材料泛化 C2材料實例 D1關係 D2參數 E1語意詞彙 E2語意實現鏈 F1跨分類稀有組合 F2跨分類製程鏈 G1潛在技術 G2跨領域（不適用不生成）。每個 Tier1 特徵須至少兩條實質獨立路徑；每個核心稀有關係至少一條 IPC 限定及一條 IPC-free；IPC / CPC 是檢索先驗而非絕對邊界。每個布林組 (詞1 OR 詞2 ...)，最多五個中英文詞，各組 AND 連接，分類式 IC=(分類1 OR 分類2)，無分類式不能加 IC；鄰近運算僅在系統支援時使用，UD/GD 限制只能放最後 AND (UD=:YYYYMMDD OR GD=:YYYYMMDD)。完成覆蓋、去漂移、括號及布林語法檢查。最終只輸出具 A1~G2 標籤的檢索式，不輸出推理、前言、分數、排名或建議；沒有可靠 IPC 不可自造。";
+async function run(){
+ const s=data.stage;$("run").disabled=true;notice("執行中；請勿關閉此分頁。");
+ try{
+ if(s===0){let parts=[{text:"辨識照片所有可見文字及圖式元件編號，完整還原請求項。另產生技術特徵、同義詞/上下位詞、可能 IPC/CPC 與理由的作答草稿；分類無法確定時標待查。補充文字：\n"+$("source").value}];let photo=$("photo").files[0];if(photo){if(photo.size>12e6)throw Error("照片請縮小到 12 MB 以下");let uri=await new Promise((res,rej)=>{let reader=new FileReader();reader.onload=()=>res(reader.result);reader.onerror=rej;reader.readAsDataURL(photo)});parts.push({inlineData:{mimeType:photo.type||"image/jpeg",data:uri.split(",")[1]}})}if(!photo&&!$("source").value.trim())throw Error("請上傳題目照片或輸入題目文字");const result=await gemini(parts,system);data.original=result;data.claim=$("source").value.trim()||result;saveResult(result);}
+ if(s===1){data.claim=$("claimEdit").value.trim();if(!data.claim)throw Error("請先輸入題目內容");const result=await gemini([{text:"請輸出兩個獨立區塊：A 忠實英文翻譯（不新增限定）與 B PQAI 語意描述（以英文表示底層技術、動作與關係，不把推測當成請求項）。題目：\n"+data.claim}],system);data.english=result;saveResult(result);}
+ if(s===2){let raw=$("hitsInput").value;if($("hitsFile").files[0])raw+="\n"+await $("hitsFile").files[0].text();let count=addHits(parseHits(raw));if(!count&&!data.hits.length)throw Error("未辨識引證；請貼入 PQAI TSV 或以 === 分隔");saveResult("本次新增 "+count+" 件；目前累計 "+data.hits.length+" 件。\n"+data.hits.map((h,i)=>(i+1)+". "+h.id+" "+h.title).join("\n"));}
+ if(s===3){if(!data.claim||!data.hits.length)throw Error("需要請求項和 PQAI 引證");let sources=data.hits.map(h=>h.id+" "+h.title+" "+h.abstract).join("\n\n");const result=await gemini([{text:"CLAIMS:\n"+data.claim+"\nSPECIFICATION/TRANSLATION:\n"+data.english+"\nSEMANTIC HITS:\n"+sources.slice(0,185000)}],system+"\n"+reverse);data.queries=result;saveResult(result);}
+ if(s===4){const add=$("extraHits").value.trim();if(add){let n=addHits(parseHits(add));notice("新增 "+n+" 篇；開始評分。");$("extraHits").value="";}let pending=data.hits.filter(h=>!data.scores[h.id]).slice(0,10);if(!pending.length){saveResult("目前 "+data.hits.length+" 筆皆有初評；可貼新引證後輸入「分數」繼續。");return;}
+ const prompt="請對每篇引證獨立比對 CLAIM 各技術特徵，輸出嚴格 JSON 陣列，不要 markdown。每筆格式 {\"id\":\"原樣案號\",\"score\":0到100整數,\"coverage\":\"已對應特徵/總特徵\",\"evidence\":\"摘要中實際文字短句；沒有則資料不足\",\"gaps\":\"未見揭露或待全文核對特徵\",\"status\":\"摘要初評或全文已驗證\"}。分數為檢索優先順序非法律上新穎性/進步性結論；重視稀有關係、具體限制與技術實現；摘要未提及不得斷言不存在。CLAIM:\n"+data.claim+"\nREFERENCES:\n"+JSON.stringify(pending);
+ let result=await gemini([{text:prompt}],system);let parsed;try{parsed=JSON.parse(result.replace(/^\x60{3}(?:json)?\s*|\s*\x60{3}$/g,"").trim())}catch(e){throw Error("模型未回傳可解析 JSON，原文已顯示供檢查：\n"+result.slice(0,1600))}
+ if(!Array.isArray(parsed))throw Error("回應非引證陣列");const allowed=new Set(pending.map(x=>x.id));for(let item of parsed){if(!allowed.has(item.id)||!Number.isFinite(Number(item.score)))continue;data.scores[item.id]={...item,score:Math.max(0,Math.min(100,Math.round(Number(item.score))))};}
+ const ranked=Object.values(data.scores).sort((a,b)=>b.score-a.score);const out="本批 "+pending.length+" 件；累計評分 "+ranked.length+"/"+data.hits.length+" 件。\n"+ranked.map((x,i)=>(i+1)+". "+x.id+" "+x.score+"/100｜"+x.coverage+"｜"+x.evidence+"｜缺口："+x.gaps+"｜"+x.status).join("\n\n");saveResult(out);if(ranked.length<data.hits.length){$("next").disabled=true;notice("本批完成，仍有 "+(data.hits.length-ranked.length)+" 筆待評分；再次按「執行本階段」處理下一批。");}}
+ if(s===5){const result=await gemini([{text:"根據以下資料，依競賽作答表四部分產生草稿：(1)關鍵字與上下位同義詞 (2)IPC/CPC及理由 (3)檢索系統/式/真實筆數/引證號 (4)逐特徵三篇比對。未提供的實際檢索筆數和全文段號標記待核對，不捏造。CLAIM:\n"+data.claim+"\nQUERIES:\n"+data.queries+"\nSCORES:\n"+JSON.stringify(data.scores)+"\nVERIFIED EVIDENCE:\n"+$("verified").value}],system);data.answer=result;saveResult(result);}
+ }catch(e){notice(String(e.message||e),true);}finally{$("run").disabled=false;render();}
+}
+$("run").onclick=run;$("next").onclick=()=>{if(data.completed[data.stage]&&data.stage<5){data.stage++;notice("");render()}};
+$("clearKey").onclick=()=>{$("apiKey").value="";notice("本機金鑰已清除。")};
+$("export").onclick=()=>{const blob=new Blob([JSON.stringify({...data,exported:new Date().toISOString()},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="patent-competition-record.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+$("importBtn").onclick=()=>$("importFile").click();$("importFile").onchange=async e=>{try{const obj=JSON.parse(await e.target.files[0].text());data={...data,...obj,stage:Math.max(0,Math.min(5,obj.stage||0))};delete data.apiKey;render();notice("紀錄已匯入；金鑰不會匯入。")}catch(err){notice("紀錄格式錯誤："+err.message,true)}};
+render();
+</script></body></html>
