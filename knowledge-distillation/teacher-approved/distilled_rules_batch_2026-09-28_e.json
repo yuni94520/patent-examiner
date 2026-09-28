@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "0.5",
+  "batchId": "2026-09-28-e",
+  "status": "teacher_approved",
+  "sourceCase": "111138806",
+  "domain": ["automotive", "mechanical spatial arrangement", "OBD"],
+  "rules": [
+    {"id":"AUTO_MOTORCYCLE_STORAGE_TO_VEHICLE_COMPARTMENT_001","direction":"motorcycle/storage box/opening -> vehicle/compartment/slot","score":1.0,"reverseScore":0.7},
+    {"id":"AUTO_OBD_TO_COMMUNICATION_COUPLER_001","direction":"OBD connector coupled to ECU -> communication coupler","score":1.0},
+    {"id":"AUTO_BRIDGE_RETAINER_TO_COVER_RECEPTACLE_EXACT_001","direction":"cover-attached bridge retainer -> cover-side reception unit","score":1.0,"requiredGuard":"bridge belongs to or moves with cover, or identical cover-side spatial relationship"},
+    {"id":"AUTO_BRIDGE_RETAINER_TO_COVER_RECEPTACLE_OBVIOUS_001","direction":"bridge retainer -> cover-side reception unit","score":0.85,"legalInference":"obviousness_only"},
+    {"id":"MECH_SNAP_TO_DETACHABLE_ATTACHMENT_001","direction":"snap-fit engaging portion -> detachable attachment","score":1.0},
+    {"id":"MECH_FASTENER_SIMPLE_SUBSTITUTION_001","direction":"snap-fit -> support rod/sliding groove/hinge","score":0.85,"legalInference":"obviousness_only"}
+  ]
+}

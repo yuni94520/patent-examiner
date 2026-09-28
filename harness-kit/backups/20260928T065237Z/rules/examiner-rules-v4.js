@@ -7,7 +7,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
   return {
-    version:'v4.0.0-shadow.2',
+    version:'v4.0.0-shadow.1',
     status:'teacher_approved',
     direction:'reference_evidence_to_claim_limitation',
     scoring:{elementMeanWeight:0.4,elementMinWeight:0.6,formula:'0.4 * elementMean + 0.6 * elementMin'},
@@ -100,31 +100,7 @@
       {id:'VIDEO_CACHE_DETERMINISTIC_SALT_001',sourceCase:'111127738',channel:'functional_equivalence',score:0.8,
         claimAny:['快取鹽值','cached salt','重用鹽值'],
         evidenceAll:[['cache','store','快取','儲存'],['deterministic','derived','決定性','導出']],
-        rejectIfAny:['fresh nonce required','unique random salt','要求新鮮 nonce','唯一隨機鹽']},
-      {id:'AUTO_MOTORCYCLE_STORAGE_TO_VEHICLE_COMPARTMENT_001',sourceCase:'111138806',channel:'directional_scope',score:1,directional:true,reverseScore:0.7,
-        claimAny:['車輛','vehicle','隔室','compartment'],
-        evidenceAll:[['motorcycle','機車'],['storage box','置物箱'],['opening','slot','開口','槽']]},
-      {id:'AUTO_OBD_TO_COMMUNICATION_COUPLER_001',sourceCase:'111138806',channel:'functional_equivalence',score:1,directional:true,reverseScore:0.65,
-        claimAny:['通信耦合器','communication coupler'],
-        evidenceAll:[['OBD connector','on-board diagnostic connector','車載診斷接頭','OBD接頭'],['ECU','electronic control unit','動力系統','電子控制單元'],['communicat','coupl','通信','耦合']]},
-      {id:'AUTO_BRIDGE_RETAINER_TO_COVER_RECEPTACLE_EXACT_001',sourceCase:'111138806',channel:'functional_equivalence',score:1,
-        claimAny:['蓋上具有接納單元','接納單元在蓋上','第一側具有接納單元','第一側有接納單元','reception unit on the cover','receiving unit on a first side of the cover'],
-        evidenceAll:[['battery cover','cover','電瓶蓋','蓋'],['bridge member','橋接件'],['retainer','fixing member','固定件'],['opening','slot','開口','槽']],
-        guardsAny:['bridge member attached to the cover','bridge member is part of the cover','moves with the cover','same cover-side spatial relationship','橋接件附接於蓋','橋接件屬於蓋','隨蓋移動','相同蓋側空間關係'],
-        rejectIfAny:['bridge member fixed to vehicle body independently of cover','橋接件獨立固定於車體']},
-      {id:'AUTO_BRIDGE_RETAINER_TO_COVER_RECEPTACLE_OBVIOUS_001',sourceCase:'111138806',channel:'obviousness_only',score:0.85,
-        claimAny:['蓋上具有接納單元','接納單元在蓋上','第一側具有接納單元','第一側有接納單元','reception unit on the cover','receiving unit on a first side of the cover'],
-        evidenceAll:[['battery cover','cover','電瓶蓋','蓋'],['bridge member','橋接件'],['retainer','fixing member','固定件'],['opening','slot','開口','槽']],
-        rejectIfAny:['changes access direction','interferes with cover opening','改變接近方向','妨礙蓋開啟']},
-      {id:'MECH_SNAP_TO_DETACHABLE_ATTACHMENT_001',sourceCase:'111138806',channel:'functional_equivalence',score:1,
-        claimAny:['可拆卸地附接','detachable attachment','removably attached'],
-        evidenceAll:[['engaging portion','snap-fit','clip','卡合部','卡扣'],['housing','connector','殼體','接頭'],['retainer','fixing member','固定件']],
-        rejectIfAny:['permanent weld','adhesive only','永久焊接','僅黏著']},
-      {id:'MECH_FASTENER_SIMPLE_SUBSTITUTION_001',sourceCase:'111138806',channel:'obviousness_only',score:0.85,
-        claimAny:['支撐桿','support rod','滑動槽','sliding groove','鉸鏈','hinge'],
-        evidenceAll:[['engaging portion','snap-fit','clip','卡合部','卡扣'],['detachable','removable','可拆卸','可移除']],
-        guardsAny:['same retention function','same access function','相同固持功能','相同接近功能'],
-        rejectIfAny:['claimed kinematics essential','unexpected mechanical effect','運動學為必要','無法預期機械功效']}
+        rejectIfAny:['fresh nonce required','unique random salt','要求新鮮 nonce','唯一隨機鹽']}
     ],
     conflicts:[
       {id:'POWER_DIRECTION_CONFLICT_001',claimAny:['increase power','提高功率','增加功率'],evidenceAny:['decrease power','降低功率','減少功率'],penalty:20,maxDistance:20},

@@ -22,7 +22,6 @@ const ENABLED_DOMAINS = {
   examiner_wireless: true, // UWB / 通話移交（OA 教師標籤驗證）
   examiner_crypto: true, // PQC / 雜湊 / 視訊簽章（OA 教師標籤驗證）
   examiner_eda: true,    // IC P/G / IR drop / ML（OA 教師標籤驗證）
-  examiner_automotive: true, // 車載 OBD / 機械空間配置（OA 教師標籤驗證）
   telecom:       false,  // 5G / 通訊（草稿，啟用前建議先用實際案例驗證）
   blockchain:    false,  // 區塊鏈（草稿，啟用前建議先用實際案例驗證）
 };
@@ -120,15 +119,6 @@ const ZH_EN_EXAMINER_EDA = [
   [/壓降/g,'IR drop'],[/配線擁塞/g,'routing congestion'],[/密度圖/g,'density map'],
   [/特徵提取器/g,'feature extractor'],[/機器學習模型/g,'machine learning model'],[/預訓練/g,'pretrained'],
 ];
-const ZH_EN_EXAMINER_AUTOMOTIVE = [
-  [/車載診斷接頭/g,'OBD connector'],[/通信耦合器單元/g,'communication coupler unit'],
-  [/通信耦合器/g,'communication coupler'],[/電子控制單元/g,'electronic control unit ECU'],
-  [/電瓶蓋/g,'battery cover'],[/置物箱/g,'storage box'],[/接納單元/g,'reception unit'],
-  [/橋接件/g,'bridge member'],[/固定件/g,'fixing member retainer'],[/卡合部/g,'engaging portion snap-fit'],
-  [/支撐桿/g,'support rod'],[/滑動槽/g,'sliding groove'],[/鉸鏈/g,'hinge'],
-  [/可拆卸地附接/g,'removably attached detachable attachment'],
-  [/隔室/g,'compartment'],[/機車/g,'motorcycle'],[/車輛/g,'vehicle'],[/開口/g,'opening'],[/槽/g,'slot'],
-];
 
 // 通用結構語言（在領域詞之後、CJK 清除之前套用，避免搶先拆掉「種晶層」等長詞）
 const ZH_EN_STRUCTURAL = [
@@ -211,9 +201,9 @@ const PATS_BLOCKCHAIN = {
 };
 
 const PATS_EXAMINER = {
-  components:[/\b(SRAM|nonvolatile memory|page buffer|column decoder|repair control circuit|redundancy (?:bit-line|block|column)|replica bitline|dummy bit-line|transmission gate|write port|read port|differential pair|UWB|credential|prime modulus|power-of-two modulus|reducer|salt(?:ed)? hash|fingerprint|subsignature|power grid|ground grid|density map|feature extractor|machine learning model|vehicle|motorcycle|storage box|compartment|OBD connector|communication coupler|ECU|battery cover|bridge member|retainer|snap-fit|support rod|sliding groove|hinge)\b/gi],
-  steps:[/\b(repair\w*|substitut\w*|remap\w*|track\w*|handoff|transfer\w*|reduc\w*|hash\w*|sign\w*|normaliz\w*|classif\w*|extract\w*|remov\w*|attach\w*|engag\w*|retain\w*|cover\w*)\b/gi],
-  relevance:[/\b(redundan\w*|replica\w*|complement\w*|differential\w*|proximity|credential|pretrain\w*|determin\w*|identif\w*|detach\w*|spatial|coupl\w*)\b/gi],
+  components:[/\b(SRAM|nonvolatile memory|page buffer|column decoder|repair control circuit|redundancy (?:bit-line|block|column)|replica bitline|dummy bit-line|transmission gate|write port|read port|differential pair|UWB|credential|prime modulus|power-of-two modulus|reducer|salt(?:ed)? hash|fingerprint|subsignature|power grid|ground grid|density map|feature extractor|machine learning model)\b/gi],
+  steps:[/\b(repair\w*|substitut\w*|remap\w*|track\w*|handoff|transfer\w*|reduc\w*|hash\w*|sign\w*|normaliz\w*|classif\w*|extract\w*|remov\w*)\b/gi],
+  relevance:[/\b(redundan\w*|replica\w*|complement\w*|differential\w*|proximity|credential|pretrain\w*|determin\w*|identif\w*)\b/gi],
 };
 
 // ═══ 合併（依 ENABLED_DOMAINS 組裝，勿改動此區塊順序）═══════
@@ -239,15 +229,14 @@ if (ENABLED_DOMAINS.examiner_memory)   { _zh.push(...ZH_EN_EXAMINER_MEMORY); }
 if (ENABLED_DOMAINS.examiner_wireless) { _zh.push(...ZH_EN_EXAMINER_WIRELESS); }
 if (ENABLED_DOMAINS.examiner_crypto)   { _zh.push(...ZH_EN_EXAMINER_CRYPTO); }
 if (ENABLED_DOMAINS.examiner_eda)      { _zh.push(...ZH_EN_EXAMINER_EDA); }
-if (ENABLED_DOMAINS.examiner_automotive) { _zh.push(...ZH_EN_EXAMINER_AUTOMOTIVE); }
-if (ENABLED_DOMAINS.examiner_memory||ENABLED_DOMAINS.examiner_wireless||ENABLED_DOMAINS.examiner_crypto||ENABLED_DOMAINS.examiner_eda||ENABLED_DOMAINS.examiner_automotive) {
+if (ENABLED_DOMAINS.examiner_memory||ENABLED_DOMAINS.examiner_wireless||ENABLED_DOMAINS.examiner_crypto||ENABLED_DOMAINS.examiner_eda) {
   _syn.push(...SYN_EXAMINER); _pats = _mergePats(_pats, PATS_EXAMINER);
 }
 
 _zh.push(...ZH_EN_STRUCTURAL); // 通用結構語言（域內長詞優先於此）
 _zh.push(...ZH_EN_CATCHALL); // CJK 清除永遠最後
 
-const VOCAB = { ZH_EN: _zh, SYN: _syn, PATS: _pats, ENABLED_DOMAINS, RULE_ENGINE_VERSION:'v4.0.0-shadow.2' };
+const VOCAB = { ZH_EN: _zh, SYN: _syn, PATS: _pats, ENABLED_DOMAINS, RULE_ENGINE_VERSION:'v4.0.0-shadow.1' };
 
 // 瀏覽器 / Node 雙環境輸出
 if (typeof module !== 'undefined' && module.exports) module.exports = VOCAB;

@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "0.5",
+  "batchId": "2026-09-28-e",
+  "labels": [
+    {"caseId":"111138806","claim":1,"scenario":"teacher_exact_spatial_record","elementScores":[100,100,100,100],"expectedMean":100,"expectedMin":100,"expectedFused":100,"expectedBand":"HIGH"},
+    {"caseId":"111138806","claim":1,"scenario":"bridge_identity_guard_missing","elementScores":[100,85,100,100],"expectedMean":96.25,"expectedMin":85,"expectedFused":89.5,"expectedBand":"MID_HIGH"},
+    {"caseId":"111138806","claim":3,"scenario":"snap_to_specific_fastener","elementScores":[100,85],"expectedMean":92.5,"expectedMin":85,"expectedFused":88,"expectedBand":"MID_HIGH","legalInference":"OBVIOUS_SIMPLE_SUBSTITUTION"}
+  ]
+}

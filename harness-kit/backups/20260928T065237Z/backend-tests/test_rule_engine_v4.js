@@ -26,20 +26,7 @@ ok('Article 26 flag is separate',art26.article26_flags.length===1&&art26.article
 const conflict=engine.scorePair('increase power to the modem','the controller will decrease power');
 ok('direction conflict penalizes score',conflict.conflict_penalty===20);
 ok('raw corpus remains immutable',conflict.raw_corpus_modified===false);
-
-score('motorcycle storage box directionally covers vehicle compartment','車輛包括具有槽的隔室','機車具有置物箱，置物箱的固定件形成開口。',95,100);
-score('OBD connector maps to communication coupler','通信耦合器被放置在槽內並與 ECU 通信','車載診斷接頭 OBD connector 穿過開口並耦合至動力系統 ECU 以通信。',95,100);
-score('bridge retainer is only an obvious spatial substitution without identity guard','蓋上具有接納單元','電瓶蓋覆蓋開口，固定件位於橋接件上。',80,90);
-score('bridge retainer reaches exact score with cover-structure guard','蓋上具有接納單元','電瓶蓋覆蓋開口；固定件位於橋接件上，且橋接件屬於蓋並隨蓋移動，形成相同蓋側空間關係。',95,100);
-score('snap-fit supports detachable attachment','耦合器殼體可拆卸地附接到接納單元','OBD 接頭殼體具有卡合部 snap-fit，卡合該固定件並可拆卸。',95,100);
-const fastener=score('specific hinge is an obviousness-only substitution','該蓋藉由鉸鏈支承','引證以卡扣形成可拆卸結構，具有相同固持功能。',80,90);
-ok('fastener substitution is not direct disclosure',fastener.triggered_rules.some(r=>r.channel==='obviousness_only'));
-score('fastener substitution requires functional guard','該蓋藉由鉸鏈支承','引證只有卡扣。',0,65);
-const obdClaim='車輛，包括具備槽的隔室；蓋覆蓋該槽且第一側具有接納單元；通信耦合器放置在槽內並與ECU通信；耦合器殼體可拆卸地附接到接納單元';
-const obdCitation='機車具有置物箱，固定件形成開口；電瓶蓋覆蓋開口，固定件位於橋接件上，且橋接件屬於蓋並隨蓋移動形成相同蓋側空間關係；車載診斷接頭 OBD connector 穿過開口並耦合至動力系統 ECU 以通信；OBD 接頭殼體具有卡合部 snap-fit，卡合該固定件並可拆卸。';
-score('111138806 exact four-element teacher scenario reaches HIGH',obdClaim,obdCitation,99,100);
-
-ok('version is explicit',engine.version==='v4.0.0-shadow.2');
+ok('version is explicit',engine.version==='v4.0.0-shadow.1');
 
 console.log(`RESULT: ${pass} passed, ${fail} failed`);
 if(fail)process.exit(1);
