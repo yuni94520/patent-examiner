@@ -16,7 +16,9 @@ ok('citation id adjustment removed',!(/id="citId"/.test(html)));
 ok('prompt policy loads before inline application',html.indexOf('prompt-screening-policy.js')>0&&html.indexOf('prompt-screening-policy.js')<html.indexOf('const SEARCH_FORMULA_PROMPT'));
 ok('official evaluator uses prompt policy',/PromptScreeningPolicy\.score\(/.test(html));
 ok('candidate distilled rules are enabled in official audit',/includeCandidateRules:true/.test(html));
-ok('sidebar is hidden',/aside\{display:none/.test(html));
+const asideRule=html.match(/aside\{([^}]*)\}/)?.[1]||'';
+ok('sidebar is hidden',/display\s*:\s*none/.test(asideRule));
+ok('sidebar hidden state is not overridden',!(/display\s*:\s*(?!none)[^;]+/.test(asideRule)));
 
 console.log(`RESULT: ${pass} passed, ${fail} failed`);
 if(fail)process.exit(1);
