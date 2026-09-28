@@ -30,6 +30,7 @@
   }
   function ruleMatch(rule,element,citation,options){
     const joined=element+' '+citation;
+    if(rule.approvalStatus==='candidate_ai_distilled'&&!options.includeCandidateRules)return null;
     if(rule.claimAny&&!any(element,rule.claimAny))return null;
     if(rule.evidenceAny&&!any(citation,rule.evidenceAny))return null;
     if(rule.evidenceAll&&!allGroups(citation,rule.evidenceAll))return null;
@@ -37,7 +38,7 @@
     if(rule.rejectIfAny&&any(joined,rule.rejectIfAny))return null;
     let score=rule.score*100,status='applied';
     if(rule.requiresCombinationGate&&!options.combinationApproved){score=Math.min(score,75);status='provisional_combination_gate';}
-    return {id:rule.id,sourceCase:rule.sourceCase,channel:rule.channel,score:+score.toFixed(1),status};
+    return {id:rule.id,sourceCase:rule.sourceCase,approvalStatus:rule.approvalStatus||'teacher_approved',channel:rule.channel,score:+score.toFixed(1),status};
   }
   function conflictMatches(claim,citation){
     return RULESET.conflicts.filter(r=>any(claim,r.claimAny)&&any(citation,r.evidenceAny)).map(r=>({id:r.id,penalty:r.penalty,maxDistance:r.maxDistance}));
@@ -48,16 +49,24 @@
     const scored=elements.map((element,index)=>{
       const direct=directScore(element,citation);
       const matches=RULESET.rules.map(r=>ruleMatch(r,element,citation,options)).filter(Boolean);
-      const functional=matches.length?Math.max(...matches.map(m=>m.score)):0;
-      const score=Math.max(direct,functional);
-      return {index:index+1,text:element,direct:+direct.toFixed(1),functional:+functional.toFixed(1),score:+score.toFixed(1),triggeredRules:matches};
+      const directMatches=matches.filter(m=>m.channel!=='obviousness_only');
+      const inferenceMatches=matches.filter(m=>m.channel==='obviousness_only');
+      const directFunctional=directMatches.length?Math.max(...directMatches.map(m=>m.score)):0;
+      const inferenceFunctional=inferenceMatches.length?Math.max(...inferenceMatches.map(m=>m.score)):0;
+      const directElement=Math.max(direct,directFunctional);
+      const score=Math.max(directElement,inferenceFunctional);
+      return {index:index+1,text:element,direct:+direct.toFixed(1),functional:+directFunctional.toFixed(1),inference:+inferenceFunctional.toFixed(1),direct_score:+directElement.toFixed(1),obviousness_score:+score.toFixed(1),score:+score.toFixed(1),triggeredRules:matches};
     });
     const values=scored.map(x=>x.score);
+    const directValues=scored.map(x=>x.direct_score);
     const mean=values.length?values.reduce((a,b)=>a+b,0)/values.length:0;
     const min=values.length?Math.min(...values):0;
+    const directMean=directValues.length?directValues.reduce((a,b)=>a+b,0)/directValues.length:0;
+    const directMin=directValues.length?Math.min(...directValues):0;
     const conflicts=conflictMatches(claim,citation);
     const penalty=conflicts.reduce((s,x)=>s+x.penalty,0);
     const fused=clamp(RULESET.scoring.elementMeanWeight*mean+RULESET.scoring.elementMinWeight*min-penalty);
+    const directFused=clamp(RULESET.scoring.elementMeanWeight*directMean+RULESET.scoring.elementMinWeight*directMin-penalty);
     // Article 26 compares the claim with the specification, never with prior-art
     // citation text. A caller must pass options.specification explicitly.
     const specification=options.specification||'';
@@ -68,8 +77,11 @@
     return {
       version:RULESET.version,mode:'static-rule-shadow',formula:RULESET.scoring.formula,
       final_score:+fused.toFixed(1),element_avg:+mean.toFixed(1),element_min:+min.toFixed(1),teacher_band:teacherBand(fused),
+      direct_final_score:+directFused.toFixed(1),direct_element_avg:+directMean.toFixed(1),direct_element_min:+directMin.toFixed(1),
+      obviousness_final_score:+fused.toFixed(1),inference_only_gap_count:scored.filter(x=>x.inference>x.direct_score).length,
       elements:scored,triggered_rules:triggeredRules,conflicts,conflict_penalty:penalty,
       article26_flags:legalSignals,prior_art_eligibility:'unchecked',
+      candidate_rules_enabled:options.includeCandidateRules===true,
       combination_gate:triggeredRules.some(r=>r.status==='provisional_combination_gate')?'needs_examiner_confirmation':'not_triggered_or_satisfied',
       raw_corpus_modified:false
     };

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "0.7",
+  "batchId": "2026-09-28-g",
+  "status": "candidate_ai_distilled_from_examiner_documents",
+  "sourceCases": ["112100543", "112101782"],
+  "activation": "shadow_only_until_user_confirmation",
+  "rules": [
+    {"id":"PAGING_EPI_CONFIG_TO_PEI_001","sourceCase":"112100543","channel":"functional_equivalence","score":1.0,"direction":"early paging indicator configuration/advance monitoring -> PEI configuration and monitoring"},
+    {"id":"PAGING_REFERENCE_PF_TIMING_ANCHOR_001","sourceCase":"112100543","channel":"obviousness_only","score":0.85,"direction":"advance timing offset over multiple paging frames -> identify reference PF and derive PEI occasion"},
+    {"id":"PAGING_HIERARCHICAL_FRAME_SYMBOL_OFFSET_001","sourceCase":"112100543","channel":"obviousness_only","score":0.85,"direction":"paging advance plus OFDM symbol intervals -> frame-level and symbol-level timing offsets"},
+    {"id":"PAGING_REVERSE_TIMING_TO_REFERENCE_PF_001","sourceCase":"112100543","channel":"obviousness_only","score":0.85,"direction":"known PMO and offsets -> reverse-identify reference PF"},
+    {"id":"PAGING_CANDIDATE_LOCATION_SEARCH_001","sourceCase":"112100543","channel":"obviousness_only","score":0.85,"direction":"set of possible EPI locations -> evaluate candidate locations to identify reference PF"},
+    {"id":"PAGING_FALLBACK_ENERGY_OR_DEFAULT_001","sourceCase":"112100543","channel":"functional_equivalence","score":0.95,"direction":"negative/missing EPI low-energy or default PO monitoring -> reference-PF failure fallback"},
+    {"id":"PAGING_SEARCH_SPACE_PMO_CONFIG_001","sourceCase":"112100543","channel":"obviousness_only","score":0.85,"direction":"broadcast EPI location/search space -> PMO periodicity and offset configuration"},
+    {"id":"PAGING_FIRST_PMO_ANCHOR_001","sourceCase":"112100543","channel":"obviousness_only","score":0.85,"direction":"multiple monitoring occasions -> first PMO as configuration anchor"},
+    {"id":"PAGING_MODULO_REFERENCE_PF_001","sourceCase":"112100543","channel":"obviousness_only","score":0.85,"direction":"SFN or PF index with cycle parameters -> modulo identification of reference PF"},
+    {"id":"PAGING_ODD_EVEN_REFERENCE_PF_001","sourceCase":"112100543","channel":"obviousness_only","score":0.85,"direction":"indexed paging frames -> odd/even reference-PF selection"},
+    {"id":"PAGING_ALL_PO_TO_PEI_MAPPING_001","sourceCase":"112100543","channel":"functional_equivalence","score":0.9,"direction":"EPI for paging occasion/device subgroups -> all POs in multiple PFs mapped to PEI"},
+    {"id":"PAGING_UE_NETWORK_ROLE_MIRROR_001","sourceCase":"112100543","channel":"obviousness_only","score":0.9,"direction":"UE PEI monitoring procedure -> corresponding network PEI transmission procedure"},
+    {"id":"CODE_SYNC_HEADER_VALIDATION_001","sourceCase":"112101782","channel":"functional_equivalence","score":1.0,"direction":"64B/66B sync-header bit validity -> test-block feature value and validation condition"},
+    {"id":"CODE_SYNC_THRESHOLD_POSITION_001","sourceCase":"112101782","channel":"functional_equivalence","score":0.9,"direction":"valid/invalid sync-header counters and thresholds -> determine codeword synchronization position"},
+    {"id":"CODE_SYNC_NUMBERED_STATE_COUNTERS_001","sourceCase":"112101782","channel":"obviousness_only","score":0.7,"direction":"generic synchronization state machine -> seventh substate, sixth/fourth counters, ninth/tenth thresholds"},
+    {"id":"CODE_SYNC_RETRY_LOOP_001","sourceCase":"112101782","channel":"functional_equivalence","score":0.95,"direction":"threshold not met then return to sync-header detection -> validate next test block"},
+    {"id":"CODE_SYNC_SLIP_RESET_001","sourceCase":"112101782","channel":"functional_equivalence","score":1.0,"direction":"invalid threshold triggers window slip and counter reset -> sliding adjustment and next detection cycle"}
+  ],
+  "conflicts": [
+    {"id":"PAGING_REFERENCE_PF_ABSENCE_CONFLICT_001","claim":"identify reference PF","evidence":"advance timing only and expressly no reference PF","penalty":25},
+    {"id":"CODE_CHECKSUM_ABSENCE_CONFLICT_001","claim":"feature value includes checksum sequence","evidence":"only synchronization-header bits and no checksum or CRC","penalty":35},
+    {"id":"CODE_SPECIFIC_STATE_GENERIC_ONLY_CONFLICT_001","claim":"numbered substate and numbered counters","evidence":"generic unnumbered state machine only","penalty":25}
+  ]
+}

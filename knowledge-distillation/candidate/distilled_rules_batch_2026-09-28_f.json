@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "0.6",
+  "batchId": "2026-09-28-f",
+  "status": "candidate_ai_distilled_from_examiner_documents",
+  "sourceCases": ["111148239", "111150352"],
+  "activation": "shadow_only_until_user_confirmation",
+  "rules": [
+    {"id":"WB_DEVICE_ID_TO_NODE_FINGERPRINT_001","sourceCase":"111148239","channel":"functional_equivalence","score":1.0,"direction":"device-derived unique identifier -> node fingerprint"},
+    {"id":"WB_BINDING_STRING_TO_SOFT_LOCK_001","sourceCase":"111148239","channel":"functional_equivalence","score":1.0,"direction":"binding string modifies white-box implementation and gates correct output -> soft-locked white-box implementation"},
+    {"id":"WB_FUNCTION_CASCADE_TO_LUT_PARTITION_001","sourceCase":"111148239","channel":"obviousness_only","score":0.85,"direction":"encoded first/second-function cascade -> node-specific LUT and global encoded LUT partition"},
+    {"id":"WB_BASE_FILE_MULTI_SECRET_DISTRIBUTION_001","sourceCase":"111148239","channel":"obviousness_only","score":0.85,"direction":"central key distribution with multiple secrets -> base file containing multiple secrets"},
+    {"id":"WB_GLOBAL_TO_NODE_SECRET_TRANSFORM_001","sourceCase":"111148239","channel":"obviousness_only","score":0.85,"direction":"binding identifier applied to global secret -> node-encoded secret via node-specific locking transform"},
+    {"id":"WB_PHYSICAL_TO_VM_DEPLOYMENT_001","sourceCase":"111148239","channel":"obviousness_only","score":0.85,"direction":"physical computing device deployment -> virtual-machine instance deployment"},
+    {"id":"WB_CRYPTO_USE_CASE_EXTENSION_001","sourceCase":"111148239","channel":"obviousness_only","score":0.85,"direction":"white-box symmetric operation -> asymmetric key, certificate, signature or hash use case"},
+    {"id":"WB_SECRET_DISTRIBUTION_TOPOLOGY_001","sourceCase":"111148239","channel":"obviousness_only","score":0.85,"direction":"server distribution -> peer-node white-box secret transfer"},
+    {"id":"WB_DUAL_PROCESSOR_PARTITION_001","sourceCase":"111148239","channel":"obviousness_only","score":0.85,"direction":"single computing device implementation -> dual-processor and dual-memory functional partition"},
+    {"id":"WIRELESS_HARQ_WINDOW_TO_CUMULATIVE_FEEDBACK_001","sourceCase":"111150352","channel":"functional_equivalence","score":1.0,"direction":"ordered HARQ-window feedback bits/codebook -> cumulative feedback for scheduled downlink occasions"},
+    {"id":"WIRELESS_FEEDBACK_MODE_TO_REPRESENTATIVE_EVENT_001","sourceCase":"111150352","channel":"obviousness_only","score":0.85,"requiresCombinationGate":true,"direction":"service/reliability/accuracy selected HARQ-ACK mode -> cumulative-feedback selected representative event"},
+    {"id":"WIRELESS_RRC_MACCE_CONFIGURATION_001","sourceCase":"111150352","channel":"obviousness_only","score":0.85,"direction":"RRC or MAC CE configuration -> representative-event priority or mapping indication"},
+    {"id":"WIRELESS_ACK_PROBABILITY_PRIORITY_001","sourceCase":"111150352","channel":"obviousness_only","score":0.8,"direction":"channel/history-derived acknowledgement probability -> event priority"},
+    {"id":"WIRELESS_PUCCH_TIME_FREQUENCY_RESOURCE_001","sourceCase":"111150352","channel":"functional_equivalence","score":0.95,"direction":"PUCCH resource -> time/frequency resource"},
+    {"id":"WIRELESS_PRIORITY_POWER_PROTECTION_001","sourceCase":"111150352","channel":"obviousness_only","score":0.85,"direction":"higher-priority control event -> higher transmit power"},
+    {"id":"WIRELESS_UE_SPECIFIC_MAPPING_001","sourceCase":"111150352","channel":"obviousness_only","score":0.85,"direction":"different UE/carrier configuration -> different feedback-resource mapping"}
+    ,{"id":"WIRELESS_DCI_CODEBOOK_TO_EVENT_MAPPING_001","sourceCase":"111150352","channel":"functional_equivalence","score":0.85,"direction":"CBG-DAI/codebook structure -> PUCCH-resource to feedback-event mapping"}
+    ,{"id":"WIRELESS_UE_BS_ROLE_MIRROR_001","sourceCase":"111150352","channel":"obviousness_only","score":0.9,"direction":"UE-side HARQ send/receive procedure -> corresponding base-station-side procedure"}
+  ],
+  "conflicts": [
+    {"id":"WB_DEVICE_BINDING_ABSENCE_CONFLICT_001","claim":"node fingerprint or soft lock","evidence":"same implementation on all devices or no device binding","penalty":25},
+    {"id":"WIRELESS_SELECTION_BASIS_CONFLICT_001","claim":"selection based on cumulative feedback","evidence":"selection expressly independent of feedback or based only on service type","penalty":20}
+  ]
+}

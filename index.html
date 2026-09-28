@@ -48,10 +48,10 @@ header::after{content:'';position:absolute;left:0;right:0;top:53px;height:1px;
 .badge.sbert{color:var(--a5);border-color:rgba(192,132,252,0.32);background:rgba(192,132,252,0.08);}
 
 /* SHELL */
-.shell{display:grid;grid-template-columns:212px 1fr;min-height:calc(100vh - 54px);position:relative;}
+.shell{display:grid;grid-template-columns:1fr;min-height:calc(100vh - 54px);position:relative;}
 
 /* SIDEBAR */
-aside{background:linear-gradient(180deg,var(--s1),#0a0d1a);border-right:1px solid var(--bd);padding:1.35rem .9rem;
+aside{display:none;background:linear-gradient(180deg,var(--s1),#0a0d1a);border-right:1px solid var(--bd);padding:1.35rem .9rem;
   display:flex;flex-direction:column;gap:1.35rem;overflow-y:auto;scrollbar-width:none;}
 .sb-hd{font-family:var(--mono);font-size:8px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--mt);
   padding-bottom:.55rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:6px;}
@@ -434,70 +434,9 @@ select option{background:var(--s2);}
     <div class="tab-pane active" id="tab-compare">
       <div class="content">
 
-        <!-- PatentSBERTa 說明 -->
-        <div class="info-box">
-          🔬 <strong>v3.10.0 Synonym-Aware Hybrid Retrieval + Semantic Evidence Alignment</strong><br>
-          ① <strong>Semantic Evidence Alignment</strong>：先用低成本 lexical/concept shortlist，再以 embedding 重排 evidence passages｜
-          ② <strong>三通道 element score</strong>：Semantic 60% + Lexical 20% + Passage-local Technical Concept 20%<br>
-          ③ <strong>Multi-feature Raw Model</strong>：Element Avg / Element Min / Structure / Coverage / Semantic Consistency；<strong>無 Min hard gate</strong><br>
-          ④ <strong>Isotonic calibration</strong>：只接收 raw relevance 單一 scalar；人工驗證同步保存完整 feature vector｜⑤ <strong>Audit Trail</strong>：保存 Top-3 evidence 與各分數構成
-        </div>
-
-
-        <div class="card" style="margin-top:10px;">
-          <div class="card-hd">
-            <div class="step-num">S</div>
-            <div class="card-title">Semantic Embedding Channel</div>
-            <div class="card-sub">PatentSBERTa / embedding API（選填，但建議啟用）</div>
-          </div>
-          <div class="card-body">
-            <div class="frow">
-              <div class="fg" style="flex:1;">
-                <label>Embedding endpoint</label>
-                <input type="text" id="semanticEndpoint" placeholder="例如 http://localhost:8000/embed" />
-              </div>
-              <div class="fg xs">
-                <label>&nbsp;</label>
-                <button class="btn-run" style="width:100%;" onclick="testSemanticEndpoint()">測試 API</button>
-              </div>
-            </div>
-            <div class="info-box" style="margin-top:4px;">
-              POST JSON：<code>{"texts":["text A","text B"]}</code>。支援回傳
-              <code>{"embeddings":[...]}</code>、<code>{"vectors":[...]}</code> 或 OpenAI-style <code>{"data":[{"embedding":[...]}]}</code>。
-              未設定或 API 失敗時會明確標示 <strong>semantic fallback</strong>，不會冒充 PatentSBERTa。
-            </div>
-            <div id="semanticStatus" style="font-family:var(--mono);font-size:9px;color:var(--dm);margin-top:5px;">尚未設定</div>
-            <div class="frow" style="margin-top:8px;">
-              <div class="fg xs">
-                <label>Query Expansion</label>
-                <select id="qeMode">
-                  <option value="auto">Auto</option>
-                  <option value="vocab">Vocab only</option>
-                  <option value="off">Off</option>
-                </select>
-              </div>
-              <div class="fg xs">
-                <label>每個 element 最多擴展</label>
-                <input type="number" id="qeLimit" min="0" max="8" value="4" />
-              </div>
-              <div class="fg xs">
-                <label>RRF k</label>
-                <input type="number" id="rrfK" min="10" max="120" value="60" />
-              </div>
-            </div>
-            <div class="info-box" style="margin-top:5px;">
-              v3.10：先以 vocab.js 雙向同義詞正規化與 Query Expansion 產生 2–5 個常見專利寫法，再以 Sparse + Dense Ranking 做 RRF。Concept 分數仍<strong>只在當前 evidence passage</strong>內計算。
-            </div>
-          </div>
-        </div>
-
         <div class="card">
           <div class="card-hd"><div class="step-num">1</div><div class="card-title">本案請求項</div><div class="card-sub"></div></div>
           <div class="card-body">
-            <div class="frow">
-              <div class="fg sm"><label>專利公開號</label><input type="text" id="patId" placeholder="US2014/0146883A1" /></div>
-              <div class="fg xs"><label>請求項</label><input type="text" id="clNum" placeholder="Claim 1" /></div>
-            </div>
             <div class="fg"><label>請求項全文</label>
               <textarea id="claimTxt" rows="6" placeholder="A method for intra prediction in video coding, comprising:&#10;  selecting one of a plurality of prediction modes;&#10;  applying the selected mode to generate a prediction block..."></textarea>
             </div>
@@ -507,7 +446,6 @@ select option{background:var(--s2);}
         <div class="card">
           <div class="card-hd"><div class="step-num g">2</div><div class="card-title">引證 / 規格書段落</div><div class="card-sub"></div></div>
           <div class="card-body">
-            <div class="fg xs" style="max-width:220px;"><label>引證案號（選填）</label><input type="text" id="citId" placeholder="US20180234567A1" /></div>
             <div class="fg"><label>引證內容</label>
               <textarea id="citTxt" rows="7" placeholder="[0005] A method for encoding video data comprising:&#10;  receiving input image data;&#10;  selecting an intra prediction mode from a mode list..."></textarea>
             </div>
@@ -738,6 +676,7 @@ select option{background:var(--s2);}
 <script src="vocab.js"></script>
 <script src="rules/examiner-rules-v4.js"></script>
 <script src="rule-engine-v4.js"></script>
+<script src="prompt-screening-policy.js"></script>
 <script>
 // ═══════════════════════════════════════
 // 8D CORE (保留原有邏輯，完整呈現)
@@ -802,7 +741,7 @@ let GOLDEN=[
 // v3.9.0 SEMANTIC EVIDENCE ALIGNMENT · MULTI-FEATURE RAW MODEL
 // Initial raw-model weights are provisional and must later be replaced by validation-trained weights.
 // ═══════════════════════════════════════
-const SCORING_VERSION = 'v3.10.0-synonym-aware-hybrid-retrieval';
+const SCORING_VERSION = (typeof window!=='undefined'&&window.PromptScreeningPolicy?.version)||'v4.1.0-prompt-aligned-screening-unavailable';
 const RULE_SCORING_VERSION = (typeof window!=='undefined'&&window.RuleEngineV4?.version)||'v4-unavailable';
 // Keep v3.5 storage keys so existing verification/calibration data survives the v3.6 UI/parser upgrade.
 const DB_KEY='pat_sim_v35_db';
@@ -1349,7 +1288,7 @@ function renderCalibInfo(){
   const cs=dbLoad().cases||[],l=cs.filter(c=>c.label===0||c.label===1),m=calibLoad();
   el.innerHTML=`已標記樣本 <b>${l.length}</b> 筆<br>${m?`模式：Isotonic · ${m.n} samples`:'模式：Baseline raw score'}`;
 }
-function tierOf(score){return score>=70?'H':score>=45?'M':'L';}
+function tierOf(score){return score>=85?'H':score>=70?'M':'L';}
 
 async function evaluatePair(claim,citation){
   const elem=await evaluateElements(claim,citation);
@@ -1364,32 +1303,61 @@ async function evaluatePair(claim,citation){
     semantic:+elem.semantic_consistency.toFixed(1)
   };
   const raw=computeRawRelevance(features);
-  // Isotonic receives one scalar only: raw relevance.
-  const final=calibrate(raw);
-  // v4 is intentionally shadow-only during A/B validation: it is recorded but
-  // does not overwrite the established v3.10 production score or thresholds.
+  const legacyFinal=calibrate(raw);
+  // Candidate rules participate only as auditable evidence channels. Obviousness-only
+  // rules never raise the direct score and instead activate the prompt hard cap.
   const v4Shadow=(typeof window!=='undefined'&&window.RuleEngineV4)
-    ? window.RuleEngineV4.scorePair(claim,citation,{combinationApproved:false})
+    ? window.RuleEngineV4.scorePair(claim,citation,{combinationApproved:false,includeCandidateRules:true})
     : null;
+  const ruleElements=v4Shadow?.elements||[];
+  const policyElementScores=elem.elements.map((e,i)=>Math.max(e.score*100,Number(ruleElements[i]?.direct_score)||0));
+  const componentScore=policyElementScores.length?policyElementScores.reduce((a,b)=>a+b,0)/policyElementScores.length:0;
+  const processKeys=new Set(['steps','process_flow','relative_position','sequence','relevance']);
+  let processWeighted=0,processWeight=0;
+  ATTRS.forEach((a,i)=>{if(processKeys.has(a.key)){processWeighted+=(struct.sims[i]||0)*a.weight;processWeight+=a.weight;}});
+  const processScore=processWeight?processWeighted/processWeight*100:0;
+  const directRuleTriggeredCount=(v4Shadow?.triggered_rules||[]).filter(x=>x.channel!=='obviousness_only').length;
+  const promptPolicy=(typeof window!=='undefined'&&window.PromptScreeningPolicy)
+    ? window.PromptScreeningPolicy.score({
+        elementScores:policyElementScores,
+        componentScore,
+        processScore,
+        directRuleScore:v4Shadow?.direct_final_score||0,
+        directRuleTriggeredCount,
+        obviousnessGapCount:v4Shadow?.inference_only_gap_count||0,
+        obviousnessScore:v4Shadow?.obviousness_final_score||0,
+        conflicts:v4Shadow?.conflicts||[],
+        requiresCombination:v4Shadow?.combination_gate==='needs_examiner_confirmation'
+      })
+    : {final_score:legacyFinal,tier:tierOf(legacyFinal),base_score:raw,hard_cap:100,penalty_total:0,cap_reasons:[],version:'fallback'};
+  const final=promptPolicy.final_score;
+  const promptElements=elem.elements.map((e,i)=>({...e,prompt_score:+policyElementScores[i].toFixed(1)}));
+  const promptAvg=policyElementScores.length?policyElementScores.reduce((a,b)=>a+b,0)/policyElementScores.length:0;
+  const promptMin=policyElementScores.length?Math.min(...policyElementScores):0;
+  const gate=(promptPolicy.cap_reasons||[]).map(x=>`${x.id}≤${x.cap}`).join('；');
 
   return {
     scoring_version:SCORING_VERSION,
-    mode:'semantic-evidence-alignment',
+    mode:'prompt-aligned-direct-screening',
     final_score:+final.toFixed(1),
-    raw_score:+raw.toFixed(1),
-    element_avg:features.element_avg,
-    element_min:features.element_min,
+    raw_score:+promptPolicy.base_score.toFixed(1),
+    legacy_raw_score:+raw.toFixed(1),
+    legacy_score:+legacyFinal.toFixed(1),
+    element_avg:+promptAvg.toFixed(1),
+    element_min:+promptMin.toFixed(1),
     coverage:features.coverage,
     semantic_consistency:features.semantic,
     semantic_source:elem.semantic_source,
-    elements:elem.elements,
+    elements:promptElements,
     structure_score:struct.score,
+    process_score:+processScore.toFixed(1),
     sims:struct.sims,
     focused_citation:focusedCitation,
-    feature_vector:features,
+    feature_vector:{...features,prompt_component:+componentScore.toFixed(1),prompt_process:+processScore.toFixed(1),prompt_cap:promptPolicy.hard_cap,prompt_penalty:promptPolicy.penalty_total},
+    prompt_policy:promptPolicy,
     v4_shadow:v4Shadow,
-    gate:'',
-    tier:tierOf(final)
+    gate,
+    tier:promptPolicy.tier
   };
 }
 let _lastR=null,_hist=[];
@@ -1399,19 +1367,19 @@ function recordAudit(pid,claim,citation,r,mode='single'){
   const a=auditLoad();a.push({
     timestamp:new Date().toISOString(),id:pid,mode,
     scoring_version:SCORING_VERSION,calibration_version:calibLoad()?.version||'baseline',
-    claim,citation,raw_score:r.raw_score,final_score:r.final_score,
+    claim,citation,raw_score:r.raw_score,final_score:r.final_score,legacy_score:r.legacy_score,
     element_avg:r.element_avg,element_min:r.element_min,coverage:r.coverage,
     semantic_consistency:r.semantic_consistency,semantic_source:r.semantic_source,
     structure_score:r.structure_score,feature_vector:r.feature_vector,
     query_expansion_enabled:(document.getElementById('qeMode')?.value||'auto')!=='off',
     elements:r.elements,sims:r.sims,focused_citation:r.focused_citation||'',
-    rule_scoring_version:RULE_SCORING_VERSION,v4_shadow:r.v4_shadow||null
+    rule_scoring_version:RULE_SCORING_VERSION,prompt_policy:r.prompt_policy||null,v4_shadow:r.v4_shadow||null
   });auditSave(a);renderAudit();
 }
 async function runCompare(){
   const claim=document.getElementById('claimTxt').value.trim(),cit=document.getElementById('citTxt').value.trim();
   if(!claim||!cit){toast('請填入請求項與引證內容',true);return;}
-  const pid=document.getElementById('patId').value.trim()||'未指定',cl=document.getElementById('clNum').value.trim()||'Claim 1';
+  const pid='單篇比對',cl='獨立項';
   const btn=document.getElementById('runBtn');btn.disabled=true;showLoad(true);step('拆解 Claim elements...',25);await sleep(40);
   step('Semantic evidence retrieval + rerank...',55);await sleep(40);const r=await evaluatePair(claim,cit);
   step('Multi-feature raw model + scalar isotonic...',90);await sleep(40);showLoad(false);btn.disabled=false;_lastR=r;
@@ -1421,32 +1389,34 @@ async function runCompare(){
 function renderScoreV35(r,pid,cl){
   document.getElementById('scoreCard').classList.add('vis');const big=document.getElementById('scoreBig');big.textContent=r.final_score;big.className='score-big '+r.tier;
   const chip=document.getElementById('tierChip'),labels={H:'高度相似 (HIGH)',M:'中度相似 (MID)',L:'低度相似 (LOW)'};chip.textContent=labels[r.tier];chip.className='tier-chip '+r.tier;
-  const shadowLine=r.v4_shadow?` · v4 shadow ${r.v4_shadow.final_score} (${r.v4_shadow.teacher_band})`:'';
-  document.getElementById('tierLine').textContent=`v3.10 hybrid ${r.semantic_source} · raw ${r.raw_score} · calibrated ${r.final_score}${shadowLine}`;document.getElementById('rPid').textContent=pid+' · '+cl;document.getElementById('rCit').textContent=document.getElementById('citId').value.trim()||'引證段落';
+  const shadowLine=r.v4_shadow?` · obviousness candidate ${r.v4_shadow.obviousness_final_score}`:'';
+  document.getElementById('tierLine').textContent=`Prompt-aligned ${r.semantic_source} · base ${r.raw_score} · final ${r.final_score} · legacy ${r.legacy_score}${shadowLine}`;document.getElementById('rPid').textContent=pid+' · '+cl;document.getElementById('rCit').textContent='引證內容';
   document.getElementById('ovElemAvg').textContent=r.element_avg+'%';document.getElementById('ovElemMin').textContent=r.element_min+'%';document.getElementById('ovCoverage').textContent=r.coverage+'%';document.getElementById('ovSemantic').textContent=r.semantic_consistency+'%';document.getElementById('ovStruct').textContent=r.structure_score;document.getElementById('ovFinal').textContent=r.final_score;
   document.getElementById('ovElemMin').style.color=r.element_min<40?'var(--a4)':r.element_min<60?'var(--a3)':'var(--a2)';
-  document.getElementById('ovExplain').textContent=`v3.10 Synonym-Aware Hybrid Retrieval
-Technical Relevance = ${r.final_score}
-Raw Relevance = ${r.raw_score}
+  document.getElementById('ovExplain').textContent=`Prompt-Aligned Direct Screening
+Direct Similarity = ${r.final_score}
+Base Score = ${r.raw_score}
+Legacy v3.10 Score = ${r.legacy_score}
 Element Average = ${r.element_avg}%
 Weakest Element = ${r.element_min}%
 Coverage = ${r.coverage}%
-Structure = ${r.structure_score}
+Process Completeness = ${r.process_score}%
 Semantic Consistency = ${r.semantic_consistency}% (${r.semantic_source})
 Retrieval = Query Expansion + Sparse/Dense RRF
-Raw model = 0.42*Avg + 0.18*Min + 0.18*Structure + 0.12*Coverage + 0.10*Semantic
-NOTE: v3.10 初始權重仍為 provisional，後續應由人工驗證 feature vectors 訓練取代。
-Isotonic input = raw relevance scalar only.
+Prompt formula = min(hard cap, 0.5*component + 0.5*process - penalties)
+Hard cap = ${r.prompt_policy?.hard_cap??100}
+Penalty = ${r.prompt_policy?.penalty_total??0}
+Below 70 = summary-only; 70-84 = medium; 85+ = high.
 Scoring version = ${SCORING_VERSION}`;
   if(r.v4_shadow){
     const ruleIds=r.v4_shadow.triggered_rules.map(x=>x.id).join(', ')||'無';
-    document.getElementById('ovExplain').textContent+=`\n\nV4 STATIC RULE SHADOW (不覆蓋正式分數)\nRule score = ${r.v4_shadow.final_score}\nElement Average = ${r.v4_shadow.element_avg}%\nWeakest Element = ${r.v4_shadow.element_min}%\nTeacher band = ${r.v4_shadow.teacher_band}\nCombination gate = ${r.v4_shadow.combination_gate}\nTriggered rules = ${ruleIds}\nArticle 26 flags = ${r.v4_shadow.article26_flags.length}\nRule version = ${r.v4_shadow.version}`;
+    document.getElementById('ovExplain').textContent+=`\n\nV4 STATIC RULE AUDIT\nDirect rule score = ${r.v4_shadow.direct_final_score}\nObviousness candidate = ${r.v4_shadow.obviousness_final_score}\nInference-only gaps = ${r.v4_shadow.inference_only_gap_count}\nCombination gate = ${r.v4_shadow.combination_gate}\nTriggered rules = ${ruleIds}\nArticle 26 flags = ${r.v4_shadow.article26_flags.length}\nRule version = ${r.v4_shadow.version}`;
   }
   const gb=document.getElementById('gateBox');if(r.gate){gb.textContent='⚠ '+r.gate;gb.classList.add('vis');}else gb.classList.remove('vis');
   const desc=document.getElementById('tierDescBox'),descs={H:'技術相關度高；仍請檢查 Weakest Element 與 Missing Limitation，再進行人工 claim chart。',M:'具實質相關性；建議依 element evidence 與 coverage 決定是否進一步閱讀全文。',L:'目前技術相關度較低，但仍應人工確認 evidence passage。'};desc.textContent=descs[r.tier];desc.className='tier-desc-box '+r.tier;
   const warn=document.getElementById('elemWarningChip');warn.innerHTML=r.element_min<40?'<span class="elem-warning">⚠ 最弱元件 &lt;40%</span>':r.element_min<60?'<span class="elem-warning">△ 最弱元件偏低</span>':'<span class="elem-ok">✓ 元件覆蓋穩定</span>';
   document.getElementById('elemRows').innerHTML=r.elements.map(e=>{
-    const pct=Math.round(e.score*100),c=pct>=60?'#34d399':pct>=40?'#f5a623':'#f87171';
+    const pct=Math.round(e.prompt_score??e.score*100),c=pct>=70?'#34d399':pct>=45?'#f5a623':'#f87171';
     const more=(e.top3||[]).slice(1).map((x,i)=>`Top ${i+2} ${Math.round(x.score*100)}% | sem ${Math.round((x.semantic||0)*100)} | lex ${Math.round((x.lexical||0)*100)} | concept ${Math.round((x.concept||0)*100)} | sparse ${Math.round((x.sparse||0)*100)} · ${x.text}`).join('\n');
     return `<div class="elem-row-v35"><div class="elem-top-v35"><div class="elem-idx">${e.index}</div><div class="elem-text" title="${esc(e.text)}">${esc(e.text)}</div><div class="elem-bar-bg"><div class="elem-bar-fill" style="width:${pct}%;background:${c}"></div></div><div class="elem-pct" style="color:${c}">${pct}%</div></div><div class="ev-sent" title="${esc((e.evidence||'')+(more?'\n\n'+more:''))}">${esc(e.evidence)}</div></div>`;
   }).join('');
@@ -1456,7 +1426,7 @@ Scoring version = ${SCORING_VERSION}`;
 }
 function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function showLayer(id,btn){document.querySelectorAll('.slayer-btn').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.slayer-pane').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById('layer-'+id).classList.add('active');}
-function clearAll(){document.getElementById('scoreCard').classList.remove('vis');['claimTxt','citTxt','patId','clNum','citId'].forEach(id=>document.getElementById(id).value='');_lastR=null;}
+function clearAll(){document.getElementById('scoreCard').classList.remove('vis');['claimTxt','citTxt'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});_lastR=null;}
 function renderHist(){const el=document.getElementById('histList');if(!_hist.length){el.innerHTML='<div class="hist-empty">尚無紀錄</div>';return;}const c={H:'var(--a4)',M:'var(--a3)',L:'var(--a2)'};el.innerHTML=_hist.map(h=>`<div class="hist-row"><div class="hist-sc" style="color:${c[h.tier]}">${h.score}</div><div class="hist-id">${esc(h.pid)}</div></div>`).join('');}
 
 // Adaptive parser retained from v3.6: TIPO / PQAI / marked citations / TSV
@@ -1649,7 +1619,8 @@ function buildClaimProfiles(text=''){
     claim_text:c.text,
     elements:splitClaimElements(c.text),
     concepts:extractScreenConcepts(c.text),
-    numerics:extractNumericFeatures(c.text)
+    numerics:extractNumericFeatures(c.text),
+    related_dependents:claims.filter(d=>!d.is_independent&&String(d.dependent_on)===String(c.number)).slice(0,3)
   }));
 }
 function splitCitationPassages(text=''){
@@ -1758,10 +1729,25 @@ function retrieveEvidenceForProfile(profile,citationText){
 }
 async function scoreOneClaimProfile(profile,citationText){
   const r=await evaluatePair(profile.claim_text,citationText);
+  const dependent_results=[];
+  for(const d of (profile.related_dependents||[])){
+    const dr=await evaluatePair(`${profile.claim_text}；${d.text}`,citationText);
+    dependent_results.push({claim_number:d.number,score:dr.final_score});
+  }
+  const depScores=dependent_results.map(x=>x.score);
+  const weighted=(typeof window!=='undefined'&&window.PromptScreeningPolicy)
+    ? window.PromptScreeningPolicy.combineIndependentDependent(r.final_score,depScores)
+    : r.final_score;
+  // A dependent claim can refine ranking but may never defeat an independent-claim hard cap.
+  const screeningScore=Math.min(weighted,r.prompt_policy?.hard_cap??100);
   return {
     claim_number:profile.claim_number,
-    screening_score:r.final_score,
+    screening_score:+screeningScore.toFixed(1),
+    independent_score:r.final_score,
+    dependent_score:depScores.length?+(depScores.reduce((a,b)=>a+b,0)/depScores.length).toFixed(1):null,
+    dependent_results,
     screening_raw:r.raw_score,
+    legacy_score:r.legacy_score,
     element_avg:r.element_avg,
     weakest:r.element_min,
     coverage:r.coverage,
@@ -1772,7 +1758,8 @@ async function scoreOneClaimProfile(profile,citationText){
       element:x.text,score:+(x.score*100).toFixed(1),text:x.evidence
     })),
     element_matches:r.elements,
-    feature_vector:r.feature_vector
+    feature_vector:r.feature_vector,
+    prompt_policy:r.prompt_policy
   };
 }
 async function runScreeningEvaluation(claimText,citationText){
@@ -1780,11 +1767,14 @@ async function runScreeningEvaluation(claimText,citationText){
   const claim_results=[];
   for(const p of profiles)claim_results.push(await scoreOneClaimProfile(p,citationText));
   claim_results.sort((a,b)=>b.screening_score-a.screening_score);
-  const best=claim_results[0]||{screening_score:0,screening_raw:0,element_avg:0,weakest:0,coverage:0,semantic:0,structure:0,evidence:[],claim_number:'1',semantic_source:'fallback'};
+  const best=claim_results[0]||{screening_score:0,screening_raw:0,element_avg:0,weakest:0,coverage:0,semantic:0,structure:0,evidence:[],claim_number:'1',semantic_source:'fallback',independent_score:0,dependent_score:null,legacy_score:0};
   return {
     scoring_version:SCORING_VERSION,
     mode:'screening-semantic-evidence',
     final_score:best.screening_score,
+    independent_score:best.independent_score,
+    dependent_score:best.dependent_score,
+    legacy_score:best.legacy_score,
     raw_score:best.screening_raw,
     tier:tierOf(best.screening_score),
     best_claim:best.claim_number,
@@ -1796,6 +1786,7 @@ async function runScreeningEvaluation(claimText,citationText){
     semantic_source:best.semantic_source,
     evidence_snippets:best.evidence,
     feature_vector:best.feature_vector,
+    prompt_policy:best.prompt_policy,
     claim_results
   };
 }
@@ -1818,7 +1809,7 @@ async function runMulti(){
   if(!citations.length){toast('未能解析有效引證',true);return;}
   const profiles=buildClaimProfiles(claim);
   updateBatchParseInfo();
-  toast(`v3.10：${parsed.format} ${citations.length} 筆｜獨立項 ${profiles.map(p=>p.claim_number).join(', ')}`);
+  toast(`Prompt-aligned v4.1：${parsed.format} ${citations.length} 筆｜獨立項 ${profiles.map(p=>p.claim_number).join(', ')}`);
   const btn=document.getElementById('mBtn');btn.disabled=true;showLoad(true);const out=[];
   try{
     for(let i=0;i<citations.length;i++){
@@ -1846,16 +1837,17 @@ function renderMultiRows(results){
         <span class="step-num g">★</span>
         <span class="card-title">最接近引證：${esc(top.citation_id)}</span>
         <span class="claim-chip">Best Claim ${esc(top.best_claim)}</span>
-        <span class="card-sub">Screening ${top.final_score} · Weakest ${top.element_min}% ⚠</span>
+        <span class="card-sub">Prompt score ${top.final_score} · Independent ${top.independent_score} · Weakest ${top.element_min}%</span>
       </div>
       <div class="card-body">
-        <div class="screen-note">v3.9 Screening 與單篇比對共用同一套 Semantic Evidence Alignment；Element Min 是特徵，不是 hard gate。</div>
+        <div class="screen-note">Prompt 對齊：獨立項 75% + 相關附屬項 25%；核心要件缺失、衝突或進步性橋接會啟動 hard cap，附屬項不得突破獨立項上限。</div>
         <div class="screen-grid">
           ${renderMetric('Element Avg',top.element_avg)}
           ${renderMetric('Semantic',top.semantic)}
           ${renderMetric('Structure',top.structure)}
           ${renderMetric('Coverage',top.coverage+'%')}
           ${renderMetric('Weakest',top.element_min+'%',top.element_min<30?'var(--a4)':'var(--a3)')}
+          ${renderMetric('Hard Cap',top.prompt_policy?.hard_cap??100)}
         </div>
         <div class="evidence-list">${ev||'<div class="screen-note">未擷取到高信心 evidence passage。</div>'}</div>
       </div>
@@ -1874,6 +1866,9 @@ function renderMultiRows(results){
           <span>Semantic ${r.semantic}</span>
           <span>Structure ${r.structure}</span>
           <span>Coverage ${r.coverage}%</span>
+          <span>Ind ${r.independent_score}</span>
+          <span>${r.dependent_score==null?'No dependent':'Dep '+r.dependent_score}</span>
+          <span>Cap ${r.prompt_policy?.hard_cap??100}</span>
           <span>${r.semantic_source}</span>
         </span>
       </span>
@@ -2026,12 +2021,12 @@ function genDraft(){
 // ═══════════════════════════════════════
 function autoSave(pid,r){
   const db=dbLoad(),claim=document.getElementById('claimTxt').value.trim(),cit=document.getElementById('citTxt').value.trim();
-  const entry={id:pid,claim,citation:cit,label:null,reviewer_label:null,raw_score:r.raw_score,calibrated_score:r.final_score,elem_min:r.element_min,element_avg:r.element_avg,structure_score:r.structure_score,coverage:r.coverage,semantic:r.semantic_consistency,feature_vector:r.feature_vector,sims:r.sims,scoring_version:SCORING_VERSION,rule_scoring_version:RULE_SCORING_VERSION,v4_shadow:r.v4_shadow||null,detected_at:new Date().toISOString()};
+  const entry={id:pid,claim,citation:cit,label:null,reviewer_label:null,raw_score:r.raw_score,calibrated_score:r.final_score,legacy_score:r.legacy_score,prompt_policy:r.prompt_policy||null,elem_min:r.element_min,element_avg:r.element_avg,structure_score:r.structure_score,coverage:r.coverage,semantic:r.semantic_consistency,feature_vector:r.feature_vector,sims:r.sims,scoring_version:SCORING_VERSION,rule_scoring_version:RULE_SCORING_VERSION,v4_shadow:r.v4_shadow||null,detected_at:new Date().toISOString()};
   const i=db.cases.findIndex(c=>c.id===pid);if(i>=0){const old=db.cases[i];db.cases[i]={...entry,label:old.label,verified_at:old.verified_at};}else db.cases.push(entry);dbSave(db);renderDB();renderCalibInfo();
 }
 function doVerify(label){
-  if(!_lastR){toast('請先執行比對',true);return;}const pid=document.getElementById('patId').value.trim()||'未指定',db=dbLoad();let i=db.cases.findIndex(c=>c.id===pid);
-  const base={id:pid,claim:document.getElementById('claimTxt').value.trim(),citation:document.getElementById('citTxt').value.trim(),raw_score:_lastR.raw_score,calibrated_score:_lastR.final_score,elem_min:_lastR.element_min,element_avg:_lastR.element_avg,structure_score:_lastR.structure_score,coverage:_lastR.coverage,semantic:_lastR.semantic_consistency,feature_vector:_lastR.feature_vector,sims:_lastR.sims,scoring_version:SCORING_VERSION,rule_scoring_version:RULE_SCORING_VERSION,v4_shadow:_lastR.v4_shadow||null};
+  if(!_lastR){toast('請先執行比對',true);return;}const pid='單篇比對',db=dbLoad();let i=db.cases.findIndex(c=>c.id===pid);
+  const base={id:pid,claim:document.getElementById('claimTxt').value.trim(),citation:document.getElementById('citTxt').value.trim(),raw_score:_lastR.raw_score,calibrated_score:_lastR.final_score,legacy_score:_lastR.legacy_score,prompt_policy:_lastR.prompt_policy||null,elem_min:_lastR.element_min,element_avg:_lastR.element_avg,structure_score:_lastR.structure_score,coverage:_lastR.coverage,semantic:_lastR.semantic_consistency,feature_vector:_lastR.feature_vector,sims:_lastR.sims,scoring_version:SCORING_VERSION,rule_scoring_version:RULE_SCORING_VERSION,v4_shadow:_lastR.v4_shadow||null};
   const entry={...(i>=0?db.cases[i]:base),...base,label,reviewer_label:label===1?'highly_relevant':'low_relevance',verified_at:new Date().toISOString()};if(i>=0)db.cases[i]=entry;else db.cases.push(entry);dbSave(db);refitCalib(false);renderDB();renderCalibInfo();
   const vb=document.getElementById('vfyBadge');vb.className='vfy-badge '+(label===1?'sep':'non');vb.textContent=label===1?'✅ SEP':'❌ 非 SEP';toast(`已記錄：${pid} → ${label===1?'SEP':'非 SEP'}`);
 }

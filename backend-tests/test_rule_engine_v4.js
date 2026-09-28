@@ -39,7 +39,32 @@ const obdClaim='車輛，包括具備槽的隔室；蓋覆蓋該槽且第一側�
 const obdCitation='機車具有置物箱，固定件形成開口；電瓶蓋覆蓋開口，固定件位於橋接件上，且橋接件屬於蓋並隨蓋移動形成相同蓋側空間關係；車載診斷接頭 OBD connector 穿過開口並耦合至動力系統 ECU 以通信；OBD 接頭殼體具有卡合部 snap-fit，卡合該固定件並可拆卸。';
 score('111138806 exact four-element teacher scenario reaches HIGH',obdClaim,obdCitation,99,100);
 
-ok('version is explicit',engine.version==='v4.0.0-shadow.2');
+const candidateOff=engine.scorePair('由節點指紋產生軟鎖定白箱','設備 unique identifier is derived from the device; a binding string modifies the white-box implementation and only a legal device produces correct output.');
+ok('candidate rules do not auto-promote',candidateOff.triggered_rules.every(r=>!r.id.startsWith('WB_')));
+const candidateOn=score('white-box device binding candidate runs only in shadow','由節點指紋產生軟鎖定白箱','設備 unique identifier is derived from the device; a binding string modifies the white-box implementation and only a legal device produces correct output.',95,100,{includeCandidateRules:true});
+ok('candidate shadow audit is explicit',candidateOn.candidate_rules_enabled===true&&candidateOn.triggered_rules.some(r=>r.approvalStatus==='candidate_ai_distilled'&&r.id==='WB_DEVICE_ID_TO_NODE_FINGERPRINT_001'));
+const representativeProvisional=score('representative-event combination is capped before approval','基於累積回饋選擇代表性事件','為降低回饋開銷，依業務類型及可靠性確定回饋模式。',70,80,{includeCandidateRules:true});
+ok('wireless combination gate remains visible',representativeProvisional.combination_gate==='needs_examiner_confirmation');
+const representativeApproved=score('representative-event combination reaches 85 after approval','基於累積回饋選擇代表性事件','為降低回饋開銷，依業務類型及可靠性確定回饋模式。',80,90,{includeCandidateRules:true,combinationApproved:true});
+ok('wireless bridge stays obviousness-only',representativeApproved.triggered_rules.some(r=>r.channel==='obviousness_only'));
+ok('obviousness bridge does not inflate direct score',representativeApproved.direct_final_score<70&&representativeApproved.obviousness_final_score>=80);
+const selectionConflict=engine.scorePair('基於累積回饋選擇代表性事件','選擇明示與回饋無關，僅依業務類型。',{includeCandidateRules:true,combinationApproved:true});
+ok('selection-basis conflict penalizes direct mismatch',selectionConflict.conflict_penalty===20);
+score('DCI codebook maps only with explicit resource-position context','辨識對應於該代表性事件的資源到累積回饋事件映射','DCI carries CBG-DAI; the HARQ碼本 mapping structure identifies the resource position.',80,90,{includeCandidateRules:true});
+score('DCI bit count alone cannot imply event mapping','辨識對應於該代表性事件的資源到累積回饋事件映射','DCI only states a bit count.',0,65,{includeCandidateRules:true});
+
+const pagingOff=engine.scorePair('辨識參考PF','PEI is transmitted with a timing offset over multiple paging frames.');
+ok('batch-g candidate rules do not auto-promote',pagingOff.triggered_rules.every(r=>!r.id.startsWith('PAGING_')));
+const pagingOn=score('reference-PF timing anchor runs only in candidate shadow','辨識參考PF','An early paging indicator PEI is transmitted in advance with a timing offset over multiple paging frames in a paging cycle.',80,90,{includeCandidateRules:true});
+ok('reference-PF bridge remains obviousness-only',pagingOn.triggered_rules.some(r=>r.id==='PAGING_REFERENCE_PF_TIMING_ANCHOR_001'&&r.channel==='obviousness_only'));
+ok('reference-PF inference is separated from direct disclosure',pagingOn.inference_only_gap_count>=1&&pagingOn.direct_final_score<pagingOn.obviousness_final_score);
+score('sync-header low bits directly support validation condition','基於測試塊的特徵值判斷是否滿足驗證條件','For each 64B/66B 66-bit block, the low two bits are tested; unequal two header bits indicate a valid sync header.',95,100,{includeCandidateRules:true});
+const checksumConflict=engine.scorePair('特徵值包括校驗序列','The evidence has sync-header bits only and expressly has no checksum or CRC.',{includeCandidateRules:true});
+ok('checksum absence is a separate conflict',checksumConflict.conflict_penalty===35);
+const numberedConflict=engine.scorePair('第七碼字驗證子狀態使用第六碼字計數器','The citation provides a 一般未編號狀態機 with a counter and threshold.',{includeCandidateRules:true});
+ok('generic state machine cannot directly disclose numbered state',numberedConflict.conflict_penalty===25&&numberedConflict.final_score<=50);
+
+ok('version is explicit',engine.version==='v4.1.0-prompt-aligned.1');
 
 console.log(`RESULT: ${pass} passed, ${fail} failed`);
 if(fail)process.exit(1);

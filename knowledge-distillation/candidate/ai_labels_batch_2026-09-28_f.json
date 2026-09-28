@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "0.6",
+  "batchId": "2026-09-28-f",
+  "status": "candidate_ai_distilled_from_examiner_documents",
+  "formula": "0.4 * elementMean + 0.6 * elementMin",
+  "labels": [
+    {"caseId":"111148239","claim":1,"scenario":"direct_disclosure_only","elementScores":[70,65,100,90,70,100],"expectedMean":82.5,"expectedMin":65,"expectedFused":72,"expectedBand":"MID","legalLayer":"direct_disclosure"},
+    {"caseId":"111148239","claim":1,"scenario":"obviousness_bridges_enabled","elementScores":[85,85,100,90,85,100],"expectedMean":90.8333333333,"expectedMin":85,"expectedFused":87.3333333333,"expectedBand":"MID_HIGH","legalLayer":"obviousness"},
+    {"caseId":"111148239","claim":4,"scenario":"physical_device_to_vm","elementScores":[85],"expectedMean":85,"expectedMin":85,"expectedFused":85,"expectedBand":"MID_HIGH","legalLayer":"obviousness"},
+    {"caseId":"111148239","claim":7,"scenario":"asymmetric_key_use_case","elementScores":[85],"expectedMean":85,"expectedMin":85,"expectedFused":85,"expectedBand":"MID_HIGH","legalLayer":"obviousness"},
+    {"caseId":"111150352","claim":1,"scenario":"reference_1_direct_only","elementScores":[100,90,100,45],"expectedMean":83.75,"expectedMin":45,"expectedFused":60.5,"expectedBand":"LOW","legalLayer":"direct_disclosure"},
+    {"caseId":"111150352","claim":1,"scenario":"references_1_2_combination_approved","elementScores":[100,90,100,85],"expectedMean":93.75,"expectedMin":85,"expectedFused":88.5,"expectedBand":"MID_HIGH","legalLayer":"obviousness"},
+    {"caseId":"111150352","claim":4,"scenario":"rrc_mac_ce_priority_configuration","elementScores":[85],"expectedMean":85,"expectedMin":85,"expectedFused":85,"expectedBand":"MID_HIGH","legalLayer":"obviousness"},
+    {"caseId":"111150352","claim":5,"scenario":"ack_probability_priority","elementScores":[80],"expectedMean":80,"expectedMin":80,"expectedFused":80,"expectedBand":"MID_HIGH","legalLayer":"obviousness"},
+    {"caseId":"111150352","claim":10,"scenario":"priority_power_unequal_protection","elementScores":[85],"expectedMean":85,"expectedMin":85,"expectedFused":85,"expectedBand":"MID_HIGH","legalLayer":"obviousness"},
+    {"caseId":"111150352","claim":11,"scenario":"pucch_event_mapping_partial","elementScores":[85],"expectedMean":85,"expectedMin":85,"expectedFused":85,"expectedBand":"MID_HIGH","legalLayer":"functional_equivalence"}
+  ],
+  "article26": [
+    {"caseId":"111148239","status":"not_raised_in_supplied_oa","separateFromSimilarity":true},
+    {"caseId":"111150352","status":"not_raised_in_supplied_oa","separateFromSimilarity":true}
+  ]
+}

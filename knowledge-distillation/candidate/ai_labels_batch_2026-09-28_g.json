@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "0.7",
+  "batchId": "2026-09-28-g",
+  "status": "candidate_ai_distilled_from_examiner_documents",
+  "formula": "0.4 * elementMean + 0.6 * elementMin",
+  "labels": [
+    {"caseId":"112100543","claim":1,"scenario":"direct_disclosure_only","elementScores":[100,100,95,30,70],"expectedMean":79,"expectedMin":30,"expectedFused":49.6,"expectedBand":"LOW","legalLayer":"direct_disclosure"},
+    {"caseId":"112100543","claim":1,"scenario":"reference_pf_obviousness_bridge","elementScores":[100,100,95,85,85],"expectedMean":93,"expectedMin":85,"expectedFused":88.2,"expectedBand":"MID_HIGH","legalLayer":"obviousness"},
+    {"caseId":"112100543","claim":2,"scenario":"hierarchical_frame_symbol_offset","elementScores":[85],"expectedMean":85,"expectedMin":85,"expectedFused":85,"expectedBand":"MID_HIGH","legalLayer":"obviousness"},
+    {"caseId":"112100543","claim":3,"scenario":"reverse_timing_reference_pf","elementScores":[85],"expectedMean":85,"expectedMin":85,"expectedFused":85,"expectedBand":"MID_HIGH","legalLayer":"obviousness"},
+    {"caseId":"112100543","claim":4,"scenario":"candidate_location_search","elementScores":[85],"expectedMean":85,"expectedMin":85,"expectedFused":85,"expectedBand":"MID_HIGH","legalLayer":"obviousness"},
+    {"caseId":"112100543","claim":5,"scenario":"fallback_energy_or_default_monitor","elementScores":[95],"expectedMean":95,"expectedMin":95,"expectedFused":95,"expectedBand":"HIGH","legalLayer":"functional_equivalence"},
+    {"caseId":"112100543","claim":11,"scenario":"sfn_modulo_reference_pf","elementScores":[85],"expectedMean":85,"expectedMin":85,"expectedFused":85,"expectedBand":"MID_HIGH","legalLayer":"obviousness"},
+    {"caseId":"112100543","claim":14,"scenario":"all_po_to_pei_mapping","elementScores":[90],"expectedMean":90,"expectedMin":90,"expectedFused":90,"expectedBand":"HIGH","legalLayer":"functional_equivalence"},
+    {"caseId":"112101782","claim":1,"scenario":"direct_specific_state_counter_disclosure","elementScores":[40,70,20,65,70,80],"expectedMean":57.5,"expectedMin":20,"expectedFused":35,"expectedBand":"LOW","legalLayer":"direct_disclosure"},
+    {"caseId":"112101782","claim":1,"scenario":"generic_state_machine_obviousness_bridge","elementScores":[70,85,70,80,85,90],"expectedMean":80,"expectedMin":70,"expectedFused":74,"expectedBand":"MID","legalLayer":"obviousness"},
+    {"caseId":"112101782","claim":2,"scenario":"sync_header_validation_condition","elementScores":[100],"expectedMean":100,"expectedMin":100,"expectedFused":100,"expectedBand":"HIGH","legalLayer":"functional_equivalence"},
+    {"caseId":"112101782","claim":3,"scenario":"checksum_sequence_absent","elementScores":[0],"expectedMean":0,"expectedMin":0,"expectedFused":0,"expectedBand":"LOW","legalLayer":"direct_disclosure","claimStatus":"no_rejection_found"},
+    {"caseId":"112101782","claim":5,"scenario":"repeat_validation_loop","elementScores":[95],"expectedMean":95,"expectedMin":95,"expectedFused":95,"expectedBand":"HIGH","legalLayer":"functional_equivalence"},
+    {"caseId":"112101782","claim":6,"scenario":"invalid_threshold_triggers_slip","elementScores":[100],"expectedMean":100,"expectedMin":100,"expectedFused":100,"expectedBand":"HIGH","legalLayer":"direct_disclosure"},
+    {"caseId":"112101782","claim":7,"scenario":"slip_reset_next_cycle","elementScores":[100],"expectedMean":100,"expectedMin":100,"expectedFused":100,"expectedBand":"HIGH","legalLayer":"direct_disclosure"},
+    {"caseId":"112101782","claim":22,"scenario":"sync_unit_and_sliding_module_device","elementScores":[95],"expectedMean":95,"expectedMin":95,"expectedFused":95,"expectedBand":"HIGH","legalLayer":"functional_equivalence"}
+  ],
+  "sourceConsistency": [
+    {"caseId":"112101782","id":"SOURCE_SCOPE_CONTRADICTION_001","summary":"Opening scope includes claims 3 and 4, while claim-specific reasoning and the later no-rejection list preserve claims 3 and 4.","requiresHumanReview":true,"separateFromSimilarity":true}
+  ],
+  "article26": [
+    {"caseId":"112100543","status":"not_raised_in_supplied_oa","separateFromSimilarity":true},
+    {"caseId":"112101782","status":"not_raised_in_supplied_oa","separateFromSimilarity":true}
+  ]
+}
