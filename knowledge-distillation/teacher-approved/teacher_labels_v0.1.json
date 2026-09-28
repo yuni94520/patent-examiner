@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "0.1",
+  "formula": "0.4 * elementMean + 0.6 * elementMin",
+  "positiveCases": [
+    {
+      "caseId": "111105799",
+      "claim": 1,
+      "reference": "US20190304565A1",
+      "teacherElementScores": [100, 100, 100],
+      "expectedMean": 100,
+      "expectedMin": 100,
+      "expectedFused": 100,
+      "expectedLabel": "HIGH",
+      "requiredRules": [
+        "MEM_REDUNDANCY_COMPOSITE_SELECTOR_001",
+        "MEM_REDUNDANCY_REPLACE_ACTION_001",
+        "MEM_FAILURE_CONDITION_001"
+      ]
+    },
+    {
+      "caseId": "111108948",
+      "claim": 1,
+      "reference": "US20080181033A1",
+      "teacherElementScores": [100, 100, 75],
+      "expectedMean": 91.6667,
+      "expectedMin": 75,
+      "expectedFused": 81.6667,
+      "tolerance": 0.01,
+      "expectedLabel": "MID_HIGH",
+      "requiredRules": [
+        "SRAM_RC_TRACKING_FUNCTION_001",
+        "SRAM_DUMMY_TO_IDENTICAL_WIRE_PARTIAL_001"
+      ]
+    }
+  ],
+  "negativeGuards": [
+    {
+      "id": "NO_GENERIC_REPAIR_TO_SELECTOR",
+      "input": "repair controller without column address, selection signal, or substitute line",
+      "mustNotTrigger": "MEM_REDUNDANCY_COMPOSITE_SELECTOR_001"
+    },
+    {
+      "id": "NO_ROW_DECODER_FALSE_SYNONYM",
+      "input": "row decoder that only activates word lines",
+      "mustNotTrigger": "MEM_REDUNDANCY_COMPOSITE_SELECTOR_001"
+    },
+    {
+      "id": "NO_GENERIC_RC_FILTER",
+      "input": "resistor-capacitor filter unrelated to memory-line length or timing",
+      "mustNotTrigger": "SRAM_RC_TRACKING_FUNCTION_001"
+    },
+    {
+      "id": "DUMMY_IS_NOT_PHYSICALLY_IDENTICAL",
+      "input": "dummy wire merely mimics a true line",
+      "maximumScore": 0.75,
+      "rule": "SRAM_DUMMY_TO_IDENTICAL_WIRE_PARTIAL_001"
+    }
+  ]
+}
+

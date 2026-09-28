@@ -1,0 +1,151 @@
+{
+  "schemaVersion": "0.1",
+  "status": "teacher_approved",
+  "direction": "reference_evidence_to_claim_limitation",
+  "scoring": {
+    "elementMeanWeight": 0.4,
+    "elementMinWeight": 0.6,
+    "formula": "0.4 * elementMean + 0.6 * elementMin",
+    "labels": {
+      "HIGH": { "min": 90 },
+      "MID_HIGH": { "min": 80, "maxExclusive": 90 },
+      "MID": { "min": 65, "maxExclusive": 80 },
+      "LOW": { "maxExclusive": 65 }
+    }
+  },
+  "enginePolicy": {
+    "teacherRulesOverrideCandidates": true,
+    "candidateRulesMayNotAutoPromote": true,
+    "allTeacherTestsMustPassBeforeRelease": true,
+    "showTriggeredRuleAndEvidence": true,
+    "preserveRawCorpus": true,
+    "requiredMatchingLayers": [
+      "technical_context",
+      "component_role",
+      "action_or_signal_path",
+      "condition",
+      "technical_result"
+    ]
+  },
+  "rules": [
+    {
+      "id": "MEM_REDUNDANCY_COMPOSITE_SELECTOR_001",
+      "sourceCase": "111105799",
+      "approval": "teacher_approved",
+      "contextAll": ["semiconductor memory", "redundancy repair"],
+      "referenceAll": [
+        "repair control circuit",
+        "column address or decoded column address",
+        "column selection signal or column selection circuit",
+        "redundancy block or redundancy bit-line"
+      ],
+      "referenceAny": [
+        "column decoder",
+        "column selection line driver",
+        "unit repair controller",
+        "redundancy repair controller"
+      ],
+      "claimConcept": "column line selection circuit",
+      "mappingType": "composite_components_to_functional_component",
+      "score": 1.0,
+      "requiredActionPath": [
+        "receive column address",
+        "use repair or failure information",
+        "change column selection signal",
+        "select substitute or redundancy line"
+      ],
+      "rejectIf": [
+        "decoder is only a row decoder",
+        "repair circuit has no column or bit-line selection output",
+        "redundancy exists without a substitution action"
+      ]
+    },
+    {
+      "id": "MEM_REDUNDANCY_REPLACE_ACTION_001",
+      "sourceCase": "111105799",
+      "approval": "teacher_approved",
+      "referenceAny": [
+        "selecting a redundancy bit-line instead of the bit-line",
+        "enable an alternative column selection line instead of the original line",
+        "replace a normal cell or fail cell with a redundancy cell",
+        "column reassignment or address remapping to a spare column"
+      ],
+      "claimConcept": "use a redundancy line to replace a line",
+      "mappingType": "action_equivalence",
+      "score": 1.0
+    },
+    {
+      "id": "MEM_FAILURE_CONDITION_001",
+      "sourceCase": "111105799",
+      "approval": "teacher_approved",
+      "referenceAny": [
+        "fail cell on a bit-line",
+        "defective cell in a column",
+        "failed column or faulty bit-line"
+      ],
+      "claimConcept": "a failure occurs in a column line",
+      "mappingType": "condition_equivalence",
+      "score": 1.0,
+      "contextAll": ["memory array", "repair or redundancy"]
+    },
+    {
+      "id": "SRAM_RC_TRACKING_FUNCTION_001",
+      "sourceCase": "111108948",
+      "approval": "teacher_approved",
+      "contextAll": ["SRAM", "timing or read/write assist"],
+      "referenceAll": [
+        "resistance and capacitance",
+        "delay or pulse width",
+        "bit-line length, word-line length, row count, column count, or array dimension"
+      ],
+      "referenceAny": [
+        "RC tracking circuit",
+        "replica bitline",
+        "dummy bit-line",
+        "dummy wire",
+        "self-timed SRAM",
+        "matched delay line",
+        "timing replica"
+      ],
+      "claimConcept": "tracking circuit with resistance and capacitance corresponding to memory-line length",
+      "mappingType": "technical_means_to_functional_result",
+      "score": 1.0,
+      "rejectIf": [
+        "RC network is only a filter, regulator, or decoupling network",
+        "no relationship to memory-array dimension or line loading",
+        "no timing, pulse, delay, read-assist, or write-assist function"
+      ]
+    },
+    {
+      "id": "SRAM_DUMMY_TO_IDENTICAL_WIRE_PARTIAL_001",
+      "sourceCase": "111108948",
+      "approval": "teacher_approved",
+      "referenceAll": [
+        "dummy wire, dummy bit-line, or replica line",
+        "mimics or tracks a true power rail, signal line, bit-line, or word-line",
+        "matched length, resistance, capacitance, or device loading"
+      ],
+      "claimConcept": "tracking conductor is the same as the memory-cell supply or signal conductor",
+      "mappingType": "functional_simulation_partial_physical_identity",
+      "score": 0.75,
+      "scoreCap": 0.75,
+      "promoteToOneRequires": [
+        "explicit physical identity or shared conductor",
+        "explicit identical interconnect topology rather than merely matched loading"
+      ]
+    }
+  ],
+  "recallExpansionCandidates": [
+    {
+      "concept": "column line selection circuit",
+      "terms": ["column selector", "column mux", "bit-line selector", "I/O gating selection", "spare column selector"],
+      "requiresTeacherApproval": true
+    },
+    {
+      "concept": "replica bitline timing",
+      "terms": ["replica BL", "dummy BL", "tracking BL", "matched RC delay", "array-tracking delay", "self-timed bitline"],
+      "requiresTeacherApproval": true
+    }
+  ]
+}
+

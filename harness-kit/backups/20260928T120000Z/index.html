@@ -736,8 +736,6 @@ select option{background:var(--s2);}
 </div>
 
 <script src="vocab.js"></script>
-<script src="rules/examiner-rules-v4.js"></script>
-<script src="rule-engine-v4.js"></script>
 <script>
 // ═══════════════════════════════════════
 // 8D CORE (保留原有邏輯，完整呈現)
@@ -803,7 +801,6 @@ let GOLDEN=[
 // Initial raw-model weights are provisional and must later be replaced by validation-trained weights.
 // ═══════════════════════════════════════
 const SCORING_VERSION = 'v3.10.0-synonym-aware-hybrid-retrieval';
-const RULE_SCORING_VERSION = (typeof window!=='undefined'&&window.RuleEngineV4?.version)||'v4-unavailable';
 // Keep v3.5 storage keys so existing verification/calibration data survives the v3.6 UI/parser upgrade.
 const DB_KEY='pat_sim_v35_db';
 const CALIB_KEY='pat_sim_v35_calibration';
@@ -1366,11 +1363,6 @@ async function evaluatePair(claim,citation){
   const raw=computeRawRelevance(features);
   // Isotonic receives one scalar only: raw relevance.
   const final=calibrate(raw);
-  // v4 is intentionally shadow-only during A/B validation: it is recorded but
-  // does not overwrite the established v3.10 production score or thresholds.
-  const v4Shadow=(typeof window!=='undefined'&&window.RuleEngineV4)
-    ? window.RuleEngineV4.scorePair(claim,citation,{combinationApproved:false})
-    : null;
 
   return {
     scoring_version:SCORING_VERSION,
@@ -1387,7 +1379,6 @@ async function evaluatePair(claim,citation){
     sims:struct.sims,
     focused_citation:focusedCitation,
     feature_vector:features,
-    v4_shadow:v4Shadow,
     gate:'',
     tier:tierOf(final)
   };
@@ -1404,8 +1395,7 @@ function recordAudit(pid,claim,citation,r,mode='single'){
     semantic_consistency:r.semantic_consistency,semantic_source:r.semantic_source,
     structure_score:r.structure_score,feature_vector:r.feature_vector,
     query_expansion_enabled:(document.getElementById('qeMode')?.value||'auto')!=='off',
-    elements:r.elements,sims:r.sims,focused_citation:r.focused_citation||'',
-    rule_scoring_version:RULE_SCORING_VERSION,v4_shadow:r.v4_shadow||null
+    elements:r.elements,sims:r.sims,focused_citation:r.focused_citation||''
   });auditSave(a);renderAudit();
 }
 async function runCompare(){
@@ -1421,8 +1411,7 @@ async function runCompare(){
 function renderScoreV35(r,pid,cl){
   document.getElementById('scoreCard').classList.add('vis');const big=document.getElementById('scoreBig');big.textContent=r.final_score;big.className='score-big '+r.tier;
   const chip=document.getElementById('tierChip'),labels={H:'高度相似 (HIGH)',M:'中度相似 (MID)',L:'低度相似 (LOW)'};chip.textContent=labels[r.tier];chip.className='tier-chip '+r.tier;
-  const shadowLine=r.v4_shadow?` · v4 shadow ${r.v4_shadow.final_score} (${r.v4_shadow.teacher_band})`:'';
-  document.getElementById('tierLine').textContent=`v3.10 hybrid ${r.semantic_source} · raw ${r.raw_score} · calibrated ${r.final_score}${shadowLine}`;document.getElementById('rPid').textContent=pid+' · '+cl;document.getElementById('rCit').textContent=document.getElementById('citId').value.trim()||'引證段落';
+  document.getElementById('tierLine').textContent=`v3.10 hybrid ${r.semantic_source} · raw ${r.raw_score} · calibrated ${r.final_score}`;document.getElementById('rPid').textContent=pid+' · '+cl;document.getElementById('rCit').textContent=document.getElementById('citId').value.trim()||'引證段落';
   document.getElementById('ovElemAvg').textContent=r.element_avg+'%';document.getElementById('ovElemMin').textContent=r.element_min+'%';document.getElementById('ovCoverage').textContent=r.coverage+'%';document.getElementById('ovSemantic').textContent=r.semantic_consistency+'%';document.getElementById('ovStruct').textContent=r.structure_score;document.getElementById('ovFinal').textContent=r.final_score;
   document.getElementById('ovElemMin').style.color=r.element_min<40?'var(--a4)':r.element_min<60?'var(--a3)':'var(--a2)';
   document.getElementById('ovExplain').textContent=`v3.10 Synonym-Aware Hybrid Retrieval
@@ -1438,10 +1427,6 @@ Raw model = 0.42*Avg + 0.18*Min + 0.18*Structure + 0.12*Coverage + 0.10*Semantic
 NOTE: v3.10 初始權重仍為 provisional，後續應由人工驗證 feature vectors 訓練取代。
 Isotonic input = raw relevance scalar only.
 Scoring version = ${SCORING_VERSION}`;
-  if(r.v4_shadow){
-    const ruleIds=r.v4_shadow.triggered_rules.map(x=>x.id).join(', ')||'無';
-    document.getElementById('ovExplain').textContent+=`\n\nV4 STATIC RULE SHADOW (不覆蓋正式分數)\nRule score = ${r.v4_shadow.final_score}\nElement Average = ${r.v4_shadow.element_avg}%\nWeakest Element = ${r.v4_shadow.element_min}%\nTeacher band = ${r.v4_shadow.teacher_band}\nCombination gate = ${r.v4_shadow.combination_gate}\nTriggered rules = ${ruleIds}\nArticle 26 flags = ${r.v4_shadow.article26_flags.length}\nRule version = ${r.v4_shadow.version}`;
-  }
   const gb=document.getElementById('gateBox');if(r.gate){gb.textContent='⚠ '+r.gate;gb.classList.add('vis');}else gb.classList.remove('vis');
   const desc=document.getElementById('tierDescBox'),descs={H:'技術相關度高；仍請檢查 Weakest Element 與 Missing Limitation，再進行人工 claim chart。',M:'具實質相關性；建議依 element evidence 與 coverage 決定是否進一步閱讀全文。',L:'目前技術相關度較低，但仍應人工確認 evidence passage。'};desc.textContent=descs[r.tier];desc.className='tier-desc-box '+r.tier;
   const warn=document.getElementById('elemWarningChip');warn.innerHTML=r.element_min<40?'<span class="elem-warning">⚠ 最弱元件 &lt;40%</span>':r.element_min<60?'<span class="elem-warning">△ 最弱元件偏低</span>':'<span class="elem-ok">✓ 元件覆蓋穩定</span>';
@@ -2026,12 +2011,12 @@ function genDraft(){
 // ═══════════════════════════════════════
 function autoSave(pid,r){
   const db=dbLoad(),claim=document.getElementById('claimTxt').value.trim(),cit=document.getElementById('citTxt').value.trim();
-  const entry={id:pid,claim,citation:cit,label:null,reviewer_label:null,raw_score:r.raw_score,calibrated_score:r.final_score,elem_min:r.element_min,element_avg:r.element_avg,structure_score:r.structure_score,coverage:r.coverage,semantic:r.semantic_consistency,feature_vector:r.feature_vector,sims:r.sims,scoring_version:SCORING_VERSION,rule_scoring_version:RULE_SCORING_VERSION,v4_shadow:r.v4_shadow||null,detected_at:new Date().toISOString()};
+  const entry={id:pid,claim,citation:cit,label:null,reviewer_label:null,raw_score:r.raw_score,calibrated_score:r.final_score,elem_min:r.element_min,element_avg:r.element_avg,structure_score:r.structure_score,coverage:r.coverage,semantic:r.semantic_consistency,feature_vector:r.feature_vector,sims:r.sims,scoring_version:SCORING_VERSION,detected_at:new Date().toISOString()};
   const i=db.cases.findIndex(c=>c.id===pid);if(i>=0){const old=db.cases[i];db.cases[i]={...entry,label:old.label,verified_at:old.verified_at};}else db.cases.push(entry);dbSave(db);renderDB();renderCalibInfo();
 }
 function doVerify(label){
   if(!_lastR){toast('請先執行比對',true);return;}const pid=document.getElementById('patId').value.trim()||'未指定',db=dbLoad();let i=db.cases.findIndex(c=>c.id===pid);
-  const base={id:pid,claim:document.getElementById('claimTxt').value.trim(),citation:document.getElementById('citTxt').value.trim(),raw_score:_lastR.raw_score,calibrated_score:_lastR.final_score,elem_min:_lastR.element_min,element_avg:_lastR.element_avg,structure_score:_lastR.structure_score,coverage:_lastR.coverage,semantic:_lastR.semantic_consistency,feature_vector:_lastR.feature_vector,sims:_lastR.sims,scoring_version:SCORING_VERSION,rule_scoring_version:RULE_SCORING_VERSION,v4_shadow:_lastR.v4_shadow||null};
+  const base={id:pid,claim:document.getElementById('claimTxt').value.trim(),citation:document.getElementById('citTxt').value.trim(),raw_score:_lastR.raw_score,calibrated_score:_lastR.final_score,elem_min:_lastR.element_min,element_avg:_lastR.element_avg,structure_score:_lastR.structure_score,coverage:_lastR.coverage,semantic:_lastR.semantic_consistency,feature_vector:_lastR.feature_vector,sims:_lastR.sims,scoring_version:SCORING_VERSION};
   const entry={...(i>=0?db.cases[i]:base),...base,label,reviewer_label:label===1?'highly_relevant':'low_relevance',verified_at:new Date().toISOString()};if(i>=0)db.cases[i]=entry;else db.cases.push(entry);dbSave(db);refitCalib(false);renderDB();renderCalibInfo();
   const vb=document.getElementById('vfyBadge');vb.className='vfy-badge '+(label===1?'sep':'non');vb.textContent=label===1?'✅ SEP':'❌ 非 SEP';toast(`已記錄：${pid} → ${label===1?'SEP':'非 SEP'}`);
 }

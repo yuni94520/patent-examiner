@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// vocab.js — 詞庫外掛檔（v1.1；EXAMINER teacher-approved domains）
+// vocab.js — 詞庫外掛檔（v1.0）
 // 主程式 index.html 只做比對運算，所有領域詞彙都在這裡維護。
 //
 // ┌─ 如何擴充 ──────────────────────────────────────────────┐
@@ -18,10 +18,6 @@
 const ENABLED_DOMAINS = {
   hevc:          true,   // 視訊編碼（原有詞庫）
   semiconductor: true,   // 半導體 / TFT / 顯示（2026-07 新增，已用實際案例驗證）
-  examiner_memory: true, // SRAM / NVM / 冗餘修復（OA 教師標籤驗證）
-  examiner_wireless: true, // UWB / 通話移交（OA 教師標籤驗證）
-  examiner_crypto: true, // PQC / 雜湊 / 視訊簽章（OA 教師標籤驗證）
-  examiner_eda: true,    // IC P/G / IR drop / ML（OA 教師標籤驗證）
   telecom:       false,  // 5G / 通訊（草稿，啟用前建議先用實際案例驗證）
   blockchain:    false,  // 區塊鏈（草稿，啟用前建議先用實際案例驗證）
 };
@@ -94,32 +90,6 @@ const ZH_EN_BLOCKCHAIN = [
   [/交易/g,'transaction'],[/礦工/g,'miner'],[/錢包/g,'wallet'],
 ];
 
-// EXAMINER 審查經驗詞庫：只放詞彙正規化；有向等效與法律推論由 v4 規則引擎處理。
-const ZH_EN_EXAMINER_MEMORY = [
-  [/行線選擇電路/g,'column line selection circuit'],[/修復控制電路/g,'repair control circuit'],
-  [/列解碼器/g,'column decoder'],[/冗餘位元線/g,'redundancy bit-line'],[/冗餘記憶塊/g,'redundancy block'],
-  [/複製位元線/g,'replica bitline'],[/虛設位元線/g,'dummy bit-line'],[/追蹤電路/g,'tracking circuit'],
-  [/靜態隨機存取記憶體/g,'SRAM'],[/非揮發性記憶體/g,'nonvolatile memory NVM'],
-  [/頁面緩衝器/g,'page buffer'],[/緩衝器子集/g,'buffer subset'],[/傳輸閘/g,'transmission gate'],
-  [/差動對/g,'differential pair'],[/互補/g,'complementary'],[/寫入埠/g,'write port'],[/讀取埠/g,'read port'],
-];
-const ZH_EN_EXAMINER_WIRELESS = [
-  [/超寬頻/g,'ultra-wideband UWB'],[/通話移交/g,'call handoff'],[/通話轉移/g,'call transfer'],
-  [/來源裝置識別符/g,'source device identifier'],[/目的裝置識別符/g,'destination device identifier'],
-  [/鄰近偵測/g,'proximity discovery'],[/憑證/g,'credential'],
-];
-const ZH_EN_EXAMINER_CRYPTO = [
-  [/後量子密碼學/g,'post-quantum cryptography PQC'],[/格基密碼/g,'lattice-based cryptography'],
-  [/質數模數/g,'prime modulus'],[/二的冪模數/g,'power-of-two modulus'],[/約簡器/g,'reducer'],
-  [/加鹽雜湊/g,'salted hash'],[/鹽值/g,'salt value'],[/視訊指紋/g,'video fingerprint'],
-  [/子簽章/g,'subsignature'],[/私有路徑/g,'private path'],
-];
-const ZH_EN_EXAMINER_EDA = [
-  [/電源接地網路/g,'power ground network P/G network'],[/電源網路/g,'power grid'],[/接地網路/g,'ground grid'],
-  [/壓降/g,'IR drop'],[/配線擁塞/g,'routing congestion'],[/密度圖/g,'density map'],
-  [/特徵提取器/g,'feature extractor'],[/機器學習模型/g,'machine learning model'],[/預訓練/g,'pretrained'],
-];
-
 // 通用結構語言（在領域詞之後、CJK 清除之前套用，避免搶先拆掉「種晶層」等長詞）
 const ZH_EN_STRUCTURAL = [
   [/至少/g,'at least'],[/第一/g,'first'],[/第二/g,'second'],[/第三/g,'third'],
@@ -156,12 +126,6 @@ const SYN_SEMICONDUCTOR = [
   [/\bpoly-?Si\b/gi,'polycrystalline silicon polysilicon'],
   [/\bIGZO\b/g,'InGaZnO oxide semiconductor'],
   [/\bLTPS\b/g,'low temperature polysilicon'],
-];
-const SYN_EXAMINER = [
-  [/\bspare column\b/gi,'redundancy column'],[/\breplica BL\b/gi,'replica bitline'],
-  [/\bdummy BL\b/gi,'dummy bit-line'],[/\bNVM\b/g,'nonvolatile memory NVM'],
-  [/\bUWB\b/g,'ultra-wideband UWB'],[/\bML model\b/gi,'machine learning model'],
-  [/\bP\/G\b/gi,'power ground network'],[/\bvoltage drop\b/gi,'IR drop'],
 ];
 
 // ═══ 8 維度特徵詞（PATS）═══════════════════════════════════
@@ -200,12 +164,6 @@ const PATS_BLOCKCHAIN = {
   steps:[/\b(broadcast\w+|validat\w+|verify\w*|verif\w+|sign\w+|hash\w+|min\w+e|append\w+|propagat\w+)\b/gi],
 };
 
-const PATS_EXAMINER = {
-  components:[/\b(SRAM|nonvolatile memory|page buffer|column decoder|repair control circuit|redundancy (?:bit-line|block|column)|replica bitline|dummy bit-line|transmission gate|write port|read port|differential pair|UWB|credential|prime modulus|power-of-two modulus|reducer|salt(?:ed)? hash|fingerprint|subsignature|power grid|ground grid|density map|feature extractor|machine learning model)\b/gi],
-  steps:[/\b(repair\w*|substitut\w*|remap\w*|track\w*|handoff|transfer\w*|reduc\w*|hash\w*|sign\w*|normaliz\w*|classif\w*|extract\w*|remov\w*)\b/gi],
-  relevance:[/\b(redundan\w*|replica\w*|complement\w*|differential\w*|proximity|credential|pretrain\w*|determin\w*|identif\w*)\b/gi],
-};
-
 // ═══ 合併（依 ENABLED_DOMAINS 組裝，勿改動此區塊順序）═══════
 function _mergePats(base, extra){
   const out = {};
@@ -225,18 +183,11 @@ if (ENABLED_DOMAINS.hevc)          { _zh.push(...ZH_EN_HEVC); _syn.push(...SYN_H
 if (ENABLED_DOMAINS.semiconductor) { _zh.push(...ZH_EN_SEMICONDUCTOR); _syn.push(...SYN_SEMICONDUCTOR); _pats = _mergePats(_pats, PATS_SEMICONDUCTOR); }
 if (ENABLED_DOMAINS.telecom)       { _zh.push(...ZH_EN_TELECOM); _pats = _mergePats(_pats, PATS_TELECOM); }
 if (ENABLED_DOMAINS.blockchain)    { _zh.push(...ZH_EN_BLOCKCHAIN); _pats = _mergePats(_pats, PATS_BLOCKCHAIN); }
-if (ENABLED_DOMAINS.examiner_memory)   { _zh.push(...ZH_EN_EXAMINER_MEMORY); }
-if (ENABLED_DOMAINS.examiner_wireless) { _zh.push(...ZH_EN_EXAMINER_WIRELESS); }
-if (ENABLED_DOMAINS.examiner_crypto)   { _zh.push(...ZH_EN_EXAMINER_CRYPTO); }
-if (ENABLED_DOMAINS.examiner_eda)      { _zh.push(...ZH_EN_EXAMINER_EDA); }
-if (ENABLED_DOMAINS.examiner_memory||ENABLED_DOMAINS.examiner_wireless||ENABLED_DOMAINS.examiner_crypto||ENABLED_DOMAINS.examiner_eda) {
-  _syn.push(...SYN_EXAMINER); _pats = _mergePats(_pats, PATS_EXAMINER);
-}
 
 _zh.push(...ZH_EN_STRUCTURAL); // 通用結構語言（域內長詞優先於此）
 _zh.push(...ZH_EN_CATCHALL); // CJK 清除永遠最後
 
-const VOCAB = { ZH_EN: _zh, SYN: _syn, PATS: _pats, ENABLED_DOMAINS, RULE_ENGINE_VERSION:'v4.0.0-shadow.1' };
+const VOCAB = { ZH_EN: _zh, SYN: _syn, PATS: _pats, ENABLED_DOMAINS };
 
 // 瀏覽器 / Node 雙環境輸出
 if (typeof module !== 'undefined' && module.exports) module.exports = VOCAB;

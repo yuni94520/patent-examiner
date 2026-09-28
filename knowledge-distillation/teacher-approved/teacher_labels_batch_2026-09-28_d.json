@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "0.4",
+  "formula": "0.4 * elementMean + 0.6 * elementMin",
+  "cases": [
+    {
+      "caseId": "111127738",
+      "claim": 1,
+      "scenario": "primary_reference_literal_only",
+      "references": ["US20140010366A1"],
+      "teacherElementScores": [100, 90, 0, 100, 100],
+      "expectedFused": 31.2,
+      "expectedLabel": "LOW",
+      "legalDecision": "PRIMARY_REFERENCE_NEEDS_HASHED_SALT_TEACHING"
+    },
+    {
+      "caseId": "111127738",
+      "claim": 1,
+      "scenario": "primary_plus_hashed_salt_reference",
+      "references": ["US20140010366A1", "US20210004864A1"],
+      "teacherElementScores": [100, 90, 100, 100, 100],
+      "expectedFused": 93.2,
+      "expectedLabel": "HIGH",
+      "legalDecision": "OBVIOUS_COMBINATION",
+      "requiredRules": ["VIDEO_EXTERNAL_METADATA_AS_SALT_001", "HASH_BITSTRING_TO_PROVIDE_SALT_001"]
+    },
+    {
+      "caseId": "111127738",
+      "claim": 2,
+      "references": ["US20140010366A1", "US20210004864A1", "US20190180240A1"],
+      "teacherElementScores": [100, 80, 65],
+      "expectedFused": 71.6667,
+      "expectedLabel": "MID",
+      "legalDecision": "OBVIOUS_COMBINATION",
+      "requiredRules": ["DIFFERENT_HASH_FUNCTIONS_ROLE_ASSIGNMENT_001", "PRIVATE_PATH_FOR_HASH_DEFINITION_001"]
+    },
+    {
+      "caseId": "111127738",
+      "claim": 3,
+      "references": ["US20140010366A1"],
+      "teacherElementScores": [100, 100],
+      "expectedFused": 100,
+      "expectedLabel": "HIGH",
+      "legalDecision": "OBVIOUS_LOGICAL_ENTAILMENT",
+      "requiredRules": ["PER_FRAME_HASH_IMPLIES_MULTIPLE_FINGERPRINTS_001"]
+    },
+    {
+      "caseId": "111127738",
+      "claim": 6,
+      "references": ["US20140010366A1", "US11317128B1"],
+      "teacherElementScores": [100, 100, 95],
+      "expectedFused": 96.3333,
+      "expectedLabel": "HIGH",
+      "legalDecision": "OBVIOUS_GRANULARITY_SUBSTITUTION",
+      "requiredRules": ["FRAME_TO_GOP_FINGERPRINT_GRANULARITY_001"]
+    },
+    {
+      "caseId": "111127738",
+      "claim": 7,
+      "references": ["US20140010366A1", "US20210012455A1"],
+      "teacherElementScores": [100, 80, 90],
+      "expectedFused": 84,
+      "expectedLabel": "MID_HIGH",
+      "legalDecision": "OBVIOUS_CACHE_OPTIMIZATION",
+      "requiredRules": ["CACHE_DETERMINISTIC_SALT_001"]
+    },
+    {
+      "caseId": "111127738",
+      "claim": 8,
+      "references": ["US20140010366A1"],
+      "teacherElementScores": [100, 75],
+      "expectedFused": 80,
+      "expectedLabel": "MID_HIGH",
+      "legalDecision": "OBVIOUS_BOUNDARY_CASE",
+      "requiredRules": ["ONE_GOP_PART_EQUALS_WHOLE_BOUNDARY_001"]
+    },
+    {
+      "caseId": "111127738",
+      "claim": 11,
+      "references": ["US20140010366A1"],
+      "teacherElementScores": [100, 90, 75],
+      "expectedFused": 80.3333,
+      "expectedLabel": "MID_HIGH",
+      "legalDecision": "OBVIOUS_WITH_SOURCE_AUDIT",
+      "requiredRules": ["SIGNED_DOCUMENTS_TO_SUBSIGNATURES_001", "SUBSIGNATURE_NEAR_SEGMENT_PLACEMENT_001"],
+      "requiredAuditFlag": "QUOTE_NOT_LOCATED_CLAIM11_001"
+    }
+  ]
+}

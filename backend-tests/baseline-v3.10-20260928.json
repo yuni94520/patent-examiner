@@ -1,0 +1,8 @@
+{
+  "baseline": "v3.10.0-synonym-aware-hybrid-retrieval",
+  "sourceCommit": "22f120c1357de1782cea108d80febeef9e94333d",
+  "capturedAt": "2026-09-28",
+  "command": "node backend-tests/test_core_engine.js",
+  "result": { "passed": 38, "failed": 0 },
+  "policy": "v4 runs in shadow mode until examiner-labelled A/B results justify promotion"
+}

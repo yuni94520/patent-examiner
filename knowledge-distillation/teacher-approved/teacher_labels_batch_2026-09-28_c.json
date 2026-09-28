@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "0.3",
+  "formula": "0.4 * elementMean + 0.6 * elementMin",
+  "labelThresholds": {"HIGH": 90, "MID_HIGH": 80, "MID": 65},
+  "cases": [
+    {
+      "caseId": "111122442",
+      "scenario": "literal_primary_reference_only",
+      "claim": 1,
+      "references": ["US20080195986A1"],
+      "teacherElementScores": [100, 100, 0, 0, 40],
+      "expectedFused": 19.2,
+      "expectedLabel": "LOW",
+      "legalDecision": "PRIMARY_REFERENCE_ALONE_NOT_FULL_LITERAL_COVERAGE"
+    },
+    {
+      "caseId": "111122442",
+      "scenario": "primary_plus_cross_domain_secondary",
+      "claim": 1,
+      "references": ["US20080195986A1", "CN111079861A"],
+      "teacherElementScores": [100, 100, 100, 100, 100],
+      "expectedFused": 100,
+      "expectedLabel": "HIGH",
+      "legalDecision": "OBVIOUS_COMBINATION",
+      "requiredRules": ["CROSS_DOMAIN_ELECTRICAL_IMAGE_ML_TRANSFER_001"],
+      "article26Flags": ["ENABLEMENT_ML_IMPLEMENTATION_MISSING_001", "CLARITY_DETERMINE_VS_IDENTIFY_001"]
+    },
+    {
+      "caseId": "111122442",
+      "scenario": "primary_plus_ordinary_knowledge_ai_substitution",
+      "claim": 1,
+      "references": ["US20080195986A1", "ORDINARY_KNOWLEDGE"],
+      "teacherElementScores": [100, 100, 85, 90, 90],
+      "expectedFused": 88.2,
+      "expectedLabel": "MID_HIGH",
+      "legalDecision": "OBVIOUS_SIMPLE_SUBSTITUTION",
+      "requiredRules": ["AI_AS_CONTROLLER_FUNCTIONAL_SUBSTITUTION_001", "EDA_MAP_TO_IMAGE_PREPROCESSING_001", "EDA_ANALYSIS_TO_ML_DIRECTED_MODIFICATION_001"]
+    },
+    {
+      "caseId": "111122442",
+      "scenario": "legacy_mixed_axis_for_audit_only",
+      "claim": 1,
+      "teacherElementScores": [100, 100, 100, 100, 85],
+      "expectedFused": 89.8,
+      "expectedLabel": "MID_HIGH",
+      "legalDecision": "OBVIOUS_COMBINATION",
+      "warning": "Legacy score improperly mixes Article 26 severity into prior-art coverage; retain only to reproduce prior audit output."
+    }
+  ],
+  "article26Expected": [
+    {"claim": "specification", "flag": "ENABLEMENT_ML_IMPLEMENTATION_MISSING_001"},
+    {"claim": 1, "flag": "CLARITY_DETERMINE_VS_IDENTIFY_001"},
+    {"claim": 5, "flag": "CLARITY_DESIRED_VS_GOLDEN_SCORE_001"},
+    {"claim": 8, "flag": "CLARITY_COUNTER_DIRECTION_001"},
+    {"claim": 16, "flag": "CLARITY_OBJECTIVE_MISMATCH_001"}
+  ]
+}

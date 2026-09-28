@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "0.4",
+  "batchId": "2026-09-28-d",
+  "status": "teacher_approved_with_source_audit",
+  "sourceCase": "111127738",
+  "eligibilityGate": {
+    "id": "PRIOR_ART_PUBLIC_AVAILABILITY_GATE_001",
+    "allRequired": [
+      "determine the application's relevant filing or priority date",
+      "determine the reference's public-availability date",
+      "confirm the reference qualifies under the applicable statutory prior-art rule"
+    ],
+    "policy": "Technical similarity may be calculated before eligibility is known, but the reference may not support a rejection until this gate passes.",
+    "warning": "An earlier priority date alone is not automatically equivalent to public availability."
+  },
+  "rules": [
+    {
+      "id": "VIDEO_EXTERNAL_METADATA_AS_SALT_001",
+      "contextAll": ["cryptographic video verification", "frame or segment hashing"],
+      "referenceAll": ["bitstring or timestamp not extracted from video pixels", "bitstring is combined with frame or video data before hashing"],
+      "claimConcept": "salt based on a bitstring not extracted from the video data",
+      "mappingType": "functional_role_equivalence",
+      "score": 0.9,
+      "rejectIf": ["metadata is appended only after hashing", "bitstring is derived from the protected video content", "bitstring has no effect on the fingerprint"]
+    },
+    {
+      "id": "HASH_BITSTRING_TO_PROVIDE_SALT_001",
+      "contextAll": ["salted hashing", "data integrity or privacy"],
+      "referenceAll": ["salt or source bitstring", "hash source bitstring before concatenation with protected data"],
+      "claimConcept": "hash the bitstring to provide the salt",
+      "mappingType": "action_equivalence",
+      "score": 1.0,
+      "sourceReference": "US20210004864A1"
+    },
+    {
+      "id": "DIFFERENT_HASH_FUNCTIONS_ROLE_ASSIGNMENT_001",
+      "contextAll": ["salt generation", "content fingerprint generation"],
+      "referenceAll": ["plurality of available hash functions", "separate salt-hash and content-hash operations"],
+      "claimConcept": "use different hash functions for the salt and fingerprint",
+      "mappingType": "predictable_algorithm_selection",
+      "score": 0.8,
+      "allowedFor": ["inventive_step"],
+      "forbiddenFor": ["direct_disclosure"],
+      "rejectIf": ["protocol requires the same hash function", "interoperability or verification fails when functions differ"]
+    },
+    {
+      "id": "PRIVATE_PATH_FOR_HASH_DEFINITION_001",
+      "contextAll": ["verifier must receive hash-function definition", "definition is treated as confidential"],
+      "referenceConcept": "private communications path",
+      "claimConcept": "share hash-function definition over a private path",
+      "mappingType": "security_channel_purpose_transfer",
+      "score": 0.65,
+      "allowedFor": ["inventive_step"],
+      "requiresAll": ["the verifier needs the definition", "unauthorized disclosure creates a stated or inferable security risk"],
+      "rejectIf": ["hash identifier is intended to be public", "private path is unrelated to cryptographic parameters"]
+    },
+    {
+      "id": "PER_FRAME_HASH_IMPLIES_MULTIPLE_FINGERPRINTS_001",
+      "contextAll": ["video sequence contains at least two frames", "each frame is independently hashed"],
+      "claimConcept": "first and second fingerprints for first and second portions",
+      "mappingType": "logical_entailment",
+      "score": 1.0,
+      "rejectIf": ["only one frame is obtained", "all frames contribute only to one aggregate hash without individual hashes"]
+    },
+    {
+      "id": "FRAME_AS_TEMPORAL_VIDEO_PART_001",
+      "contextAll": ["video sequence", "ordered frames"],
+      "referenceConcept": "frame",
+      "claimConcept": "temporal part or time segment of video",
+      "mappingType": "granularity_equivalence",
+      "score": 1.0,
+      "rejectIf": ["claim requires a multi-frame duration", "frame order or timing is absent"]
+    },
+    {
+      "id": "FRAME_TO_GOP_FINGERPRINT_GRANULARITY_001",
+      "primaryProvides": ["cryptographic video verification", "frame-level fingerprints"],
+      "secondaryProvides": ["fingerprint or signature calculated for a group of pictures"],
+      "claimConcept": "independently decodable GOP as the hashed video portion",
+      "mappingType": "multi_reference_granularity_substitution",
+      "score": 0.95,
+      "requiresCombinationGate": "same integrity purpose and codec-compatible GOP boundary",
+      "sourceReferences": ["US20140010366A1", "US11317128B1"]
+    },
+    {
+      "id": "CACHE_DETERMINISTIC_SALT_001",
+      "contextAll": ["salt is deterministically derived from a repeatable bitstring", "same bitstring may recur"],
+      "referenceConcept": "cache repeated or reusable data to avoid repeated retrieval or computation",
+      "claimConcept": "cache the salt for later use",
+      "mappingType": "generic_efficiency_optimization",
+      "score": 0.8,
+      "allowedFor": ["inventive_step"],
+      "requiredAll": ["cached salt is keyed by the source bitstring or equivalent context", "reuse preserves verification correctness"],
+      "rejectIf": ["salt must be fresh or random per frame", "salt serves as a nonce", "reuse weakens the stated threat model", "cache can return salt for the wrong bitstring"]
+    },
+    {
+      "id": "ONE_GOP_PART_EQUALS_WHOLE_BOUNDARY_001",
+      "contextAll": ["obtained video data is scoped to one data block", "data block may consist of one GOP"],
+      "referenceConcept": "one or more GOPs per data block",
+      "claimConcept": "the first portion is all obtained video data",
+      "mappingType": "boundary_case_partial_to_whole",
+      "score": 0.75,
+      "allowedFor": ["inventive_step"],
+      "forbiddenFor": ["unconditional_direct_disclosure"],
+      "rejectIf": ["obtained video necessarily includes multiple blocks", "claim scope requires an entire ongoing stream rather than the selected obtained block"]
+    },
+    {
+      "id": "SIGNED_DOCUMENTS_TO_SUBSIGNATURES_001",
+      "contextAll": ["video signature container or metadata track", "multiple independently signed documents or segments"],
+      "referenceConcept": "plurality of signed documents associated with N-GOP data",
+      "claimConcept": "signature composed of multiple sub-signatures",
+      "mappingType": "structural_equivalence",
+      "score": 0.9,
+      "rejectIf": ["documents share only one inseparable signature", "individual signed units cannot be associated with video segments"]
+    },
+    {
+      "id": "SUBSIGNATURE_NEAR_SEGMENT_PLACEMENT_001",
+      "contextAll": ["signed N-GOP documents", "metadata track or in-stream container association"],
+      "claimConcept": "insert sub-signature in or near a segment",
+      "mappingType": "container_association_inference",
+      "score": 0.75,
+      "evidenceStatus": "quoted phrase in OA not located in Google Patents text; structural evidence located",
+      "requiresManualVerification": true
+    }
+  ],
+  "sourceAuditFlags": [
+    {
+      "id": "QUOTE_NOT_LOCATED_CLAIM11_001",
+      "reference": "US20140010366A1",
+      "oaAssertion": "Insertion of the sub-signature at or near a time segment",
+      "verifiedEvidence": ["plurality of DSA signed documents", "video signature in MP4 container", "metadata track for signed N-GOP documents"],
+      "effect": "Do not label the quoted phrase as verified verbatim disclosure until the original publication or cited paragraph is manually checked."
+    }
+  ],
+  "negativeGuards": [
+    {"id": "NO_TIMESTAMP_AS_SALT_WITHOUT_PREHASH_COMBINATION", "effect": "A timestamp is not a salt merely because both are bitstrings."},
+    {"id": "NO_SINGLE_AGGREGATE_HASH_TO_MULTIPLE_FINGERPRINTS", "effect": "Multiple frames do not imply multiple fingerprints if only one aggregate hash is generated."},
+    {"id": "NO_CACHE_WHEN_SALT_FRESHNESS_REQUIRED", "effect": "Salt caching is blocked when freshness, randomness, or nonce uniqueness is required."},
+    {"id": "NO_PART_EQUALS_WHOLE_WITHOUT_SCOPE_BOUNDARY", "effect": "One GOP can equal all obtained data only when the obtained-data scope is itself limited to that GOP or block."},
+    {"id": "NO_UNVERIFIED_QUOTE_AS_DIRECT_EVIDENCE", "effect": "Unlocated quotations receive a source-audit flag and may only use verified structural evidence."}
+  ]
+}

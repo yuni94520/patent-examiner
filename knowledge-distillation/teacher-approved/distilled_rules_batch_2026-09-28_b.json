@@ -1,0 +1,189 @@
+{
+  "schemaVersion": "0.2",
+  "batchId": "2026-09-28-b",
+  "status": "teacher_approved",
+  "direction": "reference_evidence_to_claim_limitation",
+  "scoreSemantics": {
+    "similarityScore": "technical coverage only",
+    "legalDecision": "separate teacher label; an obvious modification may still have a non-HIGH similarity score",
+    "directDisclosure": 1.0,
+    "functionalEquivalenceRequiresContext": true,
+    "sameDomainAloneNeverAllowsCombination": true
+  },
+  "combinationGate": {
+    "id": "COMBINATION_GATE_001",
+    "allRequired": [
+      "primary reference supplies the base architecture",
+      "secondary reference supplies an identified missing limitation",
+      "the supplied module performs the same or a predictably related function",
+      "interfaces and signal direction are technically compatible",
+      "a motivation or predictable-use rationale is recorded",
+      "no express technical conflict is present"
+    ],
+    "supportingButInsufficientAlone": [
+      "same technical field",
+      "same CPC class",
+      "shared nouns such as memory, controller, buffer, or port"
+    ],
+    "rejectIfAny": [
+      "combination changes the operating principle",
+      "secondary module cannot connect to the primary architecture without an unproven redesign",
+      "claim requires simultaneous independent behavior that the proposed complementary pair cannot perform",
+      "evidence teaches away from the proposed substitution"
+    ]
+  },
+  "rules": [
+    {
+      "id": "SRAM_SENSE_STAGE_TO_NAND_001",
+      "sourceCase": "110135148",
+      "contextAll": ["SRAM data path", "sense or detection stage", "binary control path"],
+      "referenceAny": ["primary sense amplifier", "initial detection amplifier", "inverter stage"],
+      "claimConcept": "first logic gate or NAND gate",
+      "mappingType": "conditional_functional_equivalence_not_synonym",
+      "baseScore": 0.82,
+      "scoreBoost": {"completeInputOutputPolarityAndTruthFunction": 0.08, "cap": 0.9},
+      "requiredAll": [
+        "same inputs or derivable complemented inputs",
+        "same asserted output condition after accounting for inversion",
+        "no claimed analog gain, sensing margin, or timing property is lost"
+      ],
+      "rejectIf": ["mere amplifier-name match", "unknown polarity", "analog sensing behavior is essential"]
+    },
+    {
+      "id": "SRAM_INDEPENDENT_TO_DIFFERENTIAL_PORTS_001",
+      "sourceCase": "110135148",
+      "contextAll": ["SRAM", "paired bit-line or read path"],
+      "referenceConcept": "two independently described ports or signal paths",
+      "claimConcept": "complementary differential pair",
+      "mappingType": "conditional_architectural_conversion",
+      "score": 0.85,
+      "requiredAll": [
+        "the paths can carry complementary values",
+        "paired sensing or differential interpretation is technically compatible",
+        "the claim does not require independent simultaneous transactions on both paths"
+      ],
+      "directional": true,
+      "reverseScore": 0.72,
+      "rejectIf": ["ports require unrelated addresses", "ports require independent simultaneous read/write", "no shared sensing relationship"]
+    },
+    {
+      "id": "SRAM_WRITE_PORT_TRANSMISSION_GATE_PLUGIN_001",
+      "sourceCase": "110135148",
+      "contextAll": ["multi-port SRAM", "bit-line write path"],
+      "primaryProvides": ["dual read-port SRAM architecture", "local and global bit-line path"],
+      "secondaryProvides": ["write port", "transmission gates coupling write data lines to bit-lines"],
+      "claimConcept": "write port coupled through transmission gates",
+      "mappingType": "multi_reference_module_insertion",
+      "score": 1.0,
+      "requiresCombinationGate": "COMBINATION_GATE_001"
+    },
+    {
+      "id": "SRAM_GROUPING_TERMS_001",
+      "sourceCase": "110135148",
+      "referenceAny": ["upper sub-module group and lower sub-module group", "upper group and lower group"],
+      "claimConcept": "upper group and lower group",
+      "mappingType": "terminology_equivalence",
+      "score": 1.0
+    },
+    {
+      "id": "SRAM_WRITE_MUX_CONTROL_COMPOSITE_001",
+      "sourceCase": "110135148",
+      "referenceAll": ["write enable signal", "group selection pulse or group selection signal"],
+      "claimConcept": "asserted write multiplexer address signal",
+      "mappingType": "composite_signals_to_control_function",
+      "score": 0.9,
+      "requiredActionPath": ["write enable gates the write operation", "group selection chooses the addressed group", "combined state selects the write path"]
+    },
+    {
+      "id": "UWB_PROXIMITY_CALL_TRANSFER_001",
+      "sourceCase": "110144015",
+      "contextAll": ["active call transfer", "nearby source and destination devices"],
+      "referenceAll": ["proximity discovery", "wireless signal includes UWB as an option", "active conversation transfers between identified devices"],
+      "claimConcept": "UWB device identifies source and destination by determined position and transfers the call",
+      "mappingType": "technology_choice_plus_known_workflow",
+      "score": 0.85,
+      "rejectIf": ["UWB is mentioned only outside proximity/location detection", "no active call transfer", "device identity is not tied to the transfer workflow"]
+    },
+    {
+      "id": "CALL_TRANSFER_IDENTIFIER_HANDSHAKE_001",
+      "sourceCase": "110144015",
+      "contextAll": ["call handoff", "source device", "destination device"],
+      "referenceAll": ["source or destination device identifier", "destination joins or receives the active call", "source disconnects after transfer"],
+      "claimConcept": "two transfer commands exchange identifiers, destination identifies the call, and source disconnects after join",
+      "mappingType": "workflow_equivalence",
+      "score": 0.85,
+      "rejectIf": ["identifier is only an account ID unrelated to a device", "source disconnect occurs before successful destination join"]
+    },
+    {
+      "id": "CALL_CREDENTIAL_ROUTINE_001",
+      "sourceCase": "110144015",
+      "contextAll": ["authenticated communication", "call handoff"],
+      "referenceAny": ["credential included in transfer command", "credential retrieved using source identity", "stored credential associated with source device"],
+      "claimConcept": "destination uses a credential to join the call",
+      "mappingType": "known_security_mechanism",
+      "score": 0.75,
+      "scoreCap": 0.85,
+      "promoteRequires": ["same credential source", "same identifier-to-credential lookup", "same join authorization purpose"]
+    },
+    {
+      "id": "NVM_BASE_PLUS_EXPLICIT_BUFFER_SUBSET_001",
+      "sourceCase": "111106540",
+      "primaryReference": "US20190287629A1",
+      "secondaryReference": "US20110208905A1",
+      "primaryProvides": ["nonvolatile memory array", "plurality of page buffers", "controller or control logic communicating with buffers"],
+      "secondaryProvides": ["command specifies a subset of n buffers", "data payload is transferred in the specified subset"],
+      "claimConcept": "controller explicitly selects n buffers for command-related payload transfer",
+      "mappingType": "multi_reference_exact_missing_limitation",
+      "score": 1.0,
+      "requiresCombinationGate": "COMBINATION_GATE_001"
+    },
+    {
+      "id": "NVM_EXPLICIT_BUFFER_OPERATION_FAMILY_001",
+      "sourceCase": "111106540",
+      "referenceAny": ["shift-in controller to subset", "media-write subset to array", "media-read array to subset", "shift-out subset to external bus", "unique buffer identifier", "parallel controller-buffer and subset-array transfer"],
+      "claimConcept": "explicit subset-buffer command operation",
+      "mappingType": "operation_family",
+      "score": 1.0,
+      "contextAll": ["nonvolatile memory", "plurality of buffers", "controller command"]
+    },
+    {
+      "id": "PQC_CONFIGURABLE_SCHEME_TO_DUAL_REDUCER_001",
+      "sourceCase": "111108417",
+      "contextAll": ["lattice-based cryptography", "configurable LWE/LWR or ring/module modes", "polynomial or modular multiplication"],
+      "referenceAll": ["prime modulus is supported", "power-of-two modulus is supported", "same algorithm is parameterized for multiple underlying problems"],
+      "claimConcept": "power-of-two reducer and prime-modulus reducer",
+      "mappingType": "simple_hardware_specialization_not_direct_disclosure",
+      "score": 0.7,
+      "legalInference": "may support obviousness for broad claim 1 only",
+      "scoreCap": 0.7,
+      "mustNotInfer": ["n least-significant-bit output", "specific prime-modulus multiplication result path", "hardware mode selector", "M parallel modular multipliers"]
+    }
+  ],
+  "negativeGuards": [
+    {
+      "id": "NO_DOMAIN_ONLY_COMBINATION",
+      "condition": "references merely share SRAM, memory, communications, or cryptography domain",
+      "effect": "block combination until COMBINATION_GATE_001 is satisfied"
+    },
+    {
+      "id": "NO_AMPLIFIER_AS_UNCONDITIONAL_NAND",
+      "condition": "truth function, polarity, or signal path is absent",
+      "effect": "SRAM_SENSE_STAGE_TO_NAND_001 must not trigger"
+    },
+    {
+      "id": "NO_INDEPENDENT_PORTS_AS_DIFFERENTIAL_WHEN_SIMULTANEITY_REQUIRED",
+      "condition": "claim requires independent addresses or simultaneous unrelated operations",
+      "effect": "SRAM_INDEPENDENT_TO_DIFFERENTIAL_PORTS_001 must not trigger"
+    },
+    {
+      "id": "NO_GENERAL_PQC_TO_SPECIFIC_REDUCER_OUTPUT",
+      "condition": "reference discloses configurable lattice algorithms but not the claimed output behavior",
+      "effect": "claims 6-9 receive zero direct-coverage score on the missing hardware limitation"
+    },
+    {
+      "id": "NO_PARAMETERS_AS_POWER_ESTIMATION",
+      "condition": "reference has difficulty/structure parameters but no generated power-consumption estimate",
+      "effect": "claim 10 power-estimation limitation receives zero coverage"
+    }
+  ]
+}

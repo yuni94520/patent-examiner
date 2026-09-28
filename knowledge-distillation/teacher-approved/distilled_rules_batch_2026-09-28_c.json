@@ -1,0 +1,146 @@
+{
+  "schemaVersion": "0.3",
+  "batchId": "2026-09-28-c",
+  "status": "teacher_approved",
+  "sourceCase": "111122442",
+  "scoreAxes": {
+    "priorArtCoverage": "How completely the cited evidence or approved equivalence covers the claim limitations.",
+    "obviousnessInference": "Whether an identified difference is a predictable substitution or ordinary technical application.",
+    "disclosureQuality": "Article 26 enablement, clarity, and support defects; never subtract this from prior-art coverage.",
+    "noveltyPolicy": "Common knowledge and functional substitution may not be counted as direct disclosure for novelty."
+  },
+  "rules": [
+    {
+      "id": "AI_AS_CONTROLLER_FUNCTIONAL_SUBSTITUTION_001",
+      "priority": "high",
+      "contextAll": ["software or EDA optimization", "traditional analyzer or controller performs the same technical purpose"],
+      "claimAny": ["machine-learning model", "feature extractor", "pretrained model", "AI decision module"],
+      "referenceAny": ["controller", "analysis tool", "rule-based analyzer", "optimization algorithm"],
+      "mappingType": "obviousness_only_functional_substitution",
+      "baseScore": 0.9,
+      "legalInference": "predictable simple substitution",
+      "allowedFor": ["inventive_step"],
+      "forbiddenFor": ["novelty", "direct_disclosure"],
+      "requiredAll": [
+        "same technical input or a routine conversion of that input",
+        "same output decision or downstream modification",
+        "same optimization objective",
+        "claim does not require a specific model architecture, training procedure, dataset composition, or loss function",
+        "no evidence of an unexpected technical effect attributable to the ML implementation"
+      ],
+      "rejectIfAny": [
+        "the claimed model architecture is itself a limiting feature",
+        "training data or transfer-learning procedure materially changes system behavior",
+        "traditional tool only measures while the claim requires a separately defined predictive task",
+        "inputs or outputs are not functionally compatible"
+      ]
+    },
+    {
+      "id": "EDA_MAP_TO_IMAGE_PREPROCESSING_001",
+      "contextAll": ["EDA power or ground analysis", "spatial electrical data"],
+      "referenceAll": ["current map, voltage map, density map, or spatial grid", "numeric or spatial data available for analysis"],
+      "claimConcept": "normalize a P/G density map into an image",
+      "mappingType": "routine_data_representation_conversion",
+      "score": 0.85,
+      "allowedFor": ["inventive_step"],
+      "forbiddenFor": ["direct_disclosure"],
+      "rejectIf": ["normalization encodes a claimed non-routine physical relationship", "image channels or geometry carry a specifically claimed technical meaning absent from the reference"]
+    },
+    {
+      "id": "EDA_ANALYSIS_TO_ML_DIRECTED_MODIFICATION_001",
+      "contextAll": ["P/G network optimization", "analysis result drives physical layout modification"],
+      "referenceAll": ["IR-drop or congestion analysis", "modification of via, conductor, trace length, trace width, or routing"],
+      "claimConcept": "modify P/G vias or conductors according to an ML-model determination",
+      "mappingType": "decision_agent_equivalence",
+      "score": 0.9,
+      "requiresRule": "AI_AS_CONTROLLER_FUNCTIONAL_SUBSTITUTION_001",
+      "forbiddenFor": ["novelty", "direct_disclosure"]
+    },
+    {
+      "id": "CROSS_DOMAIN_ELECTRICAL_IMAGE_ML_TRANSFER_001",
+      "primaryDomain": "IC or package P/G routing optimization",
+      "secondaryDomain": "power-distribution voltage anomaly diagnosis",
+      "primaryReference": "US20080195986A1",
+      "secondaryReference": "CN111079861A",
+      "mappingType": "cross_domain_predictable_technology_transfer",
+      "allRequired": [
+        "both references analyze voltage, current, or derived electrical distribution data",
+        "primary reference supplies the physical P/G optimization workflow",
+        "secondary reference supplies data-to-image preprocessing and pretrained CNN feature extraction",
+        "the image pipeline can accept the primary reference data without changing its physical meaning",
+        "a recorded rationale explains automation of electrical-distribution analysis",
+        "no domain-specific conflict blocks transfer"
+      ],
+      "secondaryProvides": [
+        "voltage data converted to an image",
+        "input tensor shape 150 by 150 by 3",
+        "VGG16 convolutional feature extractor",
+        "ImageNet pretrained weights",
+        "classifier trained from extracted features"
+      ],
+      "score": 1.0,
+      "rejectIf": ["shared word voltage is the only relation", "secondary image labels have no transferable relation to the primary optimization objective", "combination requires undisclosed redesign of the physical modification loop"]
+    }
+  ],
+  "article26Flags": [
+    {
+      "id": "ENABLEMENT_ML_IMPLEMENTATION_MISSING_001",
+      "article": "26(1)",
+      "severity": 1.0,
+      "triggerAll": ["pretrained feature extractor is a core technical means", "model architecture is absent", "training dataset composition is absent", "transfer-learning implementation is absent"],
+      "output": "enablement defect",
+      "coveragePenalty": 0
+    },
+    {
+      "id": "CLARITY_DETERMINE_VS_IDENTIFY_001",
+      "article": "26(2)",
+      "severity": 0.15,
+      "claimTerm": "determine modification",
+      "specificationTerm": "identify modification or candidate region",
+      "conflictQuestion": "Does the ML model output the final modification, or only candidates later resolved by another algorithm?",
+      "output": "clarity and support defect",
+      "coveragePenalty": 0
+    },
+    {
+      "id": "CLARITY_DESIRED_VS_GOLDEN_SCORE_001",
+      "article": "26(2)",
+      "severity": 0.15,
+      "claimTerm": "desired congestion score",
+      "specificationTerm": "golden congestion score",
+      "output": "ambiguous training target and support defect",
+      "coveragePenalty": 0
+    },
+    {
+      "id": "CLARITY_COUNTER_DIRECTION_001",
+      "article": "26(2)",
+      "severity": 0.2,
+      "claimTerm": "modify when count is below threshold",
+      "specificationTerm": "stop when counter exceeds finite modification count",
+      "output": "logical-direction ambiguity",
+      "coveragePenalty": 0
+    },
+    {
+      "id": "CLARITY_OBJECTIVE_MISMATCH_001",
+      "article": "26(2)",
+      "severity": 0.2,
+      "claimTerm": "reduce congestion with less IR-drop overhead",
+      "specificationTerm": "dual objective of reducing IR drop and congestion without IR degradation",
+      "output": "objective-function ambiguity and support defect",
+      "coveragePenalty": 0
+    }
+  ],
+  "negativeGuards": [
+    {
+      "id": "NO_GENERIC_AI_ERASURE_FOR_SPECIFIC_MODEL",
+      "effect": "Do not remove architecture, dataset, training, transfer-learning, loss-function, or model-output limitations."
+    },
+    {
+      "id": "NO_ARTICLE26_PENALTY_ON_PRIOR_ART_COVERAGE",
+      "effect": "Article 26 flags are reported on a separate axis and must not reduce technical coverage scores."
+    },
+    {
+      "id": "NO_CROSS_DOMAIN_BY_SHARED_NOUN",
+      "effect": "A shared word such as voltage, image, or classifier is insufficient for combination."
+    }
+  ]
+}

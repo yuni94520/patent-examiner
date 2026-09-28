@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "0.2",
+  "formula": "0.4 * elementMean + 0.6 * elementMin",
+  "note": "Similarity and legal outcome are deliberately separate.",
+  "cases": [
+    {
+      "caseId": "110135148",
+      "claim": 1,
+      "references": ["US6188596B1", "US20150131368A1"],
+      "teacherElementScores": [100, 90, 100],
+      "expectedFused": 92.6667,
+      "tolerance": 0.01,
+      "expectedLabel": "HIGH",
+      "teacherLegalDecision": "OBVIOUS_COMBINATION",
+      "requiredRules": ["SRAM_SENSE_STAGE_TO_NAND_001", "SRAM_WRITE_PORT_TRANSMISSION_GATE_PLUGIN_001", "COMBINATION_GATE_001"]
+    },
+    {
+      "caseId": "110135148",
+      "claim": 17,
+      "references": ["US6188596B1"],
+      "teacherElementScores": [82],
+      "expectedFused": 82,
+      "expectedLabel": "MID_HIGH",
+      "teacherLegalDecision": "OBVIOUS_SIMPLE_CHANGE",
+      "requiredRules": ["SRAM_SENSE_STAGE_TO_NAND_001"]
+    },
+    {
+      "caseId": "110144015",
+      "claim": 1,
+      "references": ["US20200382647A1"],
+      "teacherElementScores": [100, 85, 85, 90],
+      "expectedFused": 87,
+      "expectedLabel": "MID_HIGH",
+      "teacherLegalDecision": "OBVIOUS",
+      "requiredRules": ["UWB_PROXIMITY_CALL_TRANSFER_001", "CALL_TRANSFER_IDENTIFIER_HANDSHAKE_001"]
+    },
+    {
+      "caseId": "111106540",
+      "claim": 1,
+      "references": ["US20190287629A1", "US20110208905A1"],
+      "teacherElementScores": [100, 100, 95],
+      "expectedFused": 96.3333,
+      "tolerance": 0.01,
+      "expectedLabel": "HIGH",
+      "teacherLegalDecision": "OBVIOUS_COMBINATION",
+      "requiredRules": ["NVM_BASE_PLUS_EXPLICIT_BUFFER_SUBSET_001", "COMBINATION_GATE_001"]
+    },
+    {
+      "caseId": "111108417",
+      "claim": 1,
+      "references": ["US20200259649A1"],
+      "teacherElementScores": [100, 85, 70],
+      "expectedFused": 76,
+      "expectedLabel": "MID",
+      "teacherLegalDecision": "OBVIOUS_SIMPLE_CHANGE",
+      "requiredRules": ["PQC_CONFIGURABLE_SCHEME_TO_DUAL_REDUCER_001"]
+    },
+    {
+      "caseId": "111108417",
+      "claim": 6,
+      "references": ["US20200259649A1"],
+      "teacherElementScores": [100, 80, 0],
+      "expectedFused": 24,
+      "expectedLabel": "LOW",
+      "teacherLegalDecision": "NO_REJECTION_FOUND",
+      "requiredGuard": "NO_GENERAL_PQC_TO_SPECIFIC_REDUCER_OUTPUT"
+    },
+    {
+      "caseId": "111108417",
+      "claim": 7,
+      "references": ["US20200259649A1"],
+      "teacherElementScores": [100, 80, 0],
+      "expectedFused": 24,
+      "expectedLabel": "LOW",
+      "teacherLegalDecision": "NO_REJECTION_FOUND",
+      "requiredGuard": "NO_GENERAL_PQC_TO_SPECIFIC_REDUCER_OUTPUT"
+    },
+    {
+      "caseId": "111108417",
+      "claim": 8,
+      "references": ["US20200259649A1"],
+      "teacherElementScores": [100, 75, 0],
+      "expectedFused": 23.3333,
+      "tolerance": 0.01,
+      "expectedLabel": "LOW",
+      "teacherLegalDecision": "NO_REJECTION_FOUND",
+      "requiredGuard": "NO_GENERAL_PQC_TO_SPECIFIC_REDUCER_OUTPUT"
+    },
+    {
+      "caseId": "111108417",
+      "claim": 9,
+      "references": ["US20200259649A1"],
+      "teacherElementScores": [100, 70, 0],
+      "expectedFused": 22.6667,
+      "tolerance": 0.01,
+      "expectedLabel": "LOW",
+      "teacherLegalDecision": "NO_REJECTION_FOUND",
+      "requiredGuard": "NO_GENERAL_PQC_TO_SPECIFIC_REDUCER_OUTPUT"
+    },
+    {
+      "caseId": "111108417",
+      "claim": 10,
+      "references": ["US20200259649A1"],
+      "teacherElementScores": [80, 40, 0],
+      "expectedFused": 16,
+      "expectedLabel": "LOW",
+      "teacherLegalDecision": "NO_REJECTION_FOUND",
+      "requiredGuard": "NO_PARAMETERS_AS_POWER_ESTIMATION"
+    }
+  ]
+}
